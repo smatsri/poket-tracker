@@ -1,0 +1,37 @@
+# TKT-019 — Browse previous evenings
+
+**Status:** todo  
+**Milestone:** M4 Review  
+**Depends on:** [TKT-006](TKT-006-read-sessions.md), [TKT-010](TKT-010-api-client.md), [TKT-012](TKT-012-rtl-shell.md)
+
+## Goal
+
+Show completed evenings from the server, newest first.
+
+## Scope
+
+- Load `GET /api/sessions` when History opens.
+- Show each session's date, number of players, number of transactions, and client-calculated overall result.
+- Order the list newest first.
+- Open the selected session's summary.
+- Show an empty state when the server returns no sessions.
+- Show a recoverable error when the request fails, without deleting the active local evening.
+
+## Out of scope
+
+- Date filters, search, and offline access to the full historical library.
+- Editing a completed session.
+
+## Implementation notes
+
+- Count distinct players returned for the session.
+- The overall result is the client-calculated session balance, displayed with sign and color.
+- Do not use the locally submitted copy as a second competing list. After submission, history comes from the server response.
+
+## Acceptance criteria
+
+- [ ] Completed sessions appear newest first with the four required facts.
+- [ ] Choosing a session opens its summary route.
+- [ ] No sessions produces the Hebrew empty state.
+- [ ] A failed load explains the failure and can be retried.
+- [ ] Opening history does not change the active draft or pending session.

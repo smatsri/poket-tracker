@@ -1,0 +1,399 @@
+openapi: 3.1.0
+info:
+  title: Poker Tracker API
+  version: 0.1.0
+  description: |
+    Authoritative HTTP contract for Poker Tracker version 1.
+
+    The server stores players and completed poker sessions. It does not
+    calculate balances, profit, rankings, or other poker statistics.
+
+    This contract supersedes the endpoint examples in the source specifications
+    where they differ. In particular, timestamps must be RFC 3339 date-time
+    values with `Z` or a numeric offset, and player and session responses
+    include server-generated `createdAt`.
+servers:
+  - url: http://localhost:3001
+    description: Local development
+security: []
+tags:
+  - name: Players
+    description: Player directory used by session transactions.
+  - name: Sessions
+    description: Completed poker evenings and their transactions.
+paths:
+  /api/players:
+    get:
+      operationId: listPlayers
+      tags: [Players]
+      summary: List players
+      description: Returns every player, ordered by `createdAt` ascending and then by `id` ascending.
+      responses:
+        "200":
+          description: Stored players.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PlayerList"
+        "500":
+          $ref: "#/components/responses/InternalError"
+    post:
+      operationId: createPlayer
+      tags: [Players]
+      summary: Create a player
+      description: |
+        Creates a player with a server-generated ID. The server trims the name
+        and collapses internal whitespace before validation and storage.
+
+        Names are not unique. A repeated name creates another player.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PlayerCreateRequest"
+            example:
+              name: David
+      responses:
+        "201":
+          description: Player created.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Player"
+              example:
+                id: 6f0c8f4e-2d7a-4f7a-9c1e-0a8f5d6b7c11
+                name: David
+                createdAt: "2026-11-12T18:05:00Z"
+        "400":
+          $ref: "#/components/responses/ValidationError"
+        "500":
+          $ref: "#/components/responses/InternalError"
+  /api/sessions:
+    get:
+      operationId: listSessions
+      tags: [Sessions]
+      summary: List sessions
+      description: |
+        Returns completed sessions with their transactions and distinct players.
+        Results are ordered by `date` descending, then `createdAt` descending,
+        then `id` descending.
+
+        `from` and `to` are optional inclusive calendar-date bounds. When both
+        are present, `from` must be earlier than or equal to `to`. Omitting
+        both bounds returns every session. This operation has no pagination.
+      parameters:
+        - $ref: "#/components/parameters/FromDate"
+        - $ref: "#/components/parameters/ToDate"
+      responses:
+        "200":
+          description: Sessions matching the optional date range.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SessionList"
+        "400":
+          $ref: "#/components/responses/ValidationError"
+        "500":
+          $ref: "#/components/responses/InternalError"
+    post:
+      operationId: createSession
+      tags: [Sessions]
+      summary: Submit a complete session
+      description: |
+        Stores one session and all of its transactions atomically. The client
+        supplies the session ID and every transaction ID. Those IDs are stable
+        across retries.
+
+        Idempotency uses the session ID:
+
+        - If the ID is new, the server stores the session and returns `201`.
+        - If the ID exists and the submitted date and transaction set match the
+          stored record, the server returns `200` and the stored session. It
+          does not insert or modify rows.
+        - If the ID exists and the date or transaction set differs, the server
+          returns `409` and leaves the stored record unchanged.
+
+        Transaction array order is not significant. Two timestamps match when
+        they represent the same UTC instant. Server-owned `createdAt` is not
+        part of the comparison.
+
+        Every referenced player must already exist. A missing player, a
+        duplicate transaction ID within the request, or an invalid field
+        returns `400` and stores nothing. Reusing a transaction ID that already
+        belongs to a different stored session returns `409` and stores nothing.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SessionCreateRequest"
+            example:
+              id: session-001
+              date: "2026-11-12"
+              transactions:
+                - id: tx-001
+                  playerId: player-001
+                  type: buy-in
+                  amount: 50
+                  timestamp: "2026-11-12T18:15:00Z"
+                - id: tx-002
+                  playerId: player-001
+                  type: rebuy
+                  amount: 50
+                  timestamp: "2026-11-12T19:10:00Z"
+                - id: tx-003
+                  playerId: player-001
+                  type: cash-out
+                  amount: 120
+                  timestamp: "2026-11-12T21:00:00Z"
+      responses:
+        "201":
+          description: Session stored for the first time.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Session"
+        "200":
+          description: Identical session was already stored. No data changed.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Session"
+        "400":
+          $ref: "#/components/responses/ValidationError"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        "500":
+          $ref: "#/components/responses/InternalError"
+  /api/sessions/{sessionId}:
+    get:
+      operationId: getSession
+      tags: [Sessions]
+      summary: Get one session
+      description: |
+        Returns the session, all of its transactions, and the distinct players
+        referenced by those transactions. Transactions are ordered by timestamp
+        ascending and then by `id` ascending. Players are ordered by name and
+        then by `id`, using binary ordering.
+      parameters:
+        - $ref: "#/components/parameters/SessionId"
+      responses:
+        "200":
+          description: Stored session.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Session"
+        "400":
+          $ref: "#/components/responses/ValidationError"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalError"
+components:
+  parameters:
+    SessionId:
+      name: sessionId
+      in: path
+      required: true
+      schema:
+        $ref: "#/components/schemas/Identifier"
+    FromDate:
+      name: from
+      in: query
+      required: false
+      description: Inclusive start date.
+      schema:
+        $ref: "#/components/schemas/CalendarDate"
+    ToDate:
+      name: to
+      in: query
+      required: false
+      description: Inclusive end date.
+      schema:
+        $ref: "#/components/schemas/CalendarDate"
+  responses:
+    ValidationError:
+      description: The request is invalid, or a referenced player does not exist.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+          example:
+            error:
+              code: VALIDATION_ERROR
+              message: Invalid session data
+    NotFound:
+      description: The requested session does not exist.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+          example:
+            error:
+              code: NOT_FOUND
+              message: Session not found
+    Conflict:
+      description: The identifier already exists with different content, or a transaction ID is already stored.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+          example:
+            error:
+              code: CONFLICT
+              message: Session already exists with different content
+    InternalError:
+      description: Unexpected server failure. The body contains no stack trace, SQL, or driver details.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+          example:
+            error:
+              code: INTERNAL_ERROR
+              message: Unexpected server error
+  schemas:
+    Identifier:
+      type: string
+      minLength: 1
+      maxLength: 64
+      pattern: "^[A-Za-z0-9_-]+$"
+    CalendarDate:
+      type: string
+      format: date
+      description: Calendar date in YYYY-MM-DD form.
+    Timestamp:
+      type: string
+      format: date-time
+      description: RFC 3339 date-time with Z or a numeric offset.
+    TransactionType:
+      type: string
+      enum: [buy-in, rebuy, cash-out]
+    Player:
+      type: object
+      additionalProperties: false
+      required: [id, name, createdAt]
+      properties:
+        id:
+          $ref: "#/components/schemas/Identifier"
+        name:
+          type: string
+          minLength: 1
+          maxLength: 80
+        createdAt:
+          $ref: "#/components/schemas/Timestamp"
+    PlayerCreateRequest:
+      type: object
+      additionalProperties: false
+      required: [name]
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 80
+          description: Leading and trailing whitespace is removed before the length check.
+    PlayerList:
+      type: object
+      additionalProperties: false
+      required: [players]
+      properties:
+        players:
+          type: array
+          items:
+            $ref: "#/components/schemas/Player"
+    TransactionInput:
+      type: object
+      additionalProperties: false
+      required: [id, playerId, type, amount, timestamp]
+      properties:
+        id:
+          $ref: "#/components/schemas/Identifier"
+        playerId:
+          $ref: "#/components/schemas/Identifier"
+        type:
+          $ref: "#/components/schemas/TransactionType"
+        amount:
+          type: integer
+          minimum: 1
+        timestamp:
+          $ref: "#/components/schemas/Timestamp"
+    Transaction:
+      type: object
+      additionalProperties: false
+      required: [id, playerId, type, amount, timestamp]
+      properties:
+        id:
+          $ref: "#/components/schemas/Identifier"
+        playerId:
+          $ref: "#/components/schemas/Identifier"
+        type:
+          $ref: "#/components/schemas/TransactionType"
+        amount:
+          type: integer
+          minimum: 1
+        timestamp:
+          $ref: "#/components/schemas/Timestamp"
+    SessionCreateRequest:
+      type: object
+      additionalProperties: false
+      required: [id, date, transactions]
+      properties:
+        id:
+          $ref: "#/components/schemas/Identifier"
+        date:
+          $ref: "#/components/schemas/CalendarDate"
+        transactions:
+          type: array
+          items:
+            $ref: "#/components/schemas/TransactionInput"
+    Session:
+      type: object
+      additionalProperties: false
+      required: [id, date, createdAt, transactions, players]
+      properties:
+        id:
+          $ref: "#/components/schemas/Identifier"
+        date:
+          $ref: "#/components/schemas/CalendarDate"
+        createdAt:
+          $ref: "#/components/schemas/Timestamp"
+        transactions:
+          type: array
+          items:
+            $ref: "#/components/schemas/Transaction"
+        players:
+          type: array
+          description: Distinct players referenced by this session's transactions.
+          items:
+            $ref: "#/components/schemas/Player"
+    SessionList:
+      type: object
+      additionalProperties: false
+      required: [sessions]
+      properties:
+        sessions:
+          type: array
+          items:
+            $ref: "#/components/schemas/Session"
+    ErrorCode:
+      type: string
+      enum: [VALIDATION_ERROR, NOT_FOUND, CONFLICT, INTERNAL_ERROR]
+    ErrorBody:
+      type: object
+      additionalProperties: false
+      required: [code, message]
+      properties:
+        code:
+          $ref: "#/components/schemas/ErrorCode"
+        message:
+          type: string
+          minLength: 1
+    ErrorResponse:
+      type: object
+      additionalProperties: false
+      required: [error]
+      properties:
+        error:
+          $ref: "#/components/schemas/ErrorBody"

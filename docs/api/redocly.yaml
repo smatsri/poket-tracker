@@ -1,0 +1,9 @@
+extends:
+  - recommended
+
+rules:
+  # Version 1 intentionally has no license and no authentication.
+  info-license: off
+  no-server-example.com: off
+  # GET /api/players has no client input that can produce a 4xx response.
+  operation-4xx-response: off
