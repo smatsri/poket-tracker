@@ -116,6 +116,17 @@ test("rejects non-positive and non-integer amounts", () => {
   rejects({ ...validTransaction, amount: "50" });
 });
 
+test("rejects duplicate transaction ids in one session", () => {
+  rejects(
+    {
+      id: "session-001",
+      date: "2026-11-12",
+      transactions: [validTransaction, { ...validTransaction, amount: 20 }],
+    },
+    sessionCreateRequest,
+  );
+});
+
 test("rejects an unsupported transaction type", () => {
   rejects({ ...validTransaction, type: "win" });
 });

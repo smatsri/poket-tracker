@@ -77,11 +77,13 @@ export const playerCreateRequest = z.strictObject({
   name: playerName,
 });
 
-export const sessionCreateRequest = z.strictObject({
-  id: identifier,
-  date: calendarDate,
-  transactions: z.array(transactionInput),
-});
+export const sessionCreateRequest = z
+  .strictObject({
+    id: identifier,
+    date: calendarDate,
+    transactions: z.array(transactionInput),
+  })
+  .refine((session) => new Set(session.transactions.map((transaction) => transaction.id)).size === session.transactions.length);
 
 export const sessionListQuery = z
   .strictObject({

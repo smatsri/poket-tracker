@@ -1,6 +1,6 @@
 # TKT-005 — Submit a session atomically and idempotently
 
-**Status:** todo  
+**Status:** done  
 **Issue:** #5  
 **Milestone:** M1 Server  
 **Depends on:** [TKT-002](TKT-002-sqlite-schema.md) (#2), [TKT-003](TKT-003-validation-errors.md) (#3), [TKT-004](TKT-004-player-endpoints.md) (#4)
@@ -36,9 +36,9 @@ Implement `POST /api/sessions` so a complete evening is stored once, retries are
 
 ## Acceptance criteria
 
-- [ ] The first valid submission returns `201` and persists the session and every transaction.
-- [ ] Repeating that exact body returns `200`, does not add rows, and preserves `createdAt`.
-- [ ] Changing any transaction field or the session date returns `409` and preserves the stored record.
-- [ ] An unknown player returns `400` and leaves no session.
-- [ ] A failure during transaction insertion leaves neither a session row nor transaction rows.
-- [ ] The response does not include derived financial totals.
+- [x] The first valid submission returns `201` and persists the session and every transaction.
+- [x] Repeating that exact body returns `200`, does not add rows, and preserves `createdAt`.
+- [x] Changing any transaction field or the session date returns `409` and preserves the stored record.
+- [x] An unknown player returns `400` and leaves no session.
+- [x] A failure during transaction insertion leaves neither a session row nor transaction rows.
+- [x] The response does not include derived financial totals.

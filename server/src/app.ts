@@ -2,6 +2,7 @@ import express from "express";
 import { clientOrigin } from "./config.js";
 import { errorDocument, errorHandler } from "./http/errors.js";
 import { playerRouter } from "./routes/players.js";
+import { sessionRouter } from "./routes/sessions.js";
 
 export function createApp(): express.Express {
   const app = express();
@@ -25,6 +26,7 @@ export function createApp(): express.Express {
 
   app.use(express.json());
   app.use("/api/players", playerRouter);
+  app.use("/api/sessions", sessionRouter);
 
   app.use("/api", (_req, res) => {
     res.status(404).json(errorDocument("NOT_FOUND", "Not found"));
