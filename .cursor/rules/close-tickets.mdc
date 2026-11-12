@@ -1,0 +1,22 @@
+---
+description: Close the GitHub issue when a ticket is finished
+alwaysApply: true
+---
+
+# Close finished tickets
+
+The ticket file is the spec. The GitHub issue is only a link to that file.
+
+When a ticket's acceptance criteria pass:
+
+1. Set `**Status:** done` in the ticket file.
+2. Put `Closes #<issue>` in the commit message, using the number from `**Issue:**` (not the `TKT-` id).
+3. Pushing that commit to the default branch closes the issue. Project automation moves the card to Done.
+
+```text
+feat: initialize the SQLite schema
+
+Closes #2
+```
+
+Do not copy the ticket into the issue body, and do not use a sync script.
