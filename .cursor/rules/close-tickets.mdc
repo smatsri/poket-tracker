@@ -19,4 +19,4 @@ feat: initialize the SQLite schema
 Closes #2
 ```
 
-Do not copy the ticket into the issue body, and do not use a sync script.
+Do not copy the ticket into the issue body.
