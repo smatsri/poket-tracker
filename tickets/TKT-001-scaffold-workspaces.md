@@ -1,6 +1,6 @@
 # TKT-001 — Scaffold the client and server workspaces
 
-**Status:** todo  
+**Status:** done  
 **Issue:** #1  
 **Milestone:** M0 Foundation  
 **Depends on:** none
@@ -34,9 +34,9 @@ Create the npm workspace that every later ticket builds on, with strict TypeScri
 
 ## Acceptance criteria
 
-- [ ] `npm install` at the repository root installs both workspaces.
-- [ ] `npm run typecheck` passes.
-- [ ] `npm run dev --workspace client` serves the client on port 5173.
-- [ ] `npm run dev --workspace server` listens on port 3001.
-- [ ] An unknown API path returns JSON containing `error.code` and `error.message`.
-- [ ] Generated output and local database files are ignored by git.
+- [x] `npm install` at the repository root installs both workspaces.
+- [x] `npm run typecheck` passes.
+- [x] `npm run dev --workspace client` serves the client on port 5173.
+- [x] `npm run dev --workspace server` listens on port 3001.
+- [x] An unknown API path returns JSON containing `error.code` and `error.message`.
+- [x] Generated output and local database files are ignored by git.
