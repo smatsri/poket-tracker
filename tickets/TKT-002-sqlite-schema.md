@@ -1,6 +1,6 @@
 # TKT-002 — Initialize SQLite and enforce the schema
 
-**Status:** todo  
+**Status:** done  
 **Issue:** #2  
 **Milestone:** M1 Server  
 **Depends on:** [TKT-001](TKT-001-scaffold-workspaces.md) (#1)
@@ -30,9 +30,9 @@ Open a durable SQLite database on startup and enforce the schema and foreign key
 
 ## Acceptance criteria
 
-- [ ] Starting the server creates the configured SQLite file when it does not exist.
-- [ ] Starting the server twice neither duplicates tables nor fails.
-- [ ] Inserting a transaction with an unknown `player_id` or `session_id` fails.
-- [ ] A transaction type outside `buy-in`, `rebuy`, and `cash-out` fails at the database.
-- [ ] An amount below 1 fails at the database.
-- [ ] The schema contains no profit, balance, or statistics columns.
+- [x] Starting the server creates the configured SQLite file when it does not exist.
+- [x] Starting the server twice neither duplicates tables nor fails.
+- [x] Inserting a transaction with an unknown `player_id` or `session_id` fails.
+- [x] A transaction type outside `buy-in`, `rebuy`, and `cash-out` fails at the database.
+- [x] An amount below 1 fails at the database.
+- [x] The schema contains no profit, balance, or statistics columns.
