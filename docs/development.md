@@ -86,6 +86,24 @@ The ticket index in [tickets/README.md](../tickets/README.md) is the execution p
 
 Server and client-core work can proceed in parallel after the workspace scaffold. The live submission interface needs both sides. History and statistics need session retrieval.
 
+## GitHub issues
+
+Each file in [tickets/](../tickets/) is an issue on `smatsri/poket-tracker`, and those issues are on the [poker tracker](https://github.com/users/smatsri/projects/8) project. The markdown file stays the spec.
+
+| `**Status:**` | Issue | Board column |
+| --- | --- | --- |
+| `todo` | open | Todo |
+| `in-progress` | open | In Progress |
+| `done` | closed | Done |
+
+After editing the status line, run:
+
+```bash
+node scripts/sync-github-issues.mjs
+```
+
+That command needs the GitHub CLI on `PATH`, signed in with the `repo` and `project` scopes. Closing an issue from GitHub moves its card to Done, and moving a card to Done closes the issue.
+
 ## Local API check
 
 After the server tickets are complete, this sequence should work against a fresh database:

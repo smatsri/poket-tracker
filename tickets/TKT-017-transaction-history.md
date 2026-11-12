@@ -1,8 +1,9 @@
 # TKT-017 — Show full transaction history
 
 **Status:** todo  
+**Issue:** #17  
 **Milestone:** M3 Live evening  
-**Depends on:** [TKT-014](TKT-014-current-evening.md), [TKT-016](TKT-016-correct-transactions.md)
+**Depends on:** [TKT-014](TKT-014-current-evening.md) (#14), [TKT-016](TKT-016-correct-transactions.md) (#16)
 
 ## Goal
 

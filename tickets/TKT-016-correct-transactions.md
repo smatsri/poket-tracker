@@ -1,8 +1,9 @@
 # TKT-016 — Correct transactions before submission
 
 **Status:** todo  
+**Issue:** #16  
 **Milestone:** M3 Live evening  
-**Depends on:** [TKT-015](TKT-015-add-transaction.md)
+**Depends on:** [TKT-015](TKT-015-add-transaction.md) (#15)
 
 ## Goal
 

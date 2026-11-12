@@ -1,8 +1,9 @@
 # TKT-013 — Load, cache, and create players
 
 **Status:** todo  
+**Issue:** #13  
 **Milestone:** M3 Live evening  
-**Depends on:** [TKT-009](TKT-009-indexeddb.md), [TKT-010](TKT-010-api-client.md), [TKT-012](TKT-012-rtl-shell.md)
+**Depends on:** [TKT-009](TKT-009-indexeddb.md) (#9), [TKT-010](TKT-010-api-client.md) (#10), [TKT-012](TKT-012-rtl-shell.md) (#12)
 
 ## Goal
 

@@ -1,8 +1,9 @@
 # TKT-009 — Persist the active session in IndexedDB
 
 **Status:** todo  
+**Issue:** #9  
 **Milestone:** M2 Client core  
-**Depends on:** [TKT-008](TKT-008-domain-calculations.md)
+**Depends on:** [TKT-008](TKT-008-domain-calculations.md) (#8)
 
 ## Goal
 

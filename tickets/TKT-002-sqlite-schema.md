@@ -1,8 +1,9 @@
 # TKT-002 — Initialize SQLite and enforce the schema
 
 **Status:** todo  
+**Issue:** #2  
 **Milestone:** M1 Server  
-**Depends on:** [TKT-001](TKT-001-scaffold-workspaces.md)
+**Depends on:** [TKT-001](TKT-001-scaffold-workspaces.md) (#1)
 
 ## Goal
 

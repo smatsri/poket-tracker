@@ -1,8 +1,9 @@
 # TKT-012 — Establish the Hebrew RTL application shell
 
 **Status:** todo  
+**Issue:** #12  
 **Milestone:** M3 Live evening  
-**Depends on:** [TKT-001](TKT-001-scaffold-workspaces.md)
+**Depends on:** [TKT-001](TKT-001-scaffold-workspaces.md) (#1)
 
 ## Goal
 

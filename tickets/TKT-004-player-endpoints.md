@@ -1,8 +1,9 @@
 # TKT-004 — Implement player list and create
 
 **Status:** todo  
+**Issue:** #4  
 **Milestone:** M1 Server  
-**Depends on:** [TKT-002](TKT-002-sqlite-schema.md), [TKT-003](TKT-003-validation-errors.md)
+**Depends on:** [TKT-002](TKT-002-sqlite-schema.md) (#2), [TKT-003](TKT-003-validation-errors.md) (#3)
 
 ## Goal
 

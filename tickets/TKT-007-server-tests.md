@@ -1,8 +1,9 @@
 # TKT-007 — Cover server integrity with automated tests
 
 **Status:** todo  
+**Issue:** #7  
 **Milestone:** M1 Server  
-**Depends on:** [TKT-004](TKT-004-player-endpoints.md), [TKT-005](TKT-005-submit-session.md), [TKT-006](TKT-006-read-sessions.md)
+**Depends on:** [TKT-004](TKT-004-player-endpoints.md) (#4), [TKT-005](TKT-005-submit-session.md) (#5), [TKT-006](TKT-006-read-sessions.md) (#6)
 
 ## Goal
 

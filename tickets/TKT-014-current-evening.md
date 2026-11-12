@@ -1,8 +1,9 @@
 # TKT-014 — Build the current-evening screen
 
 **Status:** todo  
+**Issue:** #14  
 **Milestone:** M3 Live evening  
-**Depends on:** [TKT-008](TKT-008-domain-calculations.md), [TKT-009](TKT-009-indexeddb.md), [TKT-011](TKT-011-submission-state.md), [TKT-012](TKT-012-rtl-shell.md)
+**Depends on:** [TKT-008](TKT-008-domain-calculations.md) (#8), [TKT-009](TKT-009-indexeddb.md) (#9), [TKT-011](TKT-011-submission-state.md) (#11), [TKT-012](TKT-012-rtl-shell.md) (#12)
 
 ## Goal
 

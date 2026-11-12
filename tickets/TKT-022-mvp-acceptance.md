@@ -1,8 +1,9 @@
 # TKT-022 — Verify the MVP acceptance criteria
 
 **Status:** todo  
+**Issue:** #22  
 **Milestone:** M5 Acceptance  
-**Depends on:** [TKT-007](TKT-007-server-tests.md), [TKT-017](TKT-017-transaction-history.md), [TKT-018](TKT-018-submit-retry.md), [TKT-020](TKT-020-session-summary.md), [TKT-021](TKT-021-statistics.md)
+**Depends on:** [TKT-007](TKT-007-server-tests.md) (#7), [TKT-017](TKT-017-transaction-history.md) (#17), [TKT-018](TKT-018-submit-retry.md) (#18), [TKT-020](TKT-020-session-summary.md) (#20), [TKT-021](TKT-021-statistics.md) (#21)
 
 ## Goal
 

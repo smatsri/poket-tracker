@@ -1,8 +1,9 @@
 # TKT-003 — Add validation and the JSON error pipeline
 
 **Status:** todo  
+**Issue:** #3  
 **Milestone:** M1 Server  
-**Depends on:** [TKT-001](TKT-001-scaffold-workspaces.md)
+**Depends on:** [TKT-001](TKT-001-scaffold-workspaces.md) (#1)
 
 ## Goal
 

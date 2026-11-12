@@ -1,8 +1,9 @@
 # TKT-005 — Submit a session atomically and idempotently
 
 **Status:** todo  
+**Issue:** #5  
 **Milestone:** M1 Server  
-**Depends on:** [TKT-002](TKT-002-sqlite-schema.md), [TKT-003](TKT-003-validation-errors.md), [TKT-004](TKT-004-player-endpoints.md)
+**Depends on:** [TKT-002](TKT-002-sqlite-schema.md) (#2), [TKT-003](TKT-003-validation-errors.md) (#3), [TKT-004](TKT-004-player-endpoints.md) (#4)
 
 ## Goal
 

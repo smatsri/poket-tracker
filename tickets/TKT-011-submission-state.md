@@ -1,8 +1,9 @@
 # TKT-011 — Implement submission and recovery rules
 
 **Status:** todo  
+**Issue:** #11  
 **Milestone:** M2 Client core  
-**Depends on:** [TKT-009](TKT-009-indexeddb.md), [TKT-010](TKT-010-api-client.md)
+**Depends on:** [TKT-009](TKT-009-indexeddb.md) (#9), [TKT-010](TKT-010-api-client.md) (#10)
 
 ## Goal
 

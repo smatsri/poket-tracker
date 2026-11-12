@@ -1,8 +1,9 @@
 # TKT-018 — Submit the evening and retry safely
 
 **Status:** todo  
+**Issue:** #18  
 **Milestone:** M3 Live evening  
-**Depends on:** [TKT-006](TKT-006-read-sessions.md), [TKT-011](TKT-011-submission-state.md), [TKT-014](TKT-014-current-evening.md), [TKT-016](TKT-016-correct-transactions.md)
+**Depends on:** [TKT-006](TKT-006-read-sessions.md) (#6), [TKT-011](TKT-011-submission-state.md) (#11), [TKT-014](TKT-014-current-evening.md) (#14), [TKT-016](TKT-016-correct-transactions.md) (#16)
 
 ## Goal
 

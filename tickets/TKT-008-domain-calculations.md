@@ -1,8 +1,9 @@
 # TKT-008 — Implement domain models and calculations
 
 **Status:** todo  
+**Issue:** #8  
 **Milestone:** M2 Client core  
-**Depends on:** [TKT-001](TKT-001-scaffold-workspaces.md)
+**Depends on:** [TKT-001](TKT-001-scaffold-workspaces.md) (#1)
 
 ## Goal
 

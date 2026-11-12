@@ -1,8 +1,9 @@
 # TKT-015 — Record a transaction quickly
 
 **Status:** todo  
+**Issue:** #15  
 **Milestone:** M3 Live evening  
-**Depends on:** [TKT-013](TKT-013-player-management.md), [TKT-014](TKT-014-current-evening.md)
+**Depends on:** [TKT-013](TKT-013-player-management.md) (#13), [TKT-014](TKT-014-current-evening.md) (#14)
 
 ## Goal
 

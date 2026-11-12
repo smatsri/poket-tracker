@@ -1,8 +1,9 @@
 # TKT-021 — Show cross-evening statistics
 
 **Status:** todo  
+**Issue:** #21  
 **Milestone:** M4 Review  
-**Depends on:** [TKT-008](TKT-008-domain-calculations.md), [TKT-019](TKT-019-session-history.md)
+**Depends on:** [TKT-008](TKT-008-domain-calculations.md) (#8), [TKT-019](TKT-019-session-history.md) (#19)
 
 ## Goal
 

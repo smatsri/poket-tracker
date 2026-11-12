@@ -1,6 +1,7 @@
 # TKT-001 — Scaffold the client and server workspaces
 
 **Status:** todo  
+**Issue:** #1  
 **Milestone:** M0 Foundation  
 **Depends on:** none
 

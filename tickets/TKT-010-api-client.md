@@ -1,8 +1,9 @@
 # TKT-010 — Add the HTTP API layer
 
 **Status:** todo  
+**Issue:** #10  
 **Milestone:** M2 Client core  
-**Depends on:** [TKT-001](TKT-001-scaffold-workspaces.md), [TKT-008](TKT-008-domain-calculations.md)
+**Depends on:** [TKT-001](TKT-001-scaffold-workspaces.md) (#1), [TKT-008](TKT-008-domain-calculations.md) (#8)
 
 ## Goal
 
