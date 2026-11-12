@@ -1,8 +1,8 @@
 import type Database from "better-sqlite3";
-import { selectSession, insertSession, insertTransaction, missingPlayerIds, type StoredSession, type StoredTransaction } from "../db/sessions.js";
+import { selectSession, selectSessions, insertSession, insertTransaction, missingPlayerIds, type StoredSession, type StoredTransaction } from "../db/sessions.js";
 import { getDatabase } from "../db/database.js";
-import { conflict, validationError } from "../http/errors.js";
-import type { sessionCreateRequest } from "../schemas.js";
+import { conflict, notFound, validationError } from "../http/errors.js";
+import type { sessionCreateRequest, sessionListQuery } from "../schemas.js";
 import type { z } from "zod";
 
 type SessionSubmission = z.output<typeof sessionCreateRequest>;
@@ -110,4 +110,16 @@ export function submitSession(submission: SessionSubmission): SubmitResult {
     }
     throw error;
   }
+}
+
+export function getSession(id: string): StoredSession {
+  const session = selectSession(getDatabase(), id);
+  if (!session) {
+    throw notFound("Session not found");
+  }
+  return session;
+}
+
+export function listSessions(query: z.output<typeof sessionListQuery>): StoredSession[] {
+  return selectSessions(getDatabase(), query);
 }

@@ -8,6 +8,7 @@ import type { Express } from "express";
 import { createApp } from "../app.js";
 import { closeDatabase, getDatabase, openAppDatabase } from "../db/database.js";
 import { insertPlayer } from "../db/players.js";
+import { insertSession, insertTransaction, type StoredTransaction } from "../db/sessions.js";
 
 const sessionDocumentKeys = ["createdAt", "date", "id", "players", "transactions"];
 const transactionKeys = ["amount", "id", "playerId", "timestamp", "type"];
@@ -235,6 +236,136 @@ describe("session submission", { concurrency: false }, () => {
     const second = getDatabase().prepare("SELECT id FROM sessions WHERE id = ?").get("session-002");
     assert.equal(second, undefined);
     assert.deepEqual(counts(), { sessions: 1, transactions: 1 });
+  });
+
+  function seedSession(
+    session: { id: string; date: string; createdAt: string },
+    transactions: StoredTransaction[] = [],
+  ): void {
+    const database = getDatabase();
+    insertSession(database, session);
+    for (const transaction of transactions) {
+      insertTransaction(database, session.id, transaction);
+    }
+  }
+
+  async function getJson(path: string): Promise<{ status: number; body: unknown }> {
+    const before = counts();
+    const response = await fetch(`${url}${path}`);
+    const body: unknown = await response.json();
+    assert.deepEqual(counts(), before);
+    return { status: response.status, body };
+  }
+
+  test("a stored session is returned with ordered transactions and distinct players", async () => {
+    seedSession({ id: "session-001", date: "2026-11-12", createdAt: "2026-11-12T22:00:00.000Z" }, [
+      { id: "tx-b", playerId: "player-bea", type: "cash-out", amount: 80, timestamp: "2026-11-12T19:00:00Z" },
+      { id: "tx-c", playerId: "player-ada", type: "rebuy", amount: 20, timestamp: "2026-11-12T18:15:00Z" },
+      { id: "tx-a", playerId: "player-ada", type: "buy-in", amount: 50, timestamp: "2026-11-12T18:15:00Z" },
+    ]);
+
+    const response = await getJson("/api/sessions/session-001");
+    assert.equal(response.status, 200);
+    assertSessionDocument(response.body);
+    assert.deepEqual(
+      response.body.transactions.map((transaction) => transaction.id),
+      ["tx-a", "tx-c", "tx-b"],
+    );
+    assert.deepEqual(
+      response.body.players.map((player) => ({ id: player.id, name: player.name })),
+      [
+        { id: "player-ada", name: "Ada" },
+        { id: "player-bea", name: "Bea" },
+      ],
+    );
+  });
+
+  test("an empty session returns an empty players array", async () => {
+    seedSession({ id: "session-empty", date: "2026-11-12", createdAt: "2026-11-12T22:00:00.000Z" });
+
+    const response = await getJson("/api/sessions/session-empty");
+    assert.equal(response.status, 200);
+    assertSessionDocument(response.body);
+    assert.deepEqual(response.body.transactions, []);
+    assert.deepEqual(response.body.players, []);
+  });
+
+  test("an unknown session returns 404 and NOT_FOUND", async () => {
+    const response = await getJson("/api/sessions/session-missing");
+    assert.equal(response.status, 404);
+    assert.deepEqual(response.body, {
+      error: { code: "NOT_FOUND", message: "Session not found" },
+    });
+  });
+
+  test("a malformed session id returns 400", async () => {
+    const response = await getJson("/api/sessions/bad%20id");
+    assert.equal(response.status, 400);
+    assert.deepEqual(response.body, {
+      error: { code: "VALIDATION_ERROR", message: "Invalid request" },
+    });
+  });
+
+  test("the unfiltered list returns every session newest date first", async () => {
+    seedSession({ id: "session-c", date: "2026-11-13", createdAt: "2026-11-13T10:00:00.000Z" });
+    seedSession({ id: "session-m", date: "2026-11-12", createdAt: "2026-11-12T20:00:00.000Z" });
+    seedSession({ id: "session-a", date: "2026-11-12", createdAt: "2026-11-12T20:00:00.000Z" });
+    seedSession({ id: "session-z", date: "2026-11-12", createdAt: "2026-11-12T18:00:00.000Z" });
+
+    const response = await getJson("/api/sessions");
+    assert.equal(response.status, 200);
+    const body = response.body as { sessions: unknown[] };
+    assert.deepEqual(Object.keys(body), ["sessions"]);
+    assert.equal(body.sessions.length, 4);
+    for (const session of body.sessions) {
+      assertSessionDocument(session);
+    }
+    assert.deepEqual(
+      body.sessions.map((session) => (session as { id: string }).id),
+      ["session-c", "session-m", "session-a", "session-z"],
+    );
+  });
+
+  test("from and to bounds are inclusive and either bound may be omitted", async () => {
+    seedSession({ id: "session-11", date: "2026-11-11", createdAt: "2026-11-11T10:00:00.000Z" });
+    seedSession({ id: "session-12", date: "2026-11-12", createdAt: "2026-11-12T10:00:00.000Z" });
+    seedSession({ id: "session-13", date: "2026-11-13", createdAt: "2026-11-13T10:00:00.000Z" });
+    seedSession({ id: "session-14", date: "2026-11-14", createdAt: "2026-11-14T10:00:00.000Z" });
+
+    const both = await getJson("/api/sessions?from=2026-11-12&to=2026-11-13");
+    const fromOnly = await getJson("/api/sessions?from=2026-11-13");
+    const toOnly = await getJson("/api/sessions?to=2026-11-12");
+
+    assert.equal(both.status, 200);
+    assert.equal(fromOnly.status, 200);
+    assert.equal(toOnly.status, 200);
+    assert.deepEqual(
+      (both.body as { sessions: Array<{ id: string }> }).sessions.map((session) => session.id),
+      ["session-13", "session-12"],
+    );
+    assert.deepEqual(
+      (fromOnly.body as { sessions: Array<{ id: string }> }).sessions.map((session) => session.id),
+      ["session-14", "session-13"],
+    );
+    assert.deepEqual(
+      (toOnly.body as { sessions: Array<{ id: string }> }).sessions.map((session) => session.id),
+      ["session-12", "session-11"],
+    );
+  });
+
+  test("a reversed or invalid date range returns 400", async () => {
+    seedSession({ id: "session-12", date: "2026-11-12", createdAt: "2026-11-12T10:00:00.000Z" });
+
+    const reversed = await getJson("/api/sessions?from=2026-11-13&to=2026-11-12");
+    const invalid = await getJson("/api/sessions?from=2026-02-31");
+
+    for (const response of [reversed, invalid]) {
+      assert.equal(response.status, 400);
+      assert.deepEqual(response.body, {
+        error: { code: "VALIDATION_ERROR", message: "Invalid request" },
+      });
+    }
+    assert.deepEqual(counts(), { sessions: 1, transactions: 0 });
   });
 
   test("an empty transaction list is stored without derived totals", async () => {

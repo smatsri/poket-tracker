@@ -53,6 +53,29 @@ export function selectSession(database: Database.Database, id: string): StoredSe
   return { ...session, transactions, players };
 }
 
+export function selectSessions(
+  database: Database.Database,
+  bounds: { from?: string; to?: string },
+): StoredSession[] {
+  const rows = database
+    .prepare(
+      `SELECT id
+       FROM sessions
+       WHERE (? IS NULL OR date >= ?)
+         AND (? IS NULL OR date <= ?)
+       ORDER BY date DESC, created_at DESC, id DESC`,
+    )
+    .all(bounds.from ?? null, bounds.from ?? null, bounds.to ?? null, bounds.to ?? null) as Array<{ id: string }>;
+
+  return rows.map((row) => {
+    const session = selectSession(database, row.id);
+    if (!session) {
+      throw new Error("Stored session is missing");
+    }
+    return session;
+  });
+}
+
 export function insertSession(
   database: Database.Database,
   session: { id: string; date: string; createdAt: string },

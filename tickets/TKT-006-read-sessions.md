@@ -1,6 +1,6 @@
 # TKT-006 — Retrieve one session and list sessions
 
-**Status:** todo  
+**Status:** done  
 **Issue:** #6  
 **Milestone:** M1 Server  
 **Depends on:** [TKT-005](TKT-005-submit-session.md) (#5)
@@ -33,9 +33,9 @@ Expose completed sessions for history and summary screens.
 
 ## Acceptance criteria
 
-- [ ] A stored session is returned with its transactions and distinct players.
-- [ ] An unknown session returns `404` and `NOT_FOUND`.
-- [ ] The unfiltered list returns all sessions, newest date first.
-- [ ] `from` and `to` bounds are inclusive.
-- [ ] A reversed or invalid date range returns `400`.
-- [ ] No endpoint in this ticket can change stored data.
+- [x] A stored session is returned with its transactions and distinct players.
+- [x] An unknown session returns `404` and `NOT_FOUND`.
+- [x] The unfiltered list returns all sessions, newest date first.
+- [x] `from` and `to` bounds are inclusive.
+- [x] A reversed or invalid date range returns `400`.
+- [x] No endpoint in this ticket can change stored data.
