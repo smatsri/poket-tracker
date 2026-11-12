@@ -1,6 +1,7 @@
 import express from "express";
 import { clientOrigin } from "./config.js";
 import { errorDocument, errorHandler } from "./http/errors.js";
+import { takeFailure } from "./http/failure.js";
 import { playerRouter } from "./routes/players.js";
 import { sessionRouter } from "./routes/sessions.js";
 
@@ -25,6 +26,14 @@ export function createApp(): express.Express {
   });
 
   app.use(express.json());
+  app.use((_req, _res, next) => {
+    const failure = takeFailure();
+    if (failure) {
+      next(failure);
+      return;
+    }
+    next();
+  });
   app.use("/api/players", playerRouter);
   app.use("/api/sessions", sessionRouter);
 

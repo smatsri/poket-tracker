@@ -1,6 +1,6 @@
 # TKT-007 — Cover server integrity with automated tests
 
-**Status:** todo  
+**Status:** done  
 **Issue:** #7  
 **Milestone:** M1 Server  
 **Depends on:** [TKT-004](TKT-004-player-endpoints.md) (#4), [TKT-005](TKT-005-submit-session.md) (#5), [TKT-006](TKT-006-read-sessions.md) (#6)
@@ -29,7 +29,7 @@ Lock the server acceptance cases in [docs/testing.md](../docs/testing.md) into r
 
 ## Acceptance criteria
 
-- [ ] `npm test` from the repository root runs the server suite.
-- [ ] Every server row in [docs/testing.md](../docs/testing.md) has an automated assertion.
-- [ ] Tests do not depend on a shared database file or a manually started port.
-- [ ] A failed assertion reports the behavior that broke rather than leaving a background process running.
+- [x] `npm test` from the repository root runs the server suite.
+- [x] Every server row in [docs/testing.md](../docs/testing.md) has an automated assertion.
+- [x] Tests do not depend on a shared database file or a manually started port.
+- [x] A failed assertion reports the behavior that broke rather than leaving a background process running.

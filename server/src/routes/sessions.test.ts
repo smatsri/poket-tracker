@@ -195,6 +195,44 @@ describe("session submission", { concurrency: false }, () => {
     assert.deepEqual(counts(), { sessions: 1, transactions: 2 });
   });
 
+  test("an existing session id with a different transaction set returns 409", async () => {
+    const first = await postSession(url, sessionBody());
+    assertSessionDocument(first.body);
+
+    const response = await postSession(url, sessionBody({ transactions: [buyIn] }));
+
+    assert.equal(response.status, 409);
+    assert.deepEqual(response.body, {
+      error: { code: "CONFLICT", message: "Session already exists with different content" },
+    });
+    const ids = getDatabase()
+      .prepare("SELECT id FROM transactions WHERE session_id = ? ORDER BY id")
+      .all("session-001") as Array<{ id: string }>;
+    assert.deepEqual(ids.map((row) => row.id), ["tx-001", "tx-002"]);
+    assert.deepEqual(counts(), { sessions: 1, transactions: 2 });
+  });
+
+  test("invalid session fields return 400 and store nothing", async () => {
+    const bodies = [
+      sessionBody({ transactions: [{ ...buyIn, amount: 0 }] }),
+      sessionBody({ transactions: [{ ...buyIn, amount: -5 }] }),
+      sessionBody({ transactions: [{ ...buyIn, amount: 1.5 }] }),
+      sessionBody({ transactions: [{ ...buyIn, type: "win" }] }),
+      sessionBody({ id: "bad id" }),
+      sessionBody({ date: "2026-02-31" }),
+      sessionBody({ transactions: [{ ...buyIn, timestamp: "2026-11-12T18:15:00" }] }),
+    ];
+
+    for (const body of bodies) {
+      const response = await postSession(url, body);
+      assert.equal(response.status, 400);
+      assert.deepEqual(response.body, {
+        error: { code: "VALIDATION_ERROR", message: "Invalid request" },
+      });
+      assert.deepEqual(counts(), { sessions: 0, transactions: 0 });
+    }
+  });
+
   test("an unknown player returns 400 and leaves no session", async () => {
     const response = await postSession(url, sessionBody({
       transactions: [{ ...buyIn, playerId: "player-missing" }],
