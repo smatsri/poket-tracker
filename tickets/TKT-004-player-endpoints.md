@@ -1,6 +1,6 @@
 # TKT-004 — Implement player list and create
 
-**Status:** todo  
+**Status:** done  
 **Issue:** #4  
 **Milestone:** M1 Server  
 **Depends on:** [TKT-002](TKT-002-sqlite-schema.md) (#2), [TKT-003](TKT-003-validation-errors.md) (#3)
@@ -30,8 +30,8 @@ Store the player directory and expose `GET /api/players` and `POST /api/players`
 
 ## Acceptance criteria
 
-- [ ] A valid name returns `201` with `id`, normalized `name`, and `createdAt`.
-- [ ] Repeating the same name returns a second player with a different ID.
-- [ ] A blank name returns `400` and stores nothing.
-- [ ] The list includes every stored player in the specified order.
-- [ ] The response contains no fields outside the OpenAPI player schema.
+- [x] A valid name returns `201` with `id`, normalized `name`, and `createdAt`.
+- [x] Repeating the same name returns a second player with a different ID.
+- [x] A blank name returns `400` and stores nothing.
+- [x] The list includes every stored player in the specified order.
+- [x] The response contains no fields outside the OpenAPI player schema.
