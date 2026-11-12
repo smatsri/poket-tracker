@@ -1,5 +1,6 @@
 import express from "express";
 import { clientOrigin } from "./config.js";
+import { errorDocument, errorHandler } from "./http/errors.js";
 
 export function createApp(): express.Express {
   const app = express();
@@ -21,14 +22,13 @@ export function createApp(): express.Express {
     next();
   });
 
+  app.use(express.json());
+
   app.use("/api", (_req, res) => {
-    res.status(404).json({
-      error: {
-        code: "NOT_FOUND",
-        message: "Not found",
-      },
-    });
+    res.status(404).json(errorDocument("NOT_FOUND", "Not found"));
   });
+
+  app.use(errorHandler);
 
   return app;
 }

@@ -1,6 +1,6 @@
 # TKT-003 — Add validation and the JSON error pipeline
 
-**Status:** todo  
+**Status:** done  
 **Issue:** #3  
 **Milestone:** M1 Server  
 **Depends on:** [TKT-001](TKT-001-scaffold-workspaces.md) (#1)
@@ -32,9 +32,9 @@ Provide one Zod-based validation path and one JSON error response for every API 
 
 ## Acceptance criteria
 
-- [ ] Invalid JSON, unknown fields, bad IDs, bad dates, and bad timestamps produce `400`.
-- [ ] A timestamp without a timezone produces `400`.
-- [ ] Amounts of `0`, negative numbers, and decimal numbers produce `400`.
-- [ ] `"  Dana   Levi  "` normalizes to `"Dana Levi"`.
-- [ ] A whitespace-only name fails validation.
-- [ ] An unexpected thrown error returns `INTERNAL_ERROR` without internal details.
+- [x] Invalid JSON, unknown fields, bad IDs, bad dates, and bad timestamps produce `400`.
+- [x] A timestamp without a timezone produces `400`.
+- [x] Amounts of `0`, negative numbers, and decimal numbers produce `400`.
+- [x] `"  Dana   Levi  "` normalizes to `"Dana Levi"`.
+- [x] A whitespace-only name fails validation.
+- [x] An unexpected thrown error returns `INTERNAL_ERROR` without internal details.
