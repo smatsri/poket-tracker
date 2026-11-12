@@ -88,21 +88,15 @@ Server and client-core work can proceed in parallel after the workspace scaffold
 
 ## GitHub issues
 
-Each file in [tickets/](../tickets/) is an issue on `smatsri/poket-tracker`, and those issues are on the [poker tracker](https://github.com/users/smatsri/projects/8) project. The markdown file stays the spec.
+Each file in [tickets/](../tickets/) is an issue on `smatsri/poket-tracker`, and those issues are on the [poker tracker](https://github.com/users/smatsri/projects/8) project. The markdown file stays the spec. The GitHub issue body is only a link to that file.
 
-| `**Status:**` | Issue | Board column |
+| Ticket `**Status:**` | Issue | Board column |
 | --- | --- | --- |
 | `todo` | open | Todo |
 | `in-progress` | open | In Progress |
 | `done` | closed | Done |
 
-After editing the status line, run:
-
-```bash
-node scripts/sync-github-issues.mjs
-```
-
-That command needs the GitHub CLI on `PATH`, signed in with the `repo` and `project` scopes. Closing an issue from GitHub moves its card to Done, and moving a card to Done closes the issue.
+When a ticket becomes `done`, update `**Status:**` in the ticket file and push a commit whose message contains `Closes #<issue>` using the number from `**Issue:**`. Closing the issue moves its project card to Done, and moving a card to Done closes the issue.
 
 ## Local API check
 

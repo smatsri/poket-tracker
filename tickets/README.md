@@ -2,7 +2,9 @@
 
 All tickets are `todo`. A ticket moves to `in-progress` when work starts and to `done` only when its acceptance criteria pass. Each ticket is sized as one focused change.
 
-Each ticket is also a GitHub issue. `**Issue:**` is that issue, and the [poker tracker project](https://github.com/users/smatsri/projects/8) shows the same status. After changing `**Status:**`, run `node scripts/sync-github-issues.mjs`. A status of `done` closes the issue. Milestones M0–M5 are GitHub milestones, and `Depends on` is a blocked-by link.
+Each ticket is also a GitHub issue. `**Issue:**` is that issue, and the [poker tracker project](https://github.com/users/smatsri/projects/8) tracks board status. The ticket file is the spec. The GitHub issue body is only a link to that file, not a copy of the description or acceptance criteria.
+
+When a ticket becomes `done`, set that status in the ticket file, then push a commit to the default branch whose message contains `Closes #<issue>`. Use the GitHub issue number from `**Issue:**`, not the ticket id. Closing the issue moves its project card to Done. Milestones M0–M5 are GitHub milestones, and `Depends on` is a blocked-by link.
 
 The authoritative contract is [docs/api/openapi.yaml](../docs/api/openapi.yaml). Product behavior is locked in [docs/architecture.md](../docs/architecture.md), [docs/data-model.md](../docs/data-model.md), and [docs/testing.md](../docs/testing.md).
 
