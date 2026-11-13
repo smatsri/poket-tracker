@@ -1,6 +1,6 @@
 # TKT-013 — Load, cache, and create players
 
-**Status:** todo  
+**Status:** done  
 **Issue:** #13  
 **Milestone:** M3 Live evening  
 **Depends on:** [TKT-009](TKT-009-indexeddb.md) (#9), [TKT-010](TKT-010-api-client.md) (#10), [TKT-012](TKT-012-rtl-shell.md) (#12)
@@ -32,8 +32,8 @@ Let the user select an existing player and create a new one during an evening.
 
 ## Acceptance criteria
 
-- [ ] A successful load displays the server players and refreshes the cache.
-- [ ] After a later load failure, previously cached players remain selectable.
-- [ ] A duplicate name shows a warning and can still be created as a distinct player.
-- [ ] A failed creation leaves no selectable unsaved player.
-- [ ] The created player can immediately be selected for a transaction.
+- [x] A successful load displays the server players and refreshes the cache.
+- [x] After a later load failure, previously cached players remain selectable.
+- [x] A duplicate name shows a warning and can still be created as a distinct player.
+- [x] A failed creation leaves no selectable unsaved player.
+- [x] The created player can immediately be selected for a transaction.

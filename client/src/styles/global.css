@@ -145,6 +145,66 @@ h2 {
   color: var(--color-negative);
 }
 
+.field-label {
+  gap: var(--space-2);
+  font-weight: 500;
+}
+
+.field {
+  width: 100%;
+  min-block-size: 44px;
+  padding-block: var(--space-2);
+  padding-inline: var(--space-3);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-control);
+  background: var(--color-surface);
+  color: var(--color-text);
+}
+
+.choice-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.choice {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  min-block-size: 44px;
+  padding-block: var(--space-2);
+  padding-inline: var(--space-3);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-control);
+  background: var(--color-surface);
+  color: var(--color-text);
+  font-weight: 600;
+  text-align: start;
+  cursor: pointer;
+}
+
+.choice[aria-pressed="true"] {
+  background: var(--color-primary-soft);
+  border-color: var(--color-primary);
+}
+
+.notice {
+  margin: 0;
+  padding: var(--space-3);
+  border: 1px solid var(--color-warning);
+  border-radius: var(--radius-control);
+  background: var(--color-surface-secondary);
+  color: var(--color-text);
+}
+
+.notice-alert {
+  border-color: var(--color-negative);
+  color: var(--color-negative);
+}
+
 .bottom-nav {
   position: fixed;
   inset-inline: 0;

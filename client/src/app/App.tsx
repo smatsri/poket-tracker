@@ -1,4 +1,6 @@
 import { useEffect, useState } from "react";
+import { PlayerPanel } from "../features/players/PlayerPanel.tsx";
+import type { PlayerDirectory } from "../features/players/directory.ts";
 import { CurrentEveningIcon, HistoryIcon, StatsIcon } from "./icons.tsx";
 import { matchRoute, navigation, type RouteId } from "./routes.ts";
 
@@ -8,13 +10,18 @@ const icons: Record<RouteId, () => React.JSX.Element> = {
   stats: StatsIcon,
 };
 
-export function App() {
+export function App({ players }: { players: PlayerDirectory }) {
   const route = useRoute();
 
   return (
     <div className="shell">
       <main className="shell-main">
-        {route.id === "current" ? <CurrentPlaceholder /> : null}
+        {route.id === "current" ? (
+          <div className="stack">
+            <CurrentPlaceholder />
+            <PlayerPanel directory={players} onSelect={() => undefined} />
+          </div>
+        ) : null}
         {route.id === "history" ? <Placeholder title="היסטוריה" body="ערבים שהסתיימו יופיעו כאן." /> : null}
         {route.id === "stats" ? <Placeholder title="סיכומים" body="הסיכומים יופיעו כאן." /> : null}
         {route.id === "unknown" ? <Placeholder title="העמוד לא נמצא" body="בחרו יעד מהניווט למטה." /> : null}
