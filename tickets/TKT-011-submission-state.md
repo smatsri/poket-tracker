@@ -1,6 +1,6 @@
 # TKT-011 — Implement submission and recovery rules
 
-**Status:** todo  
+**Status:** done  
 **Issue:** #11  
 **Milestone:** M2 Client core  
 **Depends on:** [TKT-009](TKT-009-indexeddb.md) (#9), [TKT-010](TKT-010-api-client.md) (#10)
@@ -34,8 +34,8 @@ Implement the local lifecycle that protects an evening until the server confirms
 
 ## Acceptance criteria
 
-- [ ] Automated tests cover every submission-state row in the testing document.
-- [ ] A failed repository write does not report the transaction as saved.
-- [ ] An uncertain server result retains every local transaction.
-- [ ] Retry uses the original session ID.
-- [ ] A draft or pending evening cannot be replaced accidentally.
+- [x] Automated tests cover every submission-state row in the testing document.
+- [x] A failed repository write does not report the transaction as saved.
+- [x] An uncertain server result retains every local transaction.
+- [x] Retry uses the original session ID.
+- [x] A draft or pending evening cannot be replaced accidentally.
