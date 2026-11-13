@@ -5,6 +5,7 @@ import type { ActiveSessionRecord, Player } from "../../domain/models.ts";
 import { navigate, onNavigate, useAppLocation } from "../../app/navigation.ts";
 import { PlayerPanel } from "../players/PlayerPanel.tsx";
 import { presentCurrentEvening, presentPlayerEvening, type PresentedResult } from "./currentEvening.ts";
+import { TransactionSheet } from "./TransactionSheet.tsx";
 
 export function CurrentEveningScreen({
   evening,
@@ -19,6 +20,7 @@ export function CurrentEveningScreen({
   const [ready, setReady] = useState(false);
   const [starting, setStarting] = useState(false);
   const [startError, setStartError] = useState<string | null>(null);
+  const [sheet, setSheet] = useState<{ playerId: string | null } | null>(null);
 
   useEffect(() => {
     let active = true;
@@ -46,6 +48,19 @@ export function CurrentEveningScreen({
   const showHistory = search.get("view") === "transactions";
   const detail = record !== null && playerId !== null ? presentPlayerEvening(record, playerId, directory) : null;
 
+  async function refreshEvening() {
+    const [current, loaded] = await Promise.all([evening.readCurrent(), players.load()]);
+    setRecord(current);
+    setDirectory(loaded.players);
+  }
+
+  function openSheet(playerId: string | null) {
+    if (view.kind !== "active" || !view.canRecord) {
+      return;
+    }
+    setSheet({ playerId });
+  }
+
   async function startEvening() {
     if (!view.canStart || starting) {
       return;
@@ -62,6 +77,17 @@ export function CurrentEveningScreen({
       setStarting(false);
     }
   }
+
+  const transactionSheet =
+    sheet !== null ? (
+      <TransactionSheet
+        presetPlayerId={sheet.playerId}
+        directory={players}
+        evening={evening}
+        onClose={() => setSheet(null)}
+        onPersisted={refreshEvening}
+      />
+    ) : null;
 
   if (!ready) {
     return <p className="muted">טוען את הערב…</p>;
@@ -92,7 +118,8 @@ export function CurrentEveningScreen({
         <h1>כל הפעולות</h1>
         <p className="muted">{view.date}</p>
         <TransactionList items={view.history} empty="אין עדיין פעולות." />
-        <AddAction />
+        <AddAction disabled={!view.canRecord} onAdd={() => openSheet(null)} />
+        {transactionSheet}
       </section>
     );
   }
@@ -119,7 +146,8 @@ export function CurrentEveningScreen({
             <TransactionList items={detail.transactions} empty="אין פעולות לשחקן הזה." />
           </>
         )}
-        <AddAction />
+        <AddAction disabled={!view.canRecord} onAdd={() => openSheet(playerId)} />
+        {transactionSheet}
       </section>
     );
   }
@@ -131,7 +159,7 @@ export function CurrentEveningScreen({
         <p>{view.date}</p>
         <p className="status">{view.statusLabel}</p>
       </header>
-      <AddAction />
+      <AddAction disabled={!view.canRecord} onAdd={() => openSheet(null)} />
       <article className="card totals">
         <p>
           <span className="muted">כניסות</span>
@@ -179,13 +207,14 @@ export function CurrentEveningScreen({
       ) : null}
       {startError !== null ? <p className="notice notice-alert">{startError}</p> : null}
       <PlayerPanel directory={players} onSelect={() => undefined} />
+      {transactionSheet}
     </section>
   );
 }
 
-function AddAction() {
+function AddAction({ disabled, onAdd }: { disabled: boolean; onAdd: () => void }) {
   return (
-    <button type="button" className="button button-primary add-action">
+    <button type="button" className="button button-primary add-action" disabled={disabled} onClick={onAdd}>
       + הוספת פעולה
     </button>
   );

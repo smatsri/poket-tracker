@@ -40,9 +40,13 @@ const transactions = [
 
 test("the empty state can start an evening and a draft or pending evening cannot", () => {
   assert.equal(presentCurrentEvening(null, players).canStart, true);
+  assert.equal(presentCurrentEvening(null, players).canRecord, false);
   assert.equal(presentCurrentEvening(record("draft", transactions), players).canStart, false);
+  assert.equal(presentCurrentEvening(record("draft", transactions), players).canRecord, true);
   assert.equal(presentCurrentEvening(record("pending", transactions), players).canStart, false);
+  assert.equal(presentCurrentEvening(record("pending", transactions), players).canRecord, false);
   assert.equal(presentCurrentEvening(record("submitted", transactions), players).canStart, true);
+  assert.equal(presentCurrentEvening(record("submitted", transactions), players).canRecord, false);
 });
 
 test("the overview and every player row match the domain calculations", () => {

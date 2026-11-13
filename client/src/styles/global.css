@@ -288,6 +288,67 @@ h2 {
   width: 100%;
 }
 
+.sheet-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 20;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  background: rgb(24 34 29 / 40%);
+}
+
+.sheet {
+  width: 100%;
+  max-width: 30rem;
+  max-block-size: min(92%, 40rem);
+  overflow: auto;
+  padding: var(--space-4);
+  padding-block-end: calc(var(--space-5) + env(safe-area-inset-bottom));
+  border-start-start-radius: var(--radius-card);
+  border-start-end-radius: var(--radius-card);
+  background: var(--color-background);
+  box-shadow: var(--shadow-card);
+}
+
+.sheet-header {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  background: var(--color-background);
+}
+
+.type-field {
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.type-field legend {
+  font-weight: 500;
+}
+
+.type-choices {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.type-choices .choice {
+  flex: 1 1 30%;
+}
+
+.amount-field {
+  min-block-size: 72px;
+  font-size: 2rem;
+  font-weight: 700;
+  text-align: center;
+}
+
 .bottom-nav {
   position: fixed;
   inset-inline: 0;

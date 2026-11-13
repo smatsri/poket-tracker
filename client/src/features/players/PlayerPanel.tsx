@@ -8,12 +8,15 @@ const emptyLoadNote = "לא הצלחנו לטעון שחקנים מהשרת. א�
 export function PlayerPanel({
   directory,
   onSelect,
+  selectedId: controlledId,
 }: {
   directory: PlayerDirectory;
   onSelect: (player: Player) => void;
+  selectedId?: string | null;
 }) {
   const [players, setPlayers] = useState<Player[]>([]);
-  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [internalId, setInternalId] = useState<string | null>(null);
+  const selectedId = controlledId === undefined ? internalId : controlledId;
   const [loadNote, setLoadNote] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [duplicate, setDuplicate] = useState<Player | null>(null);
@@ -48,7 +51,9 @@ export function PlayerPanel({
   const selected = players.find((player) => player.id === selectedId) ?? null;
 
   function select(player: Player) {
-    setSelectedId(player.id);
+    if (controlledId === undefined) {
+      setInternalId(player.id);
+    }
     onSelect(player);
   }
 

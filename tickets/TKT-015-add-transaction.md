@@ -1,6 +1,6 @@
 # TKT-015 — Record a transaction quickly
 
-**Status:** todo  
+**Status:** done  
 **Issue:** #15  
 **Milestone:** M3 Live evening  
 **Depends on:** [TKT-013](TKT-013-player-management.md) (#13), [TKT-014](TKT-014-current-evening.md) (#14)
@@ -35,9 +35,9 @@ Record a buy-in, rebuy, or cash-out with as few interactions as possible.
 
 ## Acceptance criteria
 
-- [ ] A transaction can be saved with player, type, and amount only.
-- [ ] The amount field opens a numeric keyboard on a mobile browser.
-- [ ] Repeating a transaction for the same player and type requires only a new amount and save.
-- [ ] Opening the sheet from a player's details preselects that player.
-- [ ] Invalid input does not change the session.
-- [ ] The new transaction appears in balances and recent activity only after local persistence succeeds.
+- [x] A transaction can be saved with player, type, and amount only.
+- [x] The amount field opens a numeric keyboard on a mobile browser.
+- [x] Repeating a transaction for the same player and type requires only a new amount and save.
+- [x] Opening the sheet from a player's details preselects that player.
+- [x] Invalid input does not change the session.
+- [x] The new transaction appears in balances and recent activity only after local persistence succeeds.

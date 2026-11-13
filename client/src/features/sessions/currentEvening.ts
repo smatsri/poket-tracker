@@ -44,11 +44,13 @@ export interface PresentedTransaction {
 export interface EmptyEveningView {
   kind: "empty";
   canStart: true;
+  canRecord: false;
 }
 
 export interface ActiveEveningView {
   kind: "active";
   canStart: boolean;
+  canRecord: boolean;
   title: "ערב נוכחי";
   date: string;
   statusLabel: string;
@@ -67,7 +69,7 @@ export function presentCurrentEvening(
   players: readonly Player[],
 ): CurrentEveningView {
   if (record === null) {
-    return { kind: "empty", canStart: true };
+    return { kind: "empty", canStart: true, canRecord: false };
   }
 
   const result = calculateSessionResult(record.session);
@@ -77,6 +79,7 @@ export function presentCurrentEvening(
   return {
     kind: "active",
     canStart: record.status === "submitted",
+    canRecord: record.status === "draft",
     title: "ערב נוכחי",
     date: formatSessionDate(record.session.date),
     statusLabel: statusLabels[record.status],
