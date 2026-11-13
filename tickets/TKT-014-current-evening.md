@@ -1,6 +1,6 @@
 # TKT-014 — Build the current-evening screen
 
-**Status:** todo  
+**Status:** done  
 **Issue:** #14  
 **Milestone:** M3 Live evening  
 **Depends on:** [TKT-008](TKT-008-domain-calculations.md) (#8), [TKT-009](TKT-009-indexeddb.md) (#9), [TKT-011](TKT-011-submission-state.md) (#11), [TKT-012](TKT-012-rtl-shell.md) (#12)
@@ -36,9 +36,9 @@ Make the current evening the operational home screen.
 
 ## Acceptance criteria
 
-- [ ] The empty state can start one evening on a phone-width screen.
-- [ ] The overview and every player row match the domain calculations.
-- [ ] Recent activity shows at most five transactions, newest first.
-- [ ] A player row opens that player's current-evening transactions.
-- [ ] Reloading the page restores the same evening.
-- [ ] A second evening cannot be started from this screen while the current one is draft or pending.
+- [x] The empty state can start one evening on a phone-width screen.
+- [x] The overview and every player row match the domain calculations.
+- [x] Recent activity shows at most five transactions, newest first.
+- [x] A player row opens that player's current-evening transactions.
+- [x] Reloading the page restores the same evening.
+- [x] A second evening cannot be started from this screen while the current one is draft or pending.

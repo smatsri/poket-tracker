@@ -1,8 +1,9 @@
-import { useEffect, useState } from "react";
-import { PlayerPanel } from "../features/players/PlayerPanel.tsx";
-import type { PlayerDirectory } from "../features/players/directory.ts";
 import { CurrentEveningIcon, HistoryIcon, StatsIcon } from "./icons.tsx";
-import { matchRoute, navigation, type RouteId } from "./routes.ts";
+import { onNavigate, useAppLocation } from "./navigation.ts";
+import { navigation, type RouteId } from "./routes.ts";
+import { CurrentEveningScreen } from "../features/sessions/CurrentEveningScreen.tsx";
+import type { EveningService } from "../features/sessions/evening.ts";
+import type { PlayerDirectory } from "../features/players/directory.ts";
 
 const icons: Record<RouteId, () => React.JSX.Element> = {
   current: CurrentEveningIcon,
@@ -10,18 +11,13 @@ const icons: Record<RouteId, () => React.JSX.Element> = {
   stats: StatsIcon,
 };
 
-export function App({ players }: { players: PlayerDirectory }) {
-  const route = useRoute();
+export function App({ evening, players }: { evening: EveningService; players: PlayerDirectory }) {
+  const { route } = useAppLocation();
 
   return (
     <div className="shell">
       <main className="shell-main">
-        {route.id === "current" ? (
-          <div className="stack">
-            <CurrentPlaceholder />
-            <PlayerPanel directory={players} onSelect={() => undefined} />
-          </div>
-        ) : null}
+        {route.id === "current" ? <CurrentEveningScreen evening={evening} players={players} /> : null}
         {route.id === "history" ? <Placeholder title="היסטוריה" body="ערבים שהסתיימו יופיעו כאן." /> : null}
         {route.id === "stats" ? <Placeholder title="סיכומים" body="הסיכומים יופיעו כאן." /> : null}
         {route.id === "unknown" ? <Placeholder title="העמוד לא נמצא" body="בחרו יעד מהניווט למטה." /> : null}
@@ -46,31 +42,6 @@ export function App({ players }: { players: PlayerDirectory }) {
   );
 }
 
-function CurrentPlaceholder() {
-  return (
-    <section className="stack">
-      <header className="stack">
-        <h1>ערב נוכחי</h1>
-        <p className="muted">מסך הערב ייבנה בהמשך.</p>
-      </header>
-      <article className="card stack">
-        <h2>פעולות</h2>
-        <div className="action-row">
-          <button type="button" className="button button-primary">
-            פעולה ראשית
-          </button>
-          <button type="button" className="button button-secondary">
-            פעולה משנית
-          </button>
-          <button type="button" className="button button-destructive">
-            מחיקה
-          </button>
-        </div>
-      </article>
-    </section>
-  );
-}
-
 function Placeholder({ title, body }: { title: string; body: string }) {
   return (
     <section className="stack">
@@ -80,28 +51,4 @@ function Placeholder({ title, body }: { title: string; body: string }) {
       </article>
     </section>
   );
-}
-
-function useRoute() {
-  const [pathname, setPathname] = useState(() => window.location.pathname);
-
-  useEffect(() => {
-    const sync = () => setPathname(window.location.pathname);
-    window.addEventListener("popstate", sync);
-    return () => window.removeEventListener("popstate", sync);
-  }, []);
-
-  return matchRoute(pathname);
-}
-
-function onNavigate(event: React.MouseEvent<HTMLAnchorElement>, path: string) {
-  if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) {
-    return;
-  }
-
-  event.preventDefault();
-  if (window.location.pathname !== path) {
-    window.history.pushState(null, "", path);
-    window.dispatchEvent(new PopStateEvent("popstate"));
-  }
 }
