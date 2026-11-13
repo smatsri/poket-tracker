@@ -96,6 +96,33 @@ test("recent activity shows at most five transactions, newest first", () => {
   assert.equal(view.recent[0]?.typeLabel, "כניסה נוספת");
 });
 
+test("the full history keeps every transaction and shows a missing name as the player id", () => {
+  const withUnknown = [...transactions, transaction("t8", "gone", "buy-in", 15, "2026-11-13T17:00:00Z")];
+  const view = presentCurrentEvening(record("draft", withUnknown), players);
+  assert.equal(view.kind, "active");
+  if (view.kind !== "active") {
+    return;
+  }
+
+  assert.equal(view.history.at(-1)?.playerName, "gone");
+  assert.equal(view.history.length, withUnknown.length);
+});
+
+test("an empty draft history is empty and a submitted history cannot be corrected", () => {
+  const empty = presentCurrentEvening(record("draft", []), players);
+  const submitted = presentCurrentEvening(record("submitted", transactions), players);
+  assert.equal(empty.kind, "active");
+  assert.equal(submitted.kind, "active");
+  if (empty.kind !== "active" || submitted.kind !== "active") {
+    return;
+  }
+
+  assert.deepEqual(empty.history, []);
+  assert.equal(empty.canRecord, true);
+  assert.equal(submitted.canRecord, false);
+  assert.equal(submitted.history.length, transactions.length);
+});
+
 test("a player row opens that player's current-evening transactions", () => {
   const detail = presentPlayerEvening(record("draft", transactions), "p1", players);
   assert.equal(detail?.name, "דנה");

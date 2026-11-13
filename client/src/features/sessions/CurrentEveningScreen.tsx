@@ -47,6 +47,8 @@ export function CurrentEveningScreen({
   const playerId = search.get("player");
   const transactionId = search.get("transaction");
   const showHistory = search.get("view") === "transactions";
+  const historyHref = "/?view=transactions";
+  const detailReturn = showHistory ? historyHref : "/";
   const detail = record !== null && playerId !== null ? presentPlayerEvening(record, playerId, directory) : null;
 
   async function refreshEvening() {
@@ -125,8 +127,8 @@ export function CurrentEveningScreen({
     const presented = view.history.find((item) => item.id === transactionId) ?? null;
     return (
       <section className="stack evening">
-        <a href="/" onClick={(event) => onNavigate(event, "/")}>
-          חזרה לערב
+        <a href={detailReturn} onClick={(event) => onNavigate(event, detailReturn)}>
+          {showHistory ? "חזרה לכל הפעולות" : "חזרה לערב"}
         </a>
         {transaction === null || presented === null ? (
           <article className="card">
@@ -140,6 +142,7 @@ export function CurrentEveningScreen({
             evening={evening}
             onChanged={refreshEvening}
             onEdit={() => openEditor(transaction)}
+            returnTo={detailReturn}
           />
         )}
         {transactionSheet}
@@ -153,9 +156,24 @@ export function CurrentEveningScreen({
         <a href="/" onClick={(event) => onNavigate(event, "/")}>
           חזרה לערב
         </a>
-        <h1>כל הפעולות</h1>
-        <p className="muted">{view.date}</p>
-        <TransactionList items={view.history} empty="אין עדיין פעולות." />
+        <header className="stack">
+          <h1>כל הפעולות</h1>
+          <p>{view.date}</p>
+          <p className="status">{view.statusLabel}</p>
+        </header>
+        <article className="card totals">
+          <p>
+            <span className="muted">מאזן</span>
+            <ResultText result={view.balance} prominent />
+          </p>
+        </article>
+        {view.history.length === 0 ? (
+          <article className="card">
+            <p>אין עדיין פעולות.</p>
+          </article>
+        ) : (
+          <TransactionList items={view.history} empty="אין עדיין פעולות." scope="history" />
+        )}
         <AddAction disabled={!view.canRecord} onAdd={() => openSheet(null)} />
         {transactionSheet}
       </section>
@@ -181,7 +199,7 @@ export function CurrentEveningScreen({
                 כניסות {detail.buyIns} · יציאות {detail.cashOuts}
               </p>
             </header>
-            <TransactionList items={detail.transactions} empty="אין פעולות לשחקן הזה." />
+            <TransactionList items={detail.transactions} empty="אין פעולות לשחקן הזה." scope="evening" />
           </>
         )}
         <AddAction disabled={!view.canRecord} onAdd={() => openSheet(playerId)} />
@@ -233,8 +251,8 @@ export function CurrentEveningScreen({
       </section>
       <section className="stack">
         <h2>פעולות אחרונות</h2>
-        <TransactionList items={view.recent} empty="אין עדיין פעולות." />
-        <a href="/?view=transactions" onClick={(event) => onNavigate(event, "/?view=transactions")}>
+        <TransactionList items={view.recent} empty="אין עדיין פעולות." scope="evening" />
+        <a href={historyHref} onClick={(event) => onNavigate(event, historyHref)}>
           כל הפעולות
         </a>
       </section>
@@ -258,7 +276,15 @@ function AddAction({ disabled, onAdd }: { disabled: boolean; onAdd: () => void }
   );
 }
 
-function TransactionList({ items, empty }: { items: PresentedTransaction[]; empty: string }) {
+function TransactionList({
+  items,
+  empty,
+  scope,
+}: {
+  items: PresentedTransaction[];
+  empty: string;
+  scope: "history" | "evening";
+}) {
   if (items.length === 0) {
     return <p className="muted">{empty}</p>;
   }
@@ -266,7 +292,12 @@ function TransactionList({ items, empty }: { items: PresentedTransaction[]; empt
   return (
     <ul className="choice-list">
       {items.map((item) => {
-        const href = `/?transaction=${encodeURIComponent(item.id)}`;
+        const params = new URLSearchParams();
+        if (scope === "history") {
+          params.set("view", "transactions");
+        }
+        params.set("transaction", item.id);
+        const href = `/?${params.toString()}`;
         return (
           <li key={item.id}>
             <a className="activity-row" href={href} onClick={(event) => onNavigate(event, href)}>
@@ -291,6 +322,7 @@ function TransactionDetail({
   evening,
   onChanged,
   onEdit,
+  returnTo,
 }: {
   transaction: Transaction;
   presented: PresentedTransaction;
@@ -298,6 +330,7 @@ function TransactionDetail({
   evening: EveningService;
   onChanged: () => Promise<void>;
   onEdit: () => void;
+  returnTo: string;
 }) {
   const [confirming, setConfirming] = useState(false);
   const [deleting, setDeleting] = useState(false);
@@ -319,7 +352,7 @@ function TransactionDetail({
     } finally {
       setDeleting(false);
     }
-    navigate("/");
+    navigate(returnTo);
   }
 
   return (

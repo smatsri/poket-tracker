@@ -1,6 +1,6 @@
 # TKT-017 — Show full transaction history
 
-**Status:** todo  
+**Status:** done  
 **Issue:** #17  
 **Milestone:** M3 Live evening  
 **Depends on:** [TKT-014](TKT-014-current-evening.md) (#14), [TKT-016](TKT-016-correct-transactions.md) (#16)
@@ -30,8 +30,8 @@ Show every transaction in the active or reviewed session.
 
 ## Acceptance criteria
 
-- [ ] All transactions are visible in newest-first order.
-- [ ] Draft details can reach edit and delete, and successful changes update the list and balances.
-- [ ] Submitted details cannot change the transaction.
-- [ ] The current-evening recent activity links to this complete list.
-- [ ] An empty session shows an empty state rather than a broken list.
+- [x] All transactions are visible in newest-first order.
+- [x] Draft details can reach edit and delete, and successful changes update the list and balances.
+- [x] Submitted details cannot change the transaction.
+- [x] The current-evening recent activity links to this complete list.
+- [x] An empty session shows an empty state rather than a broken list.

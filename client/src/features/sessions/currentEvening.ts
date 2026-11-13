@@ -1,10 +1,12 @@
 import { calculateSessionResult } from "../../domain/calculations.ts";
 import { formatResult } from "../../domain/format.ts";
-import type { ActiveSessionRecord, Player, PlayerSessionResult, SubmissionStatus, Transaction } from "../../domain/models.ts";
+import type { ActiveSessionRecord, Player, PlayerSessionResult, SubmissionStatus } from "../../domain/models.ts";
+import { historyAccess, presentTransactionHistory, type PresentedTransaction } from "./transactionHistory.ts";
 
 const amountFormat = new Intl.NumberFormat("he-IL", { maximumFractionDigits: 0 });
-const dateFormat = new Intl.DateTimeFormat("he-IL", { day: "numeric", month: "long", year: "numeric" });
-const timeFormat = new Intl.DateTimeFormat("he-IL", { hour: "2-digit", minute: "2-digit" });
+
+export { formatSessionDate, transactionTypeLabels } from "./transactionHistory.ts";
+export type { PresentedTransaction };
 
 export const statusLabels = {
   draft: "פתוח",
@@ -13,14 +15,8 @@ export const statusLabels = {
 } as const;
 
 export function canCorrectTransactions(status: SubmissionStatus): boolean {
-  return status === "draft";
+  return historyAccess(status) === "draft";
 }
-
-export const transactionTypeLabels = {
-  "buy-in": "כניסה",
-  rebuy: "כניסה נוספת",
-  "cash-out": "יציאה",
-} as const;
 
 export interface PresentedResult {
   value: number;
@@ -34,15 +30,6 @@ export interface PresentedPlayerRow {
   totalBuyIns: string;
   totalCashOuts: string;
   net: PresentedResult;
-}
-
-export interface PresentedTransaction {
-  id: string;
-  playerId: string;
-  playerName: string;
-  typeLabel: string;
-  amount: string;
-  time: string;
 }
 
 export interface EmptyEveningView {
@@ -78,21 +65,21 @@ export function presentCurrentEvening(
 
   const result = calculateSessionResult(record.session);
   const names = new Map(players.map((player) => [player.id, player.name]));
-  const ordered = newestFirst(record.session.transactions);
+  const history = presentTransactionHistory(record.session, players, historyAccess(record.status));
 
   return {
     kind: "active",
     canStart: record.status === "submitted",
-    canRecord: canCorrectTransactions(record.status),
+    canRecord: history.canCorrect,
     title: "ערב נוכחי",
-    date: formatSessionDate(record.session.date),
+    date: history.date,
     statusLabel: statusLabels[record.status],
     totalBuyIns: amountFormat.format(result.sessionBuyIns),
     totalCashOuts: amountFormat.format(result.sessionCashOuts),
     balance: presentResult(result.sessionBalance),
     players: result.players.map((player) => presentPlayer(player, names)),
-    recent: ordered.slice(0, 5).map((transaction) => presentTransaction(transaction, names)),
-    history: ordered.map((transaction) => presentTransaction(transaction, names)),
+    recent: history.transactions.slice(0, 5),
+    history: history.transactions,
   };
 }
 
@@ -120,15 +107,6 @@ export function presentPlayerEvening(
   };
 }
 
-export function formatSessionDate(isoDate: string): string {
-  const [year, month, day] = isoDate.split("-").map(Number);
-  if (year === undefined || month === undefined || day === undefined) {
-    return isoDate;
-  }
-
-  return dateFormat.format(new Date(year, month - 1, day));
-}
-
 function presentPlayer(player: PlayerSessionResult, names: ReadonlyMap<string, string>): PresentedPlayerRow {
   return {
     playerId: player.playerId,
@@ -136,17 +114,6 @@ function presentPlayer(player: PlayerSessionResult, names: ReadonlyMap<string, s
     totalBuyIns: amountFormat.format(player.totalBuyIns),
     totalCashOuts: amountFormat.format(player.totalCashOuts),
     net: presentResult(player.netResult),
-  };
-}
-
-function presentTransaction(transaction: Transaction, names: ReadonlyMap<string, string>): PresentedTransaction {
-  return {
-    id: transaction.id,
-    playerId: transaction.playerId,
-    playerName: names.get(transaction.playerId) ?? transaction.playerId,
-    typeLabel: transactionTypeLabels[transaction.type],
-    amount: amountFormat.format(transaction.amount),
-    time: timeFormat.format(new Date(transaction.timestamp)),
   };
 }
 
@@ -158,16 +125,3 @@ function presentResult(value: number): PresentedResult {
   };
 }
 
-function newestFirst(transactions: readonly Transaction[]): Transaction[] {
-  return transactions
-    .map((transaction, index) => ({ transaction, index }))
-    .sort((left, right) => {
-      const byTime = Date.parse(right.transaction.timestamp) - Date.parse(left.transaction.timestamp);
-      if (byTime !== 0) {
-        return byTime;
-      }
-
-      return right.index - left.index;
-    })
-    .map((item) => item.transaction);
-}
