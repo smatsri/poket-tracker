@@ -19,9 +19,9 @@ The authoritative contract is [docs/api/openapi.yaml](../docs/api/openapi.yaml).
 | M4 Review | TKT-019–TKT-021 | History, summary, and statistics | done |
 | M5 Acceptance | TKT-022 | Complete MVP checklist | done |
 | M6 Version 1.0: Historical Insights | TKT-023–TKT-028 | Group overview, player progression, and charts | done |
-| M7 Contract hardening | TKT-029–TKT-032 | The locked contracts hold for the cases the reviews found | todo |
+| M7 Contract hardening | TKT-029–TKT-032 | The locked contracts hold for the cases the reviews found | done |
 
-M0–M6 are done. M7 is the next milestone. Later work should reuse existing client calculations and `GET /api/sessions`. Do not add analytics endpoints unless a later ticket proves they are required.
+M0–M7 are done. Later work should reuse existing client calculations and `GET /api/sessions`. Do not add analytics endpoints unless a later ticket proves they are required.
 
 These review notes stay out of the backlog:
 
@@ -64,7 +64,7 @@ These review notes stay out of the backlog:
 | [TKT-029](TKT-029-single-flight-save.md) | Ignore a second save while one is in progress | done | None |
 | [TKT-030](TKT-030-evening-load-failure.md) | Show a failed evening load instead of an empty evening | done | None |
 | [TKT-031](TKT-031-malformed-route.md) | Ignore a malformed history or statistics path | done | None |
-| [TKT-032](TKT-032-session-id-conflict.md) | Cover a concurrent session-id conflict | todo | None |
+| [TKT-032](TKT-032-session-id-conflict.md) | Cover a concurrent session-id conflict | done | None |
 
 ## Requirement coverage
 

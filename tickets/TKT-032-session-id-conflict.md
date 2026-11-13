@@ -1,6 +1,6 @@
 # TKT-032 — Cover a concurrent session-id conflict
 
-**Status:** todo  
+**Status:** done  
 **Issue:** #32  
 **Milestone:** M7 Contract hardening  
 **Depends on:** none
@@ -29,6 +29,6 @@ A submission that loses the insert on `sessions.id` returns the same result as a
 
 ## Acceptance criteria
 
-- [ ] An identical colliding submission returns `200` and does not insert a second session.
-- [ ] A different colliding submission returns `409` and preserves the stored session.
-- [ ] `npm test` from the repository root passes.
+- [x] An identical colliding submission returns `200` and does not insert a second session.
+- [x] A different colliding submission returns `409` and preserves the stored session.
+- [x] `npm test` from the repository root passes.
