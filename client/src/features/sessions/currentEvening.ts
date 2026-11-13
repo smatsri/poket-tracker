@@ -77,7 +77,7 @@ export function presentCurrentEvening(
     totalBuyIns: amountFormat.format(result.sessionBuyIns),
     totalCashOuts: amountFormat.format(result.sessionCashOuts),
     balance: presentResult(result.sessionBalance),
-    players: result.players.map((player) => presentPlayer(player, names)),
+    players: result.players.map((player) => presentPlayerResult(player, names)),
     recent: history.transactions.slice(0, 5),
     history: history.transactions,
   };
@@ -107,7 +107,7 @@ export function presentPlayerEvening(
   };
 }
 
-function presentPlayer(player: PlayerSessionResult, names: ReadonlyMap<string, string>): PresentedPlayerRow {
+export function presentPlayerResult(player: PlayerSessionResult, names: ReadonlyMap<string, string>): PresentedPlayerRow {
   return {
     playerId: player.playerId,
     name: names.get(player.playerId) ?? player.playerId,

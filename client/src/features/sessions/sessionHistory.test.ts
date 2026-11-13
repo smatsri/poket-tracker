@@ -104,8 +104,8 @@ test("a failed load explains the failure and stays retryable", () => {
 
 test("choosing a session opens its summary route and history stays the active section", () => {
   assert.equal(sessionSummaryPath("session 1"), "/history/session%201");
-  assert.deepEqual(parseHistoryLocation("/history"), { screen: "list", sessionId: null });
-  assert.deepEqual(parseHistoryLocation("/history/session-1"), { screen: "summary", sessionId: "session-1" });
+  assert.deepEqual(parseHistoryLocation("/history"), { screen: "list", sessionId: null, playerId: null });
+  assert.deepEqual(parseHistoryLocation("/history/session-1"), { screen: "summary", sessionId: "session-1", playerId: null });
   assert.equal(matchRoute("/history/session-1").id, "history");
   assert.equal(matchRoute("/history/session-1").label, "היסטוריה");
 });

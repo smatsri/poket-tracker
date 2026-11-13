@@ -44,23 +44,48 @@ export function sessionSummaryPath(sessionId: string): string {
   return `/history/${encodeURIComponent(sessionId)}`;
 }
 
-export function parseHistoryLocation(pathname: string): { screen: "list" | "summary"; sessionId: string | null } {
+export interface HistoryLocation {
+  screen: "list" | "summary" | "transactions" | "player";
+  sessionId: string | null;
+  playerId: string | null;
+}
+
+export function sessionTransactionsPath(sessionId: string): string {
+  return `${sessionSummaryPath(sessionId)}/transactions`;
+}
+
+export function sessionPlayerPath(sessionId: string, playerId: string): string {
+  return `${sessionSummaryPath(sessionId)}/players/${encodeURIComponent(playerId)}`;
+}
+
+export function parseHistoryLocation(pathname: string): HistoryLocation {
   const path = pathname.length > 1 && pathname.endsWith("/") ? pathname.slice(0, -1) : pathname;
-  if (path === "/history" || path.length === 0) {
-    return { screen: "list", sessionId: null };
-  }
-
+  const list: HistoryLocation = { screen: "list", sessionId: null, playerId: null };
   const prefix = "/history/";
-  if (!path.startsWith(prefix)) {
-    return { screen: "list", sessionId: null };
+  if (path === "/history" || !path.startsWith(prefix)) {
+    return list;
   }
 
-  const sessionId = decodeURIComponent(path.slice(prefix.length));
-  if (sessionId.length === 0 || sessionId.includes("/")) {
-    return { screen: "list", sessionId: null };
+  const parts = path.slice(prefix.length).split("/").map((part) => decodeURIComponent(part));
+  const sessionId = parts[0];
+  if (sessionId === undefined || sessionId.length === 0) {
+    return list;
   }
 
-  return { screen: "summary", sessionId };
+  if (parts.length === 1) {
+    return { screen: "summary", sessionId, playerId: null };
+  }
+
+  if (parts.length === 2 && parts[1] === "transactions") {
+    return { screen: "transactions", sessionId, playerId: null };
+  }
+
+  const playerId = parts[2];
+  if (parts.length === 3 && parts[1] === "players" && playerId !== undefined && playerId.length > 0) {
+    return { screen: "player", sessionId, playerId };
+  }
+
+  return list;
 }
 
 export function presentSessionHistory(documents: readonly SessionDocument[]): HistoryListView {
