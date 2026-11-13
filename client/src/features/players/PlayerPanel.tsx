@@ -1,5 +1,6 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { Player } from "../../domain/models.ts";
+import { createSingleFlight } from "../singleFlight.ts";
 import type { PlayerDirectory } from "./directory.ts";
 
 const cachedPlayersNote = "לא הצלחנו לרענן את הרשימה. אפשר לבחור מהשחקנים השמורים.";
@@ -22,6 +23,7 @@ export function PlayerPanel({
   const [duplicate, setDuplicate] = useState<Player | null>(null);
   const [name, setName] = useState("");
   const [saving, setSaving] = useState(false);
+  const flight = useRef(createSingleFlight());
 
   useEffect(() => {
     let active = true;
@@ -58,26 +60,28 @@ export function PlayerPanel({
   }
 
   async function save(confirmDuplicate: boolean) {
-    setSaving(true);
-    setError(null);
-    try {
-      const result = await directory.create(name, { confirmDuplicate });
-      setPlayers(result.players);
-      if (result.ok) {
-        setName("");
+    await flight.current(async () => {
+      setSaving(true);
+      setError(null);
+      try {
+        const result = await directory.create(name, { confirmDuplicate });
+        setPlayers(result.players);
+        if (result.ok) {
+          setName("");
+          setDuplicate(null);
+          select(result.player);
+          return;
+        }
+        if (result.reason === "duplicate") {
+          setDuplicate(result.match);
+          return;
+        }
         setDuplicate(null);
-        select(result.player);
-        return;
+        setError(result.message);
+      } finally {
+        setSaving(false);
       }
-      if (result.reason === "duplicate") {
-        setDuplicate(result.match);
-        return;
-      }
-      setDuplicate(null);
-      setError(result.message);
-    } finally {
-      setSaving(false);
-    }
+    });
   }
 
   return (

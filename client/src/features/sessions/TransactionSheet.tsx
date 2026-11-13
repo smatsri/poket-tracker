@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import type { PlayerDirectory } from "../players/directory.ts";
 import { PlayerPanel } from "../players/PlayerPanel.tsx";
+import { createSingleFlight } from "../singleFlight.ts";
 import type { Transaction } from "../../domain/models.ts";
 import type { EveningService } from "./evening.ts";
 import {
@@ -31,6 +32,7 @@ export function TransactionSheet({
   onPersisted: () => Promise<void>;
 }) {
   const amountRef = useRef<HTMLInputElement>(null);
+  const flight = useRef(createSingleFlight());
   const [draft, setDraft] = useState<TransactionDraft>(() =>
     editing === null ? emptyTransactionDraft(presetPlayerId) : draftFromTransaction(editing),
   );
@@ -56,42 +58,44 @@ export function TransactionSheet({
       return;
     }
 
-    setSaving(true);
-    setErrors({});
-    setSaveError(null);
-    if (editing !== null) {
+    await flight.current(async () => {
+      setSaving(true);
+      setErrors({});
+      setSaveError(null);
+      if (editing !== null) {
+        try {
+          await evening.updateTransaction(editedTransaction(editing, result.value));
+          await onPersisted();
+        } catch {
+          setSaveError("לא הצלחנו לשמור את הפעולה.");
+          return;
+        } finally {
+          setSaving(false);
+        }
+        onClose();
+        return;
+      }
+
+      let savedId: string | null = null;
       try {
-        await evening.updateTransaction(editedTransaction(editing, result.value));
-        await onPersisted();
+        savedId = (await evening.addTransaction(result.value)).id;
       } catch {
         setSaveError("לא הצלחנו לשמור את הפעולה.");
         return;
       } finally {
         setSaving(false);
       }
-      onClose();
-      return;
-    }
 
-    let savedId: string | null = null;
-    try {
-      savedId = (await evening.addTransaction(result.value)).id;
-    } catch {
-      setSaveError("לא הצלחנו לשמור את הפעולה.");
-      return;
-    } finally {
-      setSaving(false);
-    }
-
-    setDraft(draftAfterSave(draft));
-    setUndoId(savedId);
-    setUndoError(null);
-    setAmountFocus((current) => current + 1);
-    try {
-      await onPersisted();
-    } catch {
-      setSaveError("הפעולה נשמרה, אבל הערב לא התרענן.");
-    }
+      setDraft(draftAfterSave(draft));
+      setUndoId(savedId);
+      setUndoError(null);
+      setAmountFocus((current) => current + 1);
+      try {
+        await onPersisted();
+      } catch {
+        setSaveError("הפעולה נשמרה, אבל הערב לא התרענן.");
+      }
+    });
   }
 
   async function undo() {

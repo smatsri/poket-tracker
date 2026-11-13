@@ -1,6 +1,6 @@
 # TKT-029 — Ignore a second save while one is in progress
 
-**Status:** todo  
+**Status:** done  
 **Issue:** #29  
 **Milestone:** M7 Contract hardening  
 **Depends on:** none
@@ -30,7 +30,7 @@ A second tap cannot create another transaction or another player while the first
 
 ## Acceptance criteria
 
-- [ ] A second transaction save started before the first settles does not create a second transaction.
-- [ ] A second player save started before the first settles does not create a second player.
-- [ ] After the in-progress save settles, another save can run.
-- [ ] `npm test` from the repository root passes.
+- [x] A second transaction save started before the first settles does not create a second transaction.
+- [x] A second player save started before the first settles does not create a second player.
+- [x] After the in-progress save settles, another save can run.
+- [x] `npm test` from the repository root passes.
