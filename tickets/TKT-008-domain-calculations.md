@@ -1,6 +1,6 @@
 # TKT-008 — Implement domain models and calculations
 
-**Status:** todo  
+**Status:** done  
 **Issue:** #8  
 **Milestone:** M2 Client core  
 **Depends on:** [TKT-001](TKT-001-scaffold-workspaces.md) (#1)
@@ -33,8 +33,8 @@ Create the React-independent domain layer for sessions, validation, and financia
 
 ## Acceptance criteria
 
-- [ ] The documented formulas pass automated tests, including a session that does not balance.
-- [ ] A decimal, zero, or negative amount is rejected.
-- [ ] A transaction referencing a different session ID is rejected.
-- [ ] Formatting uses `he-IL` grouping and shows the sign for positive and negative values.
-- [ ] Domain modules do not import React, IndexedDB, or the Fetch API.
+- [x] The documented formulas pass automated tests, including a session that does not balance.
+- [x] A decimal, zero, or negative amount is rejected.
+- [x] A transaction referencing a different session ID is rejected.
+- [x] Formatting uses `he-IL` grouping and shows the sign for positive and negative values.
+- [x] Domain modules do not import React, IndexedDB, or the Fetch API.
