@@ -10,6 +10,8 @@ description: >-
 
 The ticket file is the spec. Work an agreed count, then stop.
 
+You can ask the user any clarification question. Ask before guessing when the count, scope, a dependency, or a product decision is unclear, and pause that ticket until they answer.
+
 ## Agree the count first
 
 Before editing, state the tickets you will attempt, in order.
