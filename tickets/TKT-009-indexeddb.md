@@ -1,6 +1,6 @@
 # TKT-009 — Persist the active session in IndexedDB
 
-**Status:** todo  
+**Status:** done  
 **Issue:** #9  
 **Milestone:** M2 Client core  
 **Depends on:** [TKT-008](TKT-008-domain-calculations.md) (#8)
@@ -32,8 +32,8 @@ Make the active evening and cached player directory durable on the device.
 
 ## Acceptance criteria
 
-- [ ] Saving and reopening the database returns the same session, transactions, and status.
-- [ ] Replacing the player cache removes players that were not in the replacement list.
-- [ ] A failed write is reported to the caller and does not claim success.
-- [ ] The in-memory double supports the submission tests without a browser.
-- [ ] Refresh recovery can be satisfied by reading the `current` record.
+- [x] Saving and reopening the database returns the same session, transactions, and status.
+- [x] Replacing the player cache removes players that were not in the replacement list.
+- [x] A failed write is reported to the caller and does not claim success.
+- [x] The in-memory double supports the submission tests without a browser.
+- [x] Refresh recovery can be satisfied by reading the `current` record.
