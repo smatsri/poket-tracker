@@ -62,8 +62,11 @@ test("overall results sum per-session nets and rank from highest to lowest, with
     ranked.map((player) => [player.playerId, player.name, player.netResult, formatResult(player.netResult), statsPlayerPath(player.playerId)]),
   );
   assert.deepEqual(
-    view.players.map((player) => player.playerId),
-    ["avi", "dana"],
+    view.players.map((player) => [player.playerId, player.eveningsPlayed, player.result.value]),
+    [
+      ["avi", 1, 20],
+      ["dana", 2, -30],
+    ],
   );
   assert.equal(view.players.some((player) => player.playerId === "absent"), false);
 

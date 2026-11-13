@@ -1,6 +1,6 @@
 # TKT-024 — Enrich the group statistics overview
 
-**Status:** todo  
+**Status:** done  
 **Issue:** #24  
 **Milestone:** M6 Version 1.0: Historical Insights  
 **Depends on:** [TKT-023](TKT-023-player-history-progression.md) (#23)
@@ -31,8 +31,8 @@ Make the group statistics screen a clearer overview of participation and cumulat
 
 ## Acceptance criteria
 
-- [ ] Session and transaction counts remain correct for the returned sessions.
-- [ ] Each ranked player row shows that player's evenings-played count.
-- [ ] Ranking order and overall nets remain unchanged from TKT-021 rules.
-- [ ] The empty state still appears when no completed sessions exist.
-- [ ] Automated tests cover the enriched ranking rows.
+- [x] Session and transaction counts remain correct for the returned sessions.
+- [x] Each ranked player row shows that player's evenings-played count.
+- [x] Ranking order and overall nets remain unchanged from TKT-021 rules.
+- [x] The empty state still appears when no completed sessions exist.
+- [x] Automated tests cover the enriched ranking rows.

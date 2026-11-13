@@ -98,7 +98,12 @@ function StatisticsBody({ view }: { view: StatisticsView }) {
               {view.players.map((player) => (
                 <li key={player.playerId}>
                   <a className="player-row" href={player.href} onClick={(event) => onNavigate(event, player.href)}>
-                    <span className="player-name">{player.name}</span>
+                    <span className="player-row-main">
+                      <span className="player-name">{player.name}</span>
+                      <span className="muted">
+                        {statsCopy.eveningsPlayed}: {player.eveningsPlayed}
+                      </span>
+                    </span>
                     <ResultText result={player.result} prominent />
                   </a>
                 </li>

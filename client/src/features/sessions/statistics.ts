@@ -27,6 +27,7 @@ export interface RankedPlayerRow {
   playerId: string;
   name: string;
   href: string;
+  eveningsPlayed: number;
   result: PresentedResult;
 }
 
@@ -131,6 +132,7 @@ export function presentStatistics(documents: readonly SessionDocument[]): Statis
       playerId: player.playerId,
       name: player.name.length > 0 ? player.name : player.playerId,
       href: statsPlayerPath(player.playerId),
+      eveningsPlayed: playerCumulativeSeries(documents, player.playerId).length,
       result: presentResult(player.netResult),
     })),
   };
