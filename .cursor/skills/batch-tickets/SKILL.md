@@ -40,6 +40,12 @@ On PowerShell, pass that message with a here-string. Do not commit a failing tic
 
 ## After each commit
 
-Count it toward the agreement. Take the next ticket in the same way.
+1. Count it toward the agreement.
+2. Promote newly unblocked tickets to Ready on the [poker tracker project](https://github.com/users/smatsri/projects/8):
+   - Find open issues that list this ticket in `Depends on` / are blocked by this issue.
+   - A dependent is unblocked only when every issue in its `Depends on` list is closed (or its ticket file is `done`).
+   - For each newly unblocked dependent on the project board, set Status to **Ready**. Leave still-blocked dependents on **Todo**.
+   - Do not move cards that are already Ready or Done.
+3. Take the next ticket in the same way.
 
-Stop when the count is finished, the next ticket is blocked, tests cannot be made to pass, or a ticket needs a decision. Report what landed, what is left, and the next ready ticket.
+Stop when the count is finished, the next ticket is blocked, tests cannot be made to pass, or a ticket needs a decision. Report what landed, what was moved to Ready, what is left, and the next ready ticket.
