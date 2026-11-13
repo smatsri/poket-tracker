@@ -76,6 +76,18 @@ Run this on a phone-sized viewport, 360px wide, in a Chromium browser. The serve
 13. Confirm the primary action, touch targets, safe area, and bottom navigation remain usable at 360px width.
 14. Confirm positive and negative values have both color and an explicit sign.
 
+## Manual Version 1.0 checklist
+
+Run this on a phone-sized viewport, 360px wide, in a Chromium browser, after at least two completed evenings with mixed wins and losses. Compare every figure with the stored session transactions. Open the real screens for the chart items; a single static screenshot is not enough.
+
+1. The group overview shows the completed-evening count, the transaction count, each ranked player's evenings played, and ranking by cumulative net.
+2. A player's history shows evenings played, a chronological cumulative progression, and a final cumulative equal to that player's overall result.
+3. The cumulative-result chart is readable at 360px, and its points match the progression list and the overall result.
+4. The results-by-session chart is readable at 360px, and each value matches that evening's session balance (cash-outs minus buy-ins).
+5. The player-comparison chart is readable at 360px, and each value matches the overall net in the ranking list. Players with no transactions stay excluded.
+6. History and an opened past evening still match the transaction list (MVP checklist item 11).
+7. Statistics still count sessions and transactions and rank each player's overall result (MVP checklist item 12).
+
 ## Traceability
 
 Every must-have and all ten acceptance criteria in the UI specification are mapped to tickets in [tickets/README.md](../tickets/README.md). A ticket is not complete until its own acceptance criteria and the relevant rows of this document pass.

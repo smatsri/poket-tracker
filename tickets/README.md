@@ -18,7 +18,7 @@ The authoritative contract is [docs/api/openapi.yaml](../docs/api/openapi.yaml).
 | M3 Live evening | TKT-012–TKT-018 | Hebrew mobile flow used during a game | done |
 | M4 Review | TKT-019–TKT-021 | History, summary, and statistics | done |
 | M5 Acceptance | TKT-022 | Complete MVP checklist | done |
-| M6 Version 1.0: Historical Insights | TKT-023–TKT-028 | Group overview, player progression, and charts | open |
+| M6 Version 1.0: Historical Insights | TKT-023–TKT-028 | Group overview, player progression, and charts | done |
 
 M1 and M2 could proceed in parallel after TKT-001. M6 builds on the completed MVP statistics and history screens. Reuse existing client calculations and `GET /api/sessions`; do not add analytics endpoints unless a later ticket proves they are required.
 
@@ -53,7 +53,7 @@ M1 and M2 could proceed in parallel after TKT-001. M6 builds on the completed MV
 | [TKT-025](TKT-025-chart-cumulative-result.md) | Chart a player's cumulative result over time | done | TKT-023 |
 | [TKT-026](TKT-026-chart-results-by-session.md) | Chart results by session | done | TKT-024, TKT-025 |
 | [TKT-027](TKT-027-chart-player-comparison.md) | Chart player comparison | done | TKT-024, TKT-025 |
-| [TKT-028](TKT-028-v1-acceptance.md) | Verify the Version 1.0 acceptance criteria | todo | TKT-025, TKT-026, TKT-027 |
+| [TKT-028](TKT-028-v1-acceptance.md) | Verify the Version 1.0 acceptance criteria | done | TKT-025, TKT-026, TKT-027 |
 
 ## Requirement coverage
 
