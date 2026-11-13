@@ -1,6 +1,6 @@
 # TKT-018 — Submit the evening and retry safely
 
-**Status:** todo  
+**Status:** done  
 **Issue:** #18  
 **Milestone:** M3 Live evening  
 **Depends on:** [TKT-006](TKT-006-read-sessions.md) (#6), [TKT-011](TKT-011-submission-state.md) (#11), [TKT-014](TKT-014-current-evening.md) (#14), [TKT-016](TKT-016-correct-transactions.md) (#16)
@@ -33,9 +33,9 @@ Finish an evening, show its submission state, and recover from failure without l
 
 ## Acceptance criteria
 
-- [ ] A draft with no transactions cannot be submitted.
-- [ ] Successful submission shows the submitted evening and the server contains one copy.
-- [ ] Stopping the server during submission leaves every transaction recoverable.
-- [ ] Retry after the server returns does not create a second session.
-- [ ] A conflict response does not discard local data or generate a new session ID.
-- [ ] The pending screen cannot accidentally start another evening.
+- [x] A draft with no transactions cannot be submitted.
+- [x] Successful submission shows the submitted evening and the server contains one copy.
+- [x] Stopping the server during submission leaves every transaction recoverable.
+- [x] Retry after the server returns does not create a second session.
+- [x] A conflict response does not discard local data or generate a new session ID.
+- [x] The pending screen cannot accidentally start another evening.

@@ -4,7 +4,8 @@ import type { PlayerDirectory } from "../players/directory.ts";
 import type { ActiveSessionRecord, Player, Transaction } from "../../domain/models.ts";
 import { navigate, onNavigate, useAppLocation } from "../../app/navigation.ts";
 import { PlayerPanel } from "../players/PlayerPanel.tsx";
-import { presentCurrentEvening, presentPlayerEvening, type PresentedResult, type PresentedTransaction } from "./currentEvening.ts";
+import { presentCurrentEvening, presentPlayerEvening, statusLabels, type ActiveEveningView, type PresentedResult, type PresentedTransaction } from "./currentEvening.ts";
+import { classifySubmissionFailure, submissionActions, submissionMessages, type SubmissionFailure } from "./submission.ts";
 import { TransactionSheet } from "./TransactionSheet.tsx";
 
 export function CurrentEveningScreen({
@@ -21,6 +22,9 @@ export function CurrentEveningScreen({
   const [starting, setStarting] = useState(false);
   const [startError, setStartError] = useState<string | null>(null);
   const [sheet, setSheet] = useState<{ mode: "create"; playerId: string | null } | { mode: "edit"; transactionId: string } | null>(null);
+  const [reviewing, setReviewing] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [submitFailure, setSubmitFailure] = useState<SubmissionFailure | null>(null);
 
   useEffect(() => {
     let active = true;
@@ -44,6 +48,9 @@ export function CurrentEveningScreen({
   }, [evening, players]);
 
   const view = presentCurrentEvening(ready ? record : null, directory);
+  const actions = submissionActions(ready ? record : null);
+  const locked = submitting || !actions.canMutate;
+  const statusLabel = submitting || actions.canRetry ? statusLabels.pending : view.kind === "active" ? view.statusLabel : "";
   const playerId = search.get("player");
   const transactionId = search.get("transaction");
   const showHistory = search.get("view") === "transactions";
@@ -58,21 +65,44 @@ export function CurrentEveningScreen({
   }
 
   function openSheet(playerId: string | null) {
-    if (view.kind !== "active" || !view.canRecord) {
+    if (view.kind !== "active" || locked) {
       return;
     }
     setSheet({ mode: "create", playerId });
   }
 
   function openEditor(transaction: Transaction) {
-    if (view.kind !== "active" || !view.canRecord) {
+    if (view.kind !== "active" || locked) {
       return;
     }
     setSheet({ mode: "edit", transactionId: transaction.id });
   }
 
+  async function finishEvening() {
+    if (submitting || (!actions.canFinish && !actions.canRetry)) {
+      return;
+    }
+
+    setSubmitting(true);
+    setSubmitFailure(null);
+    try {
+      setRecord(await evening.submitEvening());
+      setReviewing(false);
+    } catch (error) {
+      try {
+        setRecord(await evening.readCurrent());
+      } catch {
+        // Keep the evening already on screen. Submission leaves it pending in local storage.
+      }
+      setSubmitFailure(classifySubmissionFailure(error));
+      setReviewing(false);
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
   async function startEvening() {
-    if (!view.canStart || starting) {
+    if (!actions.canStartAnother || submitting || starting) {
       return;
     }
 
@@ -138,7 +168,7 @@ export function CurrentEveningScreen({
           <TransactionDetail
             transaction={transaction}
             presented={presented}
-            canCorrect={view.canRecord}
+            canCorrect={!locked}
             evening={evening}
             onChanged={refreshEvening}
             onEdit={() => openEditor(transaction)}
@@ -159,7 +189,7 @@ export function CurrentEveningScreen({
         <header className="stack">
           <h1>כל הפעולות</h1>
           <p>{view.date}</p>
-          <p className="status">{view.statusLabel}</p>
+          <p className="status">{statusLabel}</p>
         </header>
         <article className="card totals">
           <p>
@@ -174,7 +204,18 @@ export function CurrentEveningScreen({
         ) : (
           <TransactionList items={view.history} empty="אין עדיין פעולות." scope="history" />
         )}
-        <AddAction disabled={!view.canRecord} onAdd={() => openSheet(null)} />
+        <AddAction disabled={locked} onAdd={() => openSheet(null)} />
+        <SubmissionPanel
+          view={view}
+          reviewing={reviewing}
+          submitting={submitting}
+          failure={submitFailure}
+          canFinish={actions.canFinish}
+          canRetry={actions.canRetry}
+          onReview={() => setReviewing(true)}
+          onCancel={() => setReviewing(false)}
+          onSubmit={() => void finishEvening()}
+        />
         {transactionSheet}
       </section>
     );
@@ -202,7 +243,7 @@ export function CurrentEveningScreen({
             <TransactionList items={detail.transactions} empty="אין פעולות לשחקן הזה." scope="evening" />
           </>
         )}
-        <AddAction disabled={!view.canRecord} onAdd={() => openSheet(playerId)} />
+        <AddAction disabled={locked} onAdd={() => openSheet(playerId)} />
         {transactionSheet}
       </section>
     );
@@ -213,9 +254,9 @@ export function CurrentEveningScreen({
       <header className="stack">
         <h1>{view.title}</h1>
         <p>{view.date}</p>
-        <p className="status">{view.statusLabel}</p>
+        <p className="status">{statusLabel}</p>
       </header>
-      <AddAction disabled={!view.canRecord} onAdd={() => openSheet(null)} />
+      <AddAction disabled={locked} onAdd={() => openSheet(null)} />
       <article className="card totals">
         <p>
           <span className="muted">כניסות</span>
@@ -256,7 +297,18 @@ export function CurrentEveningScreen({
           כל הפעולות
         </a>
       </section>
-      {view.canStart ? (
+      <SubmissionPanel
+        view={view}
+        reviewing={reviewing}
+        submitting={submitting}
+        failure={submitFailure}
+        canFinish={actions.canFinish}
+        canRetry={actions.canRetry}
+        onReview={() => setReviewing(true)}
+        onCancel={() => setReviewing(false)}
+        onSubmit={() => void finishEvening()}
+      />
+      {actions.canStartAnother && !submitting ? (
         <button type="button" className="button button-secondary" disabled={starting} onClick={() => void startEvening()}>
           התחלת ערב חדש
         </button>
@@ -265,6 +317,89 @@ export function CurrentEveningScreen({
       <PlayerPanel directory={players} onSelect={() => undefined} />
       {transactionSheet}
     </section>
+  );
+}
+
+function SubmissionPanel({
+  view,
+  reviewing,
+  submitting,
+  failure,
+  canFinish,
+  canRetry,
+  onReview,
+  onCancel,
+  onSubmit,
+}: {
+  view: ActiveEveningView;
+  reviewing: boolean;
+  submitting: boolean;
+  failure: SubmissionFailure | null;
+  canFinish: boolean;
+  canRetry: boolean;
+  onReview: () => void;
+  onCancel: () => void;
+  onSubmit: () => void;
+}) {
+  if (reviewing || submitting) {
+    return (
+      <article className="card stack">
+        <h2>סיכום לפני שליחה</h2>
+        <p>
+          <span className="muted">כניסות </span>
+          <strong>{view.totalBuyIns}</strong>
+        </p>
+        <p>
+          <span className="muted">יציאות </span>
+          <strong>{view.totalCashOuts}</strong>
+        </p>
+        <p>
+          <span className="muted">מאזן </span>
+          <ResultText result={view.balance} prominent />
+        </p>
+        <ul className="choice-list">
+          {view.players.map((player) => (
+            <li key={player.playerId} className="player-row">
+              <span className="player-name">{player.name}</span>
+              <ResultText result={player.net} />
+            </li>
+          ))}
+        </ul>
+        {submitting ? <p className="status">ממתין לשליחה</p> : null}
+        <div className="action-row">
+          <button type="button" className="button button-primary" disabled={submitting} onClick={onSubmit}>
+            שליחת הערב
+          </button>
+          <button type="button" className="button button-secondary" disabled={submitting} onClick={onCancel}>
+            חזרה
+          </button>
+        </div>
+      </article>
+    );
+  }
+
+  return (
+    <>
+      {failure !== null ? (
+        <p className="notice notice-alert" role="alert">
+          {submissionMessages[failure]}
+        </p>
+      ) : null}
+      {canFinish ? (
+        <button type="button" className="button button-secondary" onClick={onReview}>
+          סיום הערב
+        </button>
+      ) : null}
+      {canRetry ? (
+        <article className="card stack">
+          <p className="status">ממתין לשליחה</p>
+          {failure === null ? <p>הערב נשמר במכשיר ומחכה לשליחה.</p> : null}
+          <button type="button" className="button button-primary" onClick={onSubmit}>
+            שליחה מחדש
+          </button>
+        </article>
+      ) : null}
+    </>
   );
 }
 
