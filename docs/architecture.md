@@ -137,10 +137,11 @@ These decisions close gaps in the source specifications.
 8. The default session date is the device-local calendar date in `YYYY-MM-DD`.
 9. Amounts are positive whole currency units. Version 1 stores no currency code. The interface formats them with Hebrew grouping and an explicit `+` or `−` sign, without a currency symbol.
 10. The current evening shows the five newest transactions and links to the complete history.
-11. A player row opens that player's transactions for the current evening. Recording uses a bottom sheet. The main add action starts with no player selected; add from a player's details preselects that player. After a successful save, the sheet stays open, the amount clears, and the selected player and type remain selected.
+11. A player row opens that player's transactions for the current evening. Recording uses a bottom sheet. The main add action starts with no player selected; add from a player's details preselects that player. After a successful save, the sheet stays open, the amount clears, and the selected player and type remain selected. A second save, for a transaction or a new player, is ignored until the in-progress save settles.
 12. An immediate undo removes the transaction just saved. Edit and delete remain available for every draft transaction.
 13. Finishing an evening requires at least one transaction. The server still accepts an empty transaction list.
-14. A `409` response preserves the local session and its ID. The interface explains that the server already holds different content for that evening.
+14. A `409` response preserves the local session and its ID. The interface explains that the server already holds different content for that evening. The evening stays pending: it cannot be edited, and another evening cannot be started.
+15. If the active evening cannot be read, the current-evening screen shows a load error. It does not present the empty evening or offer to start an evening.
 
 ## Hebrew terminology
 

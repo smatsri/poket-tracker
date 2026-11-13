@@ -29,6 +29,7 @@ Required coverage:
 | Reverse or malformed date bounds | `400` |
 | Force a failure after session insertion and before the final transaction insert | No session row and no transaction rows |
 | Unexpected failure | `500`, `INTERNAL_ERROR`, and no stack trace or SQL in the body |
+| Insert loses a race on an existing session id | Identical body returns `200`; a different body returns `409`; one session row remains |
 
 The atomicity case can use a transaction ID collision discovered during the insert. The assertion is the absence of a partial session, not the specific collision technique.
 
@@ -54,6 +55,9 @@ Required submission-state coverage, using an in-memory repository double:
 - A network failure, `500`, or `409` stays `pending` and retains the original session ID and transactions.
 - Starting an evening is rejected while the active status is `draft` or `pending`.
 - Starting an evening after `submitted` creates a new session ID.
+- A second save started before the first settles does not create another transaction or another player.
+- A failed read of the active evening does not offer to start an evening.
+- An invalid percent-encoding in a history or statistics path does not throw and uses the list fallback.
 
 An in-memory IndexedDB double covers the repository contract. The browser store is verified by the manual restart check below. A browser automation dependency is not part of version 1.
 
@@ -63,7 +67,7 @@ Run this on a phone-sized viewport, 360px wide, in a Chromium browser. The serve
 
 1. Start an evening from the empty state and confirm the Hebrew empty and active screens read naturally from right to left.
 2. Create a player, create a second player with the same name, and confirm a duplicate warning appears without blocking the distinct saved player.
-3. Record a buy-in, rebuy, and cash-out in a few taps. Confirm the numeric keyboard, the retained player and type, and the cleared amount.
+3. Record a buy-in, rebuy, and cash-out in a few taps. Confirm the numeric keyboard, the retained player and type, and the cleared amount. A second tap during the save does not record a duplicate.
 4. Confirm player totals, the session balance, and the five-item recent activity update immediately.
 5. Refresh and restart the browser. Confirm the same evening and transactions return.
 6. Edit and delete a draft transaction. Confirm every derived balance changes.
