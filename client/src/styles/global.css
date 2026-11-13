@@ -1,0 +1,196 @@
+@import "@fontsource/heebo/hebrew-400.css";
+@import "@fontsource/heebo/hebrew-500.css";
+@import "@fontsource/heebo/hebrew-600.css";
+@import "@fontsource/heebo/hebrew-700.css";
+@import "@fontsource/heebo/latin-400.css";
+@import "@fontsource/heebo/latin-500.css";
+@import "@fontsource/heebo/latin-600.css";
+@import "@fontsource/heebo/latin-700.css";
+
+:root {
+  --color-background: #f5f6f4;
+  --color-surface: #ffffff;
+  --color-surface-secondary: #eef1ed;
+  --color-primary: #35c653;
+  --color-primary-soft: #e7f8e9;
+  --color-text: #18221d;
+  --color-text-secondary: #77817b;
+  --color-border: #e6eae6;
+  --color-positive: #249b45;
+  --color-negative: #d94b4b;
+  --color-warning: #d99a2b;
+  --radius-card: 20px;
+  --radius-control: 14px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+  --shadow-card: 0 8px 24px rgb(24 34 29 / 6%);
+  --nav-block-size: 64px;
+  --font-family: "Heebo", sans-serif;
+  color: var(--color-text);
+  background: var(--color-background);
+  font-family: var(--font-family);
+  font-size: 16px;
+  line-height: 1.45;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  min-height: 100%;
+}
+
+body {
+  margin: 0;
+}
+
+button,
+input {
+  font: inherit;
+}
+
+h1,
+h2,
+p {
+  margin: 0;
+}
+
+h1 {
+  font-size: 1.5rem;
+  font-weight: 700;
+  line-height: 1.25;
+}
+
+h2 {
+  font-size: 1.125rem;
+  font-weight: 600;
+}
+
+.shell {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  max-width: 30rem;
+  min-height: 100%;
+  margin-inline: auto;
+}
+
+.shell-main {
+  flex: 1;
+  padding-block: var(--space-5);
+  padding-inline: var(--space-4);
+  padding-block-end: calc(var(--nav-block-size) + env(safe-area-inset-bottom) + var(--space-5));
+}
+
+.stack {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.action-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.muted {
+  color: var(--color-text-secondary);
+  font-size: 0.875rem;
+  font-weight: 400;
+}
+
+.card {
+  background: var(--color-surface);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-card);
+  padding: var(--space-4);
+}
+
+.button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-block-size: 44px;
+  min-inline-size: 44px;
+  padding-block: var(--space-2);
+  padding-inline: var(--space-4);
+  border: 1px solid transparent;
+  border-radius: var(--radius-control);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.button-primary {
+  background: var(--color-primary);
+  color: var(--color-surface);
+}
+
+.button-secondary {
+  background: var(--color-surface);
+  color: var(--color-text);
+  border-color: var(--color-border);
+}
+
+.button-destructive {
+  background: transparent;
+  color: var(--color-negative);
+}
+
+.bottom-nav {
+  position: fixed;
+  inset-inline: 0;
+  bottom: 0;
+  display: flex;
+  width: 100%;
+  max-width: 30rem;
+  margin-inline: auto;
+  background: var(--color-surface);
+  border-block-start: 1px solid var(--color-border);
+  padding-block-end: env(safe-area-inset-bottom);
+}
+
+.bottom-nav a {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  min-block-size: 44px;
+  min-inline-size: 44px;
+  padding-block: var(--space-2);
+  padding-inline: var(--space-2);
+  color: var(--color-text-secondary);
+  font-size: 0.75rem;
+  font-weight: 500;
+  text-decoration: none;
+}
+
+.bottom-nav a[aria-current="page"] {
+  color: var(--color-primary);
+  background: var(--color-primary-soft);
+}
+
+.icon {
+  display: block;
+  width: 24px;
+  height: 24px;
+}
+
+:root[dir="rtl"] .icon-directional {
+  transform: scaleX(-1);
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}

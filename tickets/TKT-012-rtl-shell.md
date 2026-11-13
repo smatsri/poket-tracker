@@ -1,6 +1,6 @@
 # TKT-012 — Establish the Hebrew RTL application shell
 
-**Status:** todo  
+**Status:** done  
 **Issue:** #12  
 **Milestone:** M3 Live evening  
 **Depends on:** [TKT-001](TKT-001-scaffold-workspaces.md) (#1)
@@ -32,8 +32,8 @@ Create the shared visual foundation for a mobile Hebrew application.
 
 ## Acceptance criteria
 
-- [ ] The shell is Hebrew and RTL at a 360px viewport.
-- [ ] All three navigation labels are visible and reach the correct route.
-- [ ] The palette, light surfaces, rounded cards, and green primary action match the design language.
-- [ ] Navigation remains usable with a mobile safe-area inset.
-- [ ] No screen uses hardcoded left or right positioning for layout.
+- [x] The shell is Hebrew and RTL at a 360px viewport.
+- [x] All three navigation labels are visible and reach the correct route.
+- [x] The palette, light surfaces, rounded cards, and green primary action match the design language.
+- [x] Navigation remains usable with a mobile safe-area inset.
+- [x] No screen uses hardcoded left or right positioning for layout.
