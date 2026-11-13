@@ -210,6 +210,30 @@ h2 {
   color: var(--color-negative);
 }
 
+.cumulative-chart {
+  display: block;
+  width: 100%;
+  height: auto;
+  direction: ltr;
+}
+
+.cumulative-chart-zero {
+  stroke: var(--color-border);
+  stroke-width: 1;
+}
+
+.cumulative-chart-line {
+  fill: none;
+  stroke: var(--color-text);
+  stroke-width: 2;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+}
+
+.cumulative-chart circle {
+  fill: var(--color-primary);
+}
+
 .totals {
   display: flex;
   flex-direction: column;

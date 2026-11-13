@@ -63,6 +63,23 @@ export interface PlayerCumulativePoint {
   cumulative: number;
 }
 
+export interface CumulativeChartPoint {
+  sessionId: string;
+  date: string;
+  value: number;
+  x: number;
+  y: number;
+}
+
+export interface CumulativeChart {
+  width: number;
+  height: number;
+  zeroY: number | null;
+  plotLeft: number;
+  plotRight: number;
+  points: CumulativeChartPoint[];
+}
+
 export interface PlayerStatisticsView {
   playerId: string;
   name: string;
@@ -134,6 +151,42 @@ export function presentStatistics(documents: readonly SessionDocument[]): Statis
       href: statsPlayerPath(player.playerId),
       eveningsPlayed: playerCumulativeSeries(documents, player.playerId).length,
       result: presentResult(player.netResult),
+    })),
+  };
+}
+
+const chartPadding = 16;
+
+export function mapCumulativeChart(
+  points: readonly Pick<PlayerCumulativePoint, "sessionId" | "date" | "cumulative">[],
+  width: number,
+  height: number,
+): CumulativeChart {
+  const plotLeft = chartPadding;
+  const plotRight = Math.max(width - chartPadding, plotLeft);
+  if (points.length === 0) {
+    return { width, height, zeroY: null, plotLeft, plotRight, points: [] };
+  }
+
+  const min = Math.min(0, ...points.map((point) => point.cumulative));
+  const max = Math.max(0, ...points.map((point) => point.cumulative));
+  const span = max - min || 1;
+  const innerWidth = Math.max(width - chartPadding * 2, 0);
+  const innerHeight = Math.max(height - chartPadding * 2, 0);
+  const yFor = (value: number) => chartPadding + ((max - value) / span) * innerHeight;
+
+  return {
+    width,
+    height,
+    zeroY: yFor(0),
+    plotLeft,
+    plotRight,
+    points: points.map((point, index) => ({
+      sessionId: point.sessionId,
+      date: point.date,
+      value: point.cumulative,
+      x: chartPadding + (points.length === 1 ? innerWidth / 2 : (index / (points.length - 1)) * innerWidth),
+      y: yFor(point.cumulative),
     })),
   };
 }

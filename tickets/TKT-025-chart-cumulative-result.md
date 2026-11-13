@@ -1,6 +1,6 @@
 # TKT-025 — Chart a player's cumulative result over time
 
-**Status:** todo  
+**Status:** done  
 **Issue:** #25  
 **Milestone:** M6 Version 1.0: Historical Insights  
 **Depends on:** [TKT-023](TKT-023-player-history-progression.md) (#23)
@@ -31,8 +31,8 @@ Show how one player's cumulative result changes from evening to evening with a c
 
 ## Acceptance criteria
 
-- [ ] The player history screen shows a cumulative result chart when the player has at least one evening.
-- [ ] Chart points match the chronological cumulative series from TKT-023.
-- [ ] The chart remains usable at 360px width inside the existing Hebrew shell.
-- [ ] No new API endpoint is introduced.
-- [ ] Automated tests cover the data passed into the chart for representative series.
+- [x] The player history screen shows a cumulative result chart when the player has at least one evening.
+- [x] Chart points match the chronological cumulative series from TKT-023.
+- [x] The chart remains usable at 360px width inside the existing Hebrew shell.
+- [x] No new API endpoint is introduced.
+- [x] Automated tests cover the data passed into the chart for representative series.

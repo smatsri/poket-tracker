@@ -11,6 +11,7 @@ import {
   loadStatistics,
   parseStatsLocation,
   playerCumulativeSeries,
+  mapCumulativeChart,
   presentPlayerStatistics,
   presentStatistics,
   presentStatisticsFailure,
@@ -163,6 +164,44 @@ test("player progression counts evenings and accumulates nets oldest first", () 
   assert.match(source, /eveningsPlayed/);
   assert.match(source, /player\.progression/);
   assert.match(source, /statsCopy\.missingPlayer/);
+});
+
+test("cumulative chart points follow the chronological series", () => {
+  const empty = mapCumulativeChart([], 320, 160);
+  assert.deepEqual(empty.points, []);
+  assert.equal(empty.zeroY, null);
+
+  const single = mapCumulativeChart([{ sessionId: "session-b", date: "13 בנובמבר 2026", cumulative: 20 }], 100, 50);
+  assert.equal(single.points.length, 1);
+  assert.equal(single.points[0]?.value, 20);
+  assert.equal(single.points[0]?.x, 50);
+  assert.equal(single.points[0]?.y, 16);
+  assert.equal(single.zeroY, 34);
+
+  const series = playerCumulativeSeries([newer, older], "dana");
+  const chart = mapCumulativeChart(series, 100, 50);
+  assert.deepEqual(
+    chart.points.map((point) => [point.sessionId, point.value]),
+    [
+      ["session-a", -60],
+      ["session-b", -30],
+    ],
+  );
+  assert.deepEqual(
+    chart.points.map((point) => [point.x, point.y]),
+    [
+      [16, 34],
+      [84, 25],
+    ],
+  );
+  assert.equal(chart.points[chart.points.length - 1]?.value, series[series.length - 1]?.cumulative);
+  assert.ok((chart.points[0]?.y ?? 0) > (chart.points[1]?.y ?? 0));
+
+  const source = readFileSync(new URL("./StatisticsScreen.tsx", import.meta.url), "utf8");
+  assert.match(source, /CumulativeChart progression=\{player\.progression\}/);
+  const chartSource = readFileSync(new URL("./CumulativeChart.tsx", import.meta.url), "utf8");
+  assert.match(chartSource, /mapCumulativeChart/);
+  assert.doesNotMatch(chartSource, /fetch\(|\/api\//);
 });
 
 test("no completed sessions produces the Hebrew empty state", () => {

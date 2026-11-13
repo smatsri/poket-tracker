@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { onNavigate, useAppLocation } from "../../app/navigation.ts";
 import type { ApiClient, SessionDocument } from "../../data/api/client.ts";
+import { CumulativeChart } from "./CumulativeChart.tsx";
 import { ResultText } from "./ResultText.tsx";
 import {
   loadStatistics,
@@ -144,6 +145,9 @@ function PlayerHistory({ documents, playerId }: { documents: SessionDocument[]; 
           <span className="muted">{statsCopy.eveningsPlayed}</span>
           <strong>{player.eveningsPlayed}</strong>
         </p>
+      </article>
+      <article className="card">
+        <CumulativeChart progression={player.progression} />
       </article>
       <section className="stack">
         <h2>{statsCopy.progression}</h2>
