@@ -10,6 +10,7 @@ import { matchRoute } from "../../app/routes.ts";
 import {
   loadStatistics,
   parseStatsLocation,
+  playerCumulativeSeries,
   presentPlayerStatistics,
   presentStatistics,
   presentStatisticsFailure,
@@ -108,6 +109,57 @@ test("a player history lists only evenings that contain that player, newest firs
     ],
   );
   assert.equal(presentPlayerStatistics([older, newer], "absent"), null);
+});
+
+test("player progression counts evenings and accumulates nets oldest first", () => {
+  assert.equal(presentPlayerStatistics([], "dana"), null);
+  assert.equal(playerCumulativeSeries([], "dana").length, 0);
+  assert.equal(presentPlayerStatistics([older, newer], "absent"), null);
+
+  const aviHistory = presentPlayerStatistics([newer], "avi");
+  assert.ok(aviHistory !== null);
+  if (aviHistory === null) {
+    return;
+  }
+  assert.equal(aviHistory.eveningsPlayed, 1);
+  assert.deepEqual(
+    aviHistory.progression.map((point) => [point.sessionId, point.result.value, point.cumulative.value]),
+    [["session-b", 20, 20]],
+  );
+  assert.equal(aviHistory.progression[0]?.cumulative.value, aviHistory.overall.value);
+
+  const danaHistory = presentPlayerStatistics([newer, older], "dana");
+  assert.ok(danaHistory !== null);
+  if (danaHistory === null) {
+    return;
+  }
+  const series = playerCumulativeSeries([newer, older], "dana");
+  assert.equal(danaHistory.eveningsPlayed, 2);
+  assert.deepEqual(
+    series.map((point) => [point.sessionId, point.net, point.cumulative]),
+    [
+      ["session-a", -60, -60],
+      ["session-b", 30, -30],
+    ],
+  );
+  assert.deepEqual(
+    danaHistory.progression.map((point) => [point.sessionId, point.cumulative.value]),
+    series.map((point) => [point.sessionId, point.cumulative]),
+  );
+  assert.equal(danaHistory.overall.value, series[series.length - 1]?.cumulative);
+  assert.equal(
+    danaHistory.overall.value,
+    series.reduce((sum, point) => sum + point.net, 0),
+  );
+  assert.deepEqual(
+    danaHistory.evenings.map((evening) => evening.sessionId),
+    ["session-b", "session-a"],
+  );
+
+  const source = readFileSync(new URL("./StatisticsScreen.tsx", import.meta.url), "utf8");
+  assert.match(source, /eveningsPlayed/);
+  assert.match(source, /player\.progression/);
+  assert.match(source, /statsCopy\.missingPlayer/);
 });
 
 test("no completed sessions produces the Hebrew empty state", () => {

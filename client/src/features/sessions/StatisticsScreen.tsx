@@ -135,8 +135,27 @@ function PlayerHistory({ documents, playerId }: { documents: SessionDocument[]; 
           <span className="muted">מאזן</span>
           <ResultText result={player.overall} prominent />
         </p>
+        <p>
+          <span className="muted">{statsCopy.eveningsPlayed}</span>
+          <strong>{player.eveningsPlayed}</strong>
+        </p>
       </article>
-      <ul className="choice-list">
+      <section className="stack">
+        <h2>{statsCopy.progression}</h2>
+        <ul className="choice-list">
+          {player.progression.map((point) => (
+            <li key={point.sessionId}>
+              <div className="player-row">
+                <span className="player-name">{point.date}</span>
+                <ResultText result={point.cumulative} prominent />
+              </div>
+            </li>
+          ))}
+        </ul>
+      </section>
+      <section className="stack">
+        <h2>{statsCopy.byEvening}</h2>
+        <ul className="choice-list">
         {player.evenings.map((evening) => (
           <li key={evening.sessionId}>
             <a className="player-row" href={evening.href} onClick={(event) => onNavigate(event, evening.href)}>
@@ -145,7 +164,8 @@ function PlayerHistory({ documents, playerId }: { documents: SessionDocument[]; 
             </a>
           </li>
         ))}
-      </ul>
+        </ul>
+      </section>
     </section>
   );
 }

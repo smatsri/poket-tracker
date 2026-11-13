@@ -1,6 +1,6 @@
 # TKT-023 — Deepen player history with progression
 
-**Status:** todo  
+**Status:** done  
 **Issue:** #23  
 **Milestone:** M6 Version 1.0: Historical Insights  
 **Depends on:** [TKT-021](TKT-021-statistics.md) (#21)
@@ -33,8 +33,8 @@ Make an individual player's history show how many evenings they played and how t
 
 ## Acceptance criteria
 
-- [ ] The player history shows how many completed evenings include that player.
-- [ ] The screen exposes a chronological cumulative progression that matches summing per-evening nets in date order.
-- [ ] The final cumulative value equals the existing overall result for that player.
-- [ ] Players with no attended evenings still show the existing missing-player state.
-- [ ] Automated tests cover empty history, a single evening, and multiple evenings with mixed wins and losses.
+- [x] The player history shows how many completed evenings include that player.
+- [x] The screen exposes a chronological cumulative progression that matches summing per-evening nets in date order.
+- [x] The final cumulative value equals the existing overall result for that player.
+- [x] Players with no attended evenings still show the existing missing-player state.
+- [x] Automated tests cover empty history, a single evening, and multiple evenings with mixed wins and losses.

@@ -14,6 +14,9 @@ export const statsCopy = {
   transactions: "פעולות",
   players: "שחקנים",
   back: "חזרה לסיכומים",
+  eveningsPlayed: "ערבים",
+  progression: "התקדמות מצטברת",
+  byEvening: "לפי ערב",
   missingPlayer: "לשחקן הזה אין ערבים שהסתיימו.",
   networkError: "אין חיבור לשרת, ולכן אי אפשר להציג את הסיכומים.",
   loadError: "השרת לא הצליח להחזיר את הסיכומים.",
@@ -45,10 +48,26 @@ export interface PlayerEveningRow {
   result: PresentedResult;
 }
 
+export interface PlayerProgressPoint {
+  sessionId: string;
+  date: string;
+  result: PresentedResult;
+  cumulative: PresentedResult;
+}
+
+export interface PlayerCumulativePoint {
+  sessionId: string;
+  date: string;
+  net: number;
+  cumulative: number;
+}
+
 export interface PlayerStatisticsView {
   playerId: string;
   name: string;
+  eveningsPlayed: number;
   overall: PresentedResult;
+  progression: PlayerProgressPoint[];
   evenings: PlayerEveningRow[];
 }
 
@@ -117,36 +136,52 @@ export function presentStatistics(documents: readonly SessionDocument[]): Statis
   };
 }
 
+export function playerCumulativeSeries(documents: readonly SessionDocument[], playerId: string): PlayerCumulativePoint[] {
+  let cumulative = 0;
+  return [...documents].sort(oldestFirst).flatMap((document) => {
+    const result = calculatePlayerResults(document.session.transactions).find((player) => player.playerId === playerId);
+    if (result === undefined) {
+      return [];
+    }
+
+    cumulative += result.netResult;
+    return [
+      {
+        sessionId: document.session.id,
+        date: formatSessionDate(document.session.date),
+        net: result.netResult,
+        cumulative,
+      },
+    ];
+  });
+}
+
 export function presentPlayerStatistics(documents: readonly SessionDocument[], playerId: string): PlayerStatisticsView | null {
-  const names = new Map(playersOf(documents).map((player) => [player.id, player.name]));
-  const evenings = [...documents]
-    .sort(newestFirst)
-    .flatMap((document) => {
-      const result = calculatePlayerResults(document.session.transactions).find((player) => player.playerId === playerId);
-      if (result === undefined) {
-        return [];
-      }
-
-      return [
-        {
-          sessionId: document.session.id,
-          href: sessionSummaryPath(document.session.id),
-          date: formatSessionDate(document.session.date),
-          result: presentResult(result.netResult),
-        },
-      ];
-    });
-
-  if (evenings.length === 0) {
+  const series = playerCumulativeSeries(documents, playerId);
+  if (series.length === 0) {
     return null;
   }
 
+  const names = new Map(playersOf(documents).map((player) => [player.id, player.name]));
   const name = names.get(playerId);
+  const finalCumulative = series[series.length - 1]?.cumulative ?? 0;
   return {
     playerId,
     name: name !== undefined && name.length > 0 ? name : playerId,
-    overall: presentResult(evenings.reduce((sum, evening) => sum + evening.result.value, 0)),
-    evenings,
+    eveningsPlayed: series.length,
+    overall: presentResult(finalCumulative),
+    progression: series.map((point) => ({
+      sessionId: point.sessionId,
+      date: point.date,
+      result: presentResult(point.net),
+      cumulative: presentResult(point.cumulative),
+    })),
+    evenings: [...series].reverse().map((point) => ({
+      sessionId: point.sessionId,
+      href: sessionSummaryPath(point.sessionId),
+      date: point.date,
+      result: presentResult(point.net),
+    })),
   };
 }
 
@@ -179,6 +214,10 @@ function playersOf(documents: readonly SessionDocument[]): Player[] {
   }
 
   return [...players.values()];
+}
+
+function oldestFirst(left: SessionDocument, right: SessionDocument): number {
+  return newestFirst(right, left);
 }
 
 function newestFirst(left: SessionDocument, right: SessionDocument): number {
