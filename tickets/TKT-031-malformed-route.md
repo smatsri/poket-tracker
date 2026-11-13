@@ -1,6 +1,6 @@
 # TKT-031 — Ignore a malformed history or statistics path
 
-**Status:** todo  
+**Status:** done  
 **Issue:** #31  
 **Milestone:** M7 Contract hardening  
 **Depends on:** none
@@ -28,6 +28,6 @@ An invalid percent-encoding in a history or statistics path does not crash the s
 
 ## Acceptance criteria
 
-- [ ] `/history/%` and `/stats/%` return the list location and do not throw.
-- [ ] A valid encoded session id and player id still parse.
-- [ ] `npm test` from the repository root passes.
+- [x] `/history/%` and `/stats/%` return the list location and do not throw.
+- [x] A valid encoded session id and player id still parse.
+- [x] `npm test` from the repository root passes.

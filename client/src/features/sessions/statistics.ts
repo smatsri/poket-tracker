@@ -160,7 +160,12 @@ export function parseStatsLocation(pathname: string): StatisticsLocation {
     return list;
   }
 
-  const playerId = decodeURIComponent(path.slice(prefix.length));
+  let playerId: string;
+  try {
+    playerId = decodeURIComponent(path.slice(prefix.length));
+  } catch {
+    return list;
+  }
   if (playerId.length === 0 || playerId.includes("/")) {
     return list;
   }

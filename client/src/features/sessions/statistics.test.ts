@@ -351,6 +351,8 @@ test("statistics load the server session list and a player route stays in סיכ
   assert.equal(loaded.length, 1);
   assert.deepEqual(parseStatsLocation("/stats"), { screen: "list", playerId: null });
   assert.deepEqual(parseStatsLocation("/stats/avi"), { screen: "player", playerId: "avi" });
+  assert.deepEqual(parseStatsLocation("/stats/%"), { screen: "list", playerId: null });
+  assert.deepEqual(parseStatsLocation("/stats/%D7%93%D7%A0%D7%94"), { screen: "player", playerId: "דנה" });
   assert.equal(matchRoute("/stats/avi").id, "stats");
 
   const offline = presentStatisticsFailure(networkError("offline"));

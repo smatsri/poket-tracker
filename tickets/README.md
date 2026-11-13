@@ -63,7 +63,7 @@ These review notes stay out of the backlog:
 | [TKT-028](TKT-028-v1-acceptance.md) | Verify the Version 1.0 acceptance criteria | done | TKT-025, TKT-026, TKT-027 |
 | [TKT-029](TKT-029-single-flight-save.md) | Ignore a second save while one is in progress | done | None |
 | [TKT-030](TKT-030-evening-load-failure.md) | Show a failed evening load instead of an empty evening | done | None |
-| [TKT-031](TKT-031-malformed-route.md) | Ignore a malformed history or statistics path | todo | None |
+| [TKT-031](TKT-031-malformed-route.md) | Ignore a malformed history or statistics path | done | None |
 | [TKT-032](TKT-032-session-id-conflict.md) | Cover a concurrent session-id conflict | todo | None |
 
 ## Requirement coverage

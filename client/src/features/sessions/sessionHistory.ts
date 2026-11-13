@@ -58,6 +58,14 @@ export function sessionPlayerPath(sessionId: string, playerId: string): string {
   return `${sessionSummaryPath(sessionId)}/players/${encodeURIComponent(playerId)}`;
 }
 
+function decodeRoutePart(part: string): string | null {
+  try {
+    return decodeURIComponent(part);
+  } catch {
+    return null;
+  }
+}
+
 export function parseHistoryLocation(pathname: string): HistoryLocation {
   const path = pathname.length > 1 && pathname.endsWith("/") ? pathname.slice(0, -1) : pathname;
   const list: HistoryLocation = { screen: "list", sessionId: null, playerId: null };
@@ -66,7 +74,14 @@ export function parseHistoryLocation(pathname: string): HistoryLocation {
     return list;
   }
 
-  const parts = path.slice(prefix.length).split("/").map((part) => decodeURIComponent(part));
+  const parts: string[] = [];
+  for (const part of path.slice(prefix.length).split("/")) {
+    const decoded = decodeRoutePart(part);
+    if (decoded === null) {
+      return list;
+    }
+    parts.push(decoded);
+  }
   const sessionId = parts[0];
   if (sessionId === undefined || sessionId.length === 0) {
     return list;
