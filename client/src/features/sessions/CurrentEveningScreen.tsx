@@ -4,7 +4,8 @@ import type { PlayerDirectory } from "../players/directory.ts";
 import type { ActiveSessionRecord, Player, Transaction } from "../../domain/models.ts";
 import { navigate, onNavigate, useAppLocation } from "../../app/navigation.ts";
 import { PlayerPanel } from "../players/PlayerPanel.tsx";
-import { presentCurrentEvening, presentPlayerEvening, statusLabels, type ActiveEveningView, type PresentedResult, type PresentedTransaction } from "./currentEvening.ts";
+import { presentCurrentEvening, presentPlayerEvening, statusLabels, type ActiveEveningView, type PresentedTransaction } from "./currentEvening.ts";
+import { ResultText } from "./ResultText.tsx";
 import { classifySubmissionFailure, submissionActions, submissionMessages, type SubmissionFailure } from "./submission.ts";
 import { TransactionSheet } from "./TransactionSheet.tsx";
 
@@ -527,13 +528,5 @@ function TransactionDetail({
         </p>
       ) : null}
     </>
-  );
-}
-
-function ResultText({ result, prominent = false }: { result: PresentedResult; prominent?: boolean }) {
-  return (
-    <span dir="ltr" className={`money money-${result.tone}${prominent ? " money-prominent" : ""}`}>
-      {result.text}
-    </span>
   );
 }

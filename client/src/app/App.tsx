@@ -1,7 +1,9 @@
+import type { ApiClient } from "../data/api/client.ts";
 import { CurrentEveningIcon, HistoryIcon, StatsIcon } from "./icons.tsx";
 import { onNavigate, useAppLocation } from "./navigation.ts";
 import { navigation, type RouteId } from "./routes.ts";
 import { CurrentEveningScreen } from "../features/sessions/CurrentEveningScreen.tsx";
+import { HistoryScreen } from "../features/sessions/HistoryScreen.tsx";
 import type { EveningService } from "../features/sessions/evening.ts";
 import type { PlayerDirectory } from "../features/players/directory.ts";
 
@@ -11,14 +13,22 @@ const icons: Record<RouteId, () => React.JSX.Element> = {
   stats: StatsIcon,
 };
 
-export function App({ evening, players }: { evening: EveningService; players: PlayerDirectory }) {
+export function App({
+  evening,
+  players,
+  api,
+}: {
+  evening: EveningService;
+  players: PlayerDirectory;
+  api: ApiClient;
+}) {
   const { route } = useAppLocation();
 
   return (
     <div className="shell">
       <main className="shell-main">
         {route.id === "current" ? <CurrentEveningScreen evening={evening} players={players} /> : null}
-        {route.id === "history" ? <Placeholder title="היסטוריה" body="ערבים שהסתיימו יופיעו כאן." /> : null}
+        {route.id === "history" ? <HistoryScreen api={api} /> : null}
         {route.id === "stats" ? <Placeholder title="סיכומים" body="הסיכומים יופיעו כאן." /> : null}
         {route.id === "unknown" ? <Placeholder title="העמוד לא נמצא" body="בחרו יעד מהניווט למטה." /> : null}
       </main>

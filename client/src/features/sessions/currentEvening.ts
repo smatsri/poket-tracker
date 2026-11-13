@@ -117,7 +117,7 @@ function presentPlayer(player: PlayerSessionResult, names: ReadonlyMap<string, s
   };
 }
 
-function presentResult(value: number): PresentedResult {
+export function presentResult(value: number): PresentedResult {
   return {
     value,
     text: formatResult(value),

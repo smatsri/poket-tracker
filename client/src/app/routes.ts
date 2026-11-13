@@ -19,6 +19,10 @@ export function matchRoute(pathname: string): AppRoute {
     return match;
   }
 
+  if (path.startsWith("/history/")) {
+    return { id: "history", path, label: "היסטוריה" };
+  }
+
   return { id: "unknown", path, label: "העמוד לא נמצא" };
 }
 

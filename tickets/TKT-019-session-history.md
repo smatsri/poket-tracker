@@ -1,6 +1,6 @@
 # TKT-019 — Browse previous evenings
 
-**Status:** todo  
+**Status:** done  
 **Issue:** #19  
 **Milestone:** M4 Review  
 **Depends on:** [TKT-006](TKT-006-read-sessions.md) (#6), [TKT-010](TKT-010-api-client.md) (#10), [TKT-012](TKT-012-rtl-shell.md) (#12)
@@ -31,8 +31,8 @@ Show completed evenings from the server, newest first.
 
 ## Acceptance criteria
 
-- [ ] Completed sessions appear newest first with the four required facts.
-- [ ] Choosing a session opens its summary route.
-- [ ] No sessions produces the Hebrew empty state.
-- [ ] A failed load explains the failure and can be retried.
-- [ ] Opening history does not change the active draft or pending session.
+- [x] Completed sessions appear newest first with the four required facts.
+- [x] Choosing a session opens its summary route.
+- [x] No sessions produces the Hebrew empty state.
+- [x] A failed load explains the failure and can be retried.
+- [x] Opening history does not change the active draft or pending session.

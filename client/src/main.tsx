@@ -24,6 +24,6 @@ if (apiBaseUrl.length === 0) {
 
 createRoot(root).render(
   <StrictMode>
-    <App evening={evening} players={players} />
+    <App evening={evening} players={players} api={api} />
   </StrictMode>,
 );
