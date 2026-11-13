@@ -23,6 +23,7 @@ test("navigation labels reach the three routes", () => {
   assert.equal(matchRoute("/history/").id, "history");
   assert.equal(matchRoute("/history/session-1").id, "history");
   assert.equal(matchRoute("/stats").id, "stats");
+  assert.equal(matchRoute("/stats/player-1").id, "stats");
   assert.equal(matchRoute("/missing").id, "unknown");
 });
 

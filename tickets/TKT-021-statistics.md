@@ -1,6 +1,6 @@
 # TKT-021 — Show cross-evening statistics
 
-**Status:** todo  
+**Status:** done  
 **Issue:** #21  
 **Milestone:** M4 Review  
 **Depends on:** [TKT-008](TKT-008-domain-calculations.md) (#8), [TKT-019](TKT-019-session-history.md) (#19)
@@ -30,8 +30,8 @@ Show the first-version aggregate results for all stored evenings.
 
 ## Acceptance criteria
 
-- [ ] Session and transaction counts match the returned sessions.
-- [ ] A player's overall result is the sum of that player's per-session nets.
-- [ ] Ranking is highest to lowest, with names breaking ties.
-- [ ] A player history lists only evenings that contain that player.
-- [ ] The empty state appears before any session has been submitted.
+- [x] Session and transaction counts match the returned sessions.
+- [x] A player's overall result is the sum of that player's per-session nets.
+- [x] Ranking is highest to lowest, with names breaking ties.
+- [x] A player history lists only evenings that contain that player.
+- [x] The empty state appears before any session has been submitted.

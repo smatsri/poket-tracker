@@ -4,6 +4,7 @@ import { onNavigate, useAppLocation } from "./navigation.ts";
 import { navigation, type RouteId } from "./routes.ts";
 import { CurrentEveningScreen } from "../features/sessions/CurrentEveningScreen.tsx";
 import { HistoryScreen } from "../features/sessions/HistoryScreen.tsx";
+import { StatisticsScreen } from "../features/sessions/StatisticsScreen.tsx";
 import type { EveningService } from "../features/sessions/evening.ts";
 import type { PlayerDirectory } from "../features/players/directory.ts";
 
@@ -29,7 +30,7 @@ export function App({
       <main className="shell-main">
         {route.id === "current" ? <CurrentEveningScreen evening={evening} players={players} /> : null}
         {route.id === "history" ? <HistoryScreen api={api} /> : null}
-        {route.id === "stats" ? <Placeholder title="סיכומים" body="הסיכומים יופיעו כאן." /> : null}
+        {route.id === "stats" ? <StatisticsScreen api={api} /> : null}
         {route.id === "unknown" ? <Placeholder title="העמוד לא נמצא" body="בחרו יעד מהניווט למטה." /> : null}
       </main>
       <nav className="bottom-nav" aria-label="ניווט ראשי">

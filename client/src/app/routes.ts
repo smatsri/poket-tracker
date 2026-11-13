@@ -23,6 +23,10 @@ export function matchRoute(pathname: string): AppRoute {
     return { id: "history", path, label: "היסטוריה" };
   }
 
+  if (path.startsWith("/stats/")) {
+    return { id: "stats", path, label: "סיכומים" };
+  }
+
   return { id: "unknown", path, label: "העמוד לא נמצא" };
 }
 
