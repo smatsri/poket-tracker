@@ -4,7 +4,7 @@ Version 1 uses automated tests for domain rules and server integrity, plus a man
 
 ## Server automation
 
-Use Node's built-in test runner from the server package. Server tests use an in-memory PGlite database and close it before exit. They do not open `DATABASE_URL`. Tests call the Express application in-process, so they do not depend on a fixed port.
+Use Node's built-in test runner from the server package. Without `DATABASE_URL`, server tests use an in-memory PGlite database and close it before exit. When `DATABASE_URL` is set, the same suite uses that empty PostgreSQL database, including two overlapping submits of one session id. Each test file gets its own schema and drops it on close. Tests call the Express application in-process, so they do not depend on a fixed port.
 
 Required coverage:
 
@@ -30,6 +30,7 @@ Required coverage:
 | Force a failure after session insertion and before the final transaction insert | No session row and no transaction rows |
 | Unexpected failure | `500`, `INTERNAL_ERROR`, and no stack trace or SQL in the body |
 | Insert loses a race on an existing session id | Identical body returns `200`; a different body returns `409`; one session row remains |
+| Two overlapping submits of one new session id on PostgreSQL | Identical bodies return `201` and `200` and store one session. Different bodies return one success and `409`, and the stored body matches the winner. No session is left without its transactions, and no transaction is left without its session. Skipped on PGlite |
 
 The atomicity case can use a transaction ID collision discovered during the insert. The assertion is the absence of a partial session, not the specific collision technique.
 

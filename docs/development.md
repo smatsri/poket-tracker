@@ -42,7 +42,7 @@ VITE_API_BASE_URL=http://localhost:3001
 
 Start local PostgreSQL with `docker compose up -d` before the server. That Compose file runs only PostgreSQL 16: port 5432, database `poker`, user `postgres`, password `postgres`, and a named volume. It does not run the client or the server. Set `DATABASE_URL` in the environment. Do not commit an env file.
 
-The server reads `DATABASE_URL`, opens a pool, and applies numbered migrations on startup. `npm test` uses in-memory PGlite and does not need Compose or a Neon database. CORS allows only `CLIENT_ORIGIN`.
+The server reads `DATABASE_URL`, opens a pool, and applies numbered migrations on startup. `npm test` uses in-memory PGlite and does not need Compose or a Neon database. When `DATABASE_URL` points at an empty PostgreSQL database, that same command runs the server suite there, including overlapping session submits. CORS allows only `CLIENT_ORIGIN`.
 
 No authentication variables exist in version 1. Do not add secrets to the repository.
 

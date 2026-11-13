@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { createServer } from "node:http";
 import { after, before, beforeEach, describe, test } from "node:test";
 import type { Express } from "express";
+import { Client } from "pg";
 import { createApp } from "../app.js";
 import { closeDatabase, getDatabase, openTestDatabase } from "../db/database.js";
 import { insertPlayer } from "../db/players.js";
@@ -122,6 +123,8 @@ async function postSession(url: string, body: unknown): Promise<{ status: number
   });
   return { status: response.status, body: await response.json() };
 }
+
+const onPostgres = Boolean(process.env.DATABASE_URL);
 
 describe("session submission", { concurrency: false }, () => {
   let url = "";
@@ -492,4 +495,138 @@ describe("session submission", { concurrency: false }, () => {
     assert.deepEqual(response.body.players, []);
     assert.deepEqual(await counts(), { sessions: 1, transactions: 0 });
   });
+
+  test(
+    "identical overlapping submits store one session and return 201 and 200",
+    { skip: onPostgres ? false : "requires PostgreSQL" },
+    async () => {
+      const body = sessionBody({ id: "session-overlap" });
+      const [first, second] = await overlappingPosts(url, [body, body]);
+      const statuses = [first.status, second.status].sort();
+
+      assert.deepEqual(statuses, [200, 201]);
+      assertSessionDocument(first.body);
+      assertSessionDocument(second.body);
+      assert.equal(first.body.createdAt, second.body.createdAt);
+      assert.deepEqual(
+        first.body.transactions.map((transaction) => transaction.id),
+        ["tx-001", "tx-002"],
+      );
+      await assertStoredSession(url, "session-overlap", first.status === 201 ? first.body : second.body);
+      await assertNoPartialRows(["tx-001", "tx-002"]);
+    },
+  );
+
+  test(
+    "conflicting overlapping submits keep the winner and return 409",
+    { skip: onPostgres ? false : "requires PostgreSQL" },
+    async () => {
+      const winnerBody = sessionBody({ id: "session-overlap" });
+      const loserBody = sessionBody({
+        id: "session-overlap",
+        transactions: [{ ...buyIn, amount: 90 }, cashOut],
+      });
+      const [first, second] = await overlappingPosts(url, [winnerBody, loserBody]);
+      const responses = [first, second];
+      const winner = responses.find((response) => response.status === 201);
+      const loser = responses.find((response) => response.status === 409);
+
+      assert.ok(winner);
+      assert.ok(loser);
+      assert.equal(responses.every((response) => response.status === 201 || response.status === 409), true);
+      assertSessionDocument(winner.body);
+      const storedBuyIn = winner.body.transactions.find((transaction) => transaction.id === "tx-001");
+      assert.ok(storedBuyIn);
+      assert.deepEqual(loser.body, {
+        error: { code: "CONFLICT", message: "Session already exists with different content" },
+      });
+      await assertStoredSession(url, "session-overlap", winner.body);
+      await assertNoPartialRows(["tx-001", "tx-002"]);
+      const amount = await getDatabase().query<{ amount: number }>(
+        "SELECT amount FROM transactions WHERE id = $1",
+        ["tx-001"],
+      );
+      assert.equal(Number(amount.rows[0]?.amount), storedBuyIn.amount);
+    },
+  );
 });
+
+async function assertStoredSession(url: string, id: string, expected: unknown): Promise<void> {
+  const response = await fetch(`${url}/api/sessions/${id}`);
+  assert.equal(response.status, 200);
+  assert.deepEqual(await response.json(), expected);
+}
+
+async function assertNoPartialRows(transactionIds: string[]): Promise<void> {
+  const database = getDatabase();
+  const orphans = await database.query<{ count: number }>(
+    `SELECT COUNT(*)::int AS count
+     FROM transactions
+     WHERE NOT EXISTS (SELECT 1 FROM sessions WHERE sessions.id = transactions.session_id)`,
+  );
+  const bareSessions = await database.query<{ count: number }>(
+    `SELECT COUNT(*)::int AS count
+     FROM sessions
+     WHERE NOT EXISTS (
+       SELECT 1 FROM transactions WHERE transactions.session_id = sessions.id
+     )`,
+  );
+  assert.equal(Number(orphans.rows[0]?.count), 0);
+  assert.equal(Number(bareSessions.rows[0]?.count), 0);
+  assert.deepEqual(await counts(), { sessions: 1, transactions: transactionIds.length });
+}
+
+async function overlappingPosts(
+  url: string,
+  bodies: [Record<string, unknown>, Record<string, unknown>],
+): Promise<[{ status: number; body: unknown }, { status: number; body: unknown }]> {
+  let arrivals = 0;
+  let release: () => void = () => undefined;
+  const bothEntered = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+
+  getDatabase().setQueryInterceptor(async (sql) => {
+    if (!sql.includes("FROM sessions WHERE id = $1") || arrivals >= 2) {
+      return undefined;
+    }
+
+    arrivals += 1;
+    if (arrivals >= 2) {
+      await assertTwoOpenTransactions();
+      release();
+    }
+    await bothEntered;
+    return { rows: [] };
+  });
+
+  try {
+    return await Promise.all([postSession(url, bodies[0]), postSession(url, bodies[1])]);
+  } finally {
+    release();
+    getDatabase().setQueryInterceptor(undefined);
+  }
+}
+
+async function assertTwoOpenTransactions(): Promise<void> {
+  const connectionString = process.env.DATABASE_URL;
+  assert.ok(connectionString);
+  const client = new Client({ connectionString, application_name: "poker-overlap-watch" });
+  await client.connect();
+  try {
+    const waiting = await client.query<{ count: number }>(
+      `SELECT COUNT(*)::int AS count
+       FROM pg_stat_activity
+       WHERE datname = current_database()
+         AND application_name = $1
+         AND state = 'idle in transaction'`,
+      [`poker-test-${process.pid}`],
+    );
+    assert.ok(
+      Number(waiting.rows[0]?.count) >= 2,
+      "overlapping submits did not hold two PostgreSQL connections",
+    );
+  } finally {
+    await client.end();
+  }
+}

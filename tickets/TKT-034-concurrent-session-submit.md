@@ -1,6 +1,6 @@
 # TKT-034 — Prove concurrent session submits on Postgres
 
-**Status:** todo  
+**Status:** done  
 **Issue:** #34  
 **Milestone:** M8 Production deployment  
 **Depends on:** [TKT-033](TKT-033-postgresql-access.md) (#33)
@@ -29,8 +29,8 @@ Two overlapping submits of one new session id end in one stored session, with th
 
 ## Acceptance criteria
 
-- [ ] Identical overlapping submits store one session and return `201` and `200`.
-- [ ] Conflicting overlapping submits store one unchanged winner and return `409` for the loser.
-- [ ] Neither case leaves a session without its transactions, or transactions without their session.
-- [ ] `npm test` with no `DATABASE_URL` still passes on PGlite.
-- [ ] The same suite passes against the empty Postgres service.
+- [x] Identical overlapping submits store one session and return `201` and `200`.
+- [x] Conflicting overlapping submits store one unchanged winner and return `409` for the loser.
+- [x] Neither case leaves a session without its transactions, or transactions without their session.
+- [x] `npm test` with no `DATABASE_URL` still passes on PGlite.
+- [x] The same suite passes against the empty Postgres service.

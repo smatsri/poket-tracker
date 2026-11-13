@@ -1,3 +1,4 @@
+import { randomBytes } from "node:crypto";
 import { Pool, type PoolClient, type PoolConfig, type QueryResultRow } from "pg";
 import { applyMigrations } from "./migrate.js";
 import type { Database, QueryInterceptor, QueryResult, Sql } from "./sql.js";
@@ -23,8 +24,17 @@ export async function openTestDatabase(): Promise<Database> {
     throw new Error("Database is already open");
   }
 
-  appDatabase = await createPgliteDatabase();
+  appDatabase = await createEphemeralDatabase();
   return appDatabase;
+}
+
+export async function createEphemeralDatabase(): Promise<Database> {
+  const connectionString = process.env.DATABASE_URL;
+  if (!connectionString) {
+    return createPgliteDatabase();
+  }
+
+  return createIsolatedPoolDatabase(connectionString);
 }
 
 export async function createPgliteDatabase(): Promise<Database> {
@@ -82,8 +92,25 @@ export async function closeDatabase(): Promise<void> {
   await database.close();
 }
 
-function createPoolDatabase(connectionString: string): Promise<Database> {
-  const pool = new Pool(poolConfig(connectionString));
+async function createIsolatedPoolDatabase(connectionString: string): Promise<Database> {
+  const schema = `test_${process.pid}_${randomBytes(4).toString("hex")}`;
+  const admin = new Pool(poolConfig(connectionString));
+  try {
+    await admin.query(`CREATE SCHEMA ${schema}`);
+  } finally {
+    await admin.end();
+  }
+
+  return createPoolDatabase(connectionString, schema);
+}
+
+function createPoolDatabase(connectionString: string, schema?: string): Promise<Database> {
+  const pool = new Pool({
+    ...poolConfig(connectionString),
+    ...(schema
+      ? { options: `-c search_path=${schema}`, application_name: `poker-test-${process.pid}` }
+      : {}),
+  });
   pool.on("error", (error: Error) => {
     console.error("PostgreSQL pool error", error);
   });
@@ -110,10 +137,28 @@ function createPoolDatabase(connectionString: string): Promise<Database> {
         client.release();
       }
     },
-    close: () => pool.end(),
+    close: async () => {
+      await pool.end();
+      if (!schema) {
+        return;
+      }
+
+      const cleanup = new Pool(poolConfig(connectionString));
+      try {
+        await cleanup.query(`DROP SCHEMA ${schema} CASCADE`);
+      } finally {
+        await cleanup.end();
+      }
+    },
   });
 
-  return applyMigrations(database).then(() => database);
+  return applyMigrations(database).then(
+    () => database,
+    async (error: unknown) => {
+      await database.close();
+      throw error;
+    },
+  );
 }
 
 function createDatabase(handlers: {
@@ -125,7 +170,7 @@ function createDatabase(handlers: {
 
   const wrap = (executor: Executor): Sql => ({
     async query<T>(text: string, params: unknown[] = []): Promise<QueryResult<T>> {
-      const intercepted = interceptor?.(text, params);
+      const intercepted = await interceptor?.(text, params);
       if (intercepted) {
         return { rows: intercepted.rows as T[] };
       }

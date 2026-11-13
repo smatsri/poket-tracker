@@ -1,11 +1,11 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { createPgliteDatabase } from "./database.js";
+import { createEphemeralDatabase } from "./database.js";
 import { applyMigrations } from "./migrate.js";
 import type { Database } from "./sql.js";
 
 async function withDatabase(run: (database: Database) => Promise<void>): Promise<void> {
-  const database = await createPgliteDatabase();
+  const database = await createEphemeralDatabase();
   try {
     await run(database);
   } finally {
@@ -57,7 +57,7 @@ async function tableNames(database: Database): Promise<string[]> {
   const tables = await database.query<{ name: string }>(
     `SELECT table_name AS name
      FROM information_schema.tables
-     WHERE table_schema = 'public' AND table_type = 'BASE TABLE'
+     WHERE table_schema = current_schema() AND table_type = 'BASE TABLE'
      ORDER BY table_name`,
   );
   return tables.rows.map((table) => table.name);
@@ -119,7 +119,7 @@ test("stores no profit, balance, or statistics columns", async () => {
       const columns = await database.query<{ name: string }>(
         `SELECT column_name AS name
          FROM information_schema.columns
-         WHERE table_schema = 'public' AND table_name = $1`,
+         WHERE table_schema = current_schema() AND table_name = $1`,
         [table],
       );
       const names = columns.rows.map((column) => column.name);

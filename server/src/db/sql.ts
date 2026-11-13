@@ -10,7 +10,7 @@ export interface Sql {
 export type QueryInterceptor = (
   text: string,
   params: readonly unknown[],
-) => QueryResult<unknown> | undefined;
+) => QueryResult<unknown> | undefined | Promise<QueryResult<unknown> | undefined>;
 
 export interface Database extends Sql {
   transaction<T>(run: (sql: Sql) => Promise<T>): Promise<T>;
