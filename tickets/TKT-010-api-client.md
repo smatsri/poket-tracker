@@ -1,6 +1,6 @@
 # TKT-010 — Add the HTTP API layer
 
-**Status:** todo  
+**Status:** done  
 **Issue:** #10  
 **Milestone:** M2 Client core  
 **Depends on:** [TKT-001](TKT-001-scaffold-workspaces.md) (#1), [TKT-008](TKT-008-domain-calculations.md) (#8)
@@ -31,7 +31,7 @@ Isolate all HTTP communication behind one client API layer that follows the Open
 
 ## Acceptance criteria
 
-- [ ] Each contract operation has one function and no component needs to call `fetch`.
-- [ ] A successful session response becomes domain transactions carrying their parent session ID.
-- [ ] Network failure, `400`, `404`, `409`, and `500` are distinguishable by the caller.
-- [ ] Request bodies contain only fields allowed by the OpenAPI write schemas.
+- [x] Each contract operation has one function and no component needs to call `fetch`.
+- [x] A successful session response becomes domain transactions carrying their parent session ID.
+- [x] Network failure, `400`, `404`, `409`, and `500` are distinguishable by the caller.
+- [x] Request bodies contain only fields allowed by the OpenAPI write schemas.
