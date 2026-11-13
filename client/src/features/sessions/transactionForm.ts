@@ -1,4 +1,4 @@
-import type { TransactionType } from "../../domain/models.ts";
+import type { Transaction, TransactionType } from "../../domain/models.ts";
 import { transactionTypeLabels } from "./currentEvening.ts";
 
 export const amountFieldProps = {
@@ -37,6 +37,25 @@ export function emptyTransactionDraft(playerId: string | null = null): Transacti
 
 export function draftAfterSave(draft: TransactionDraft): TransactionDraft {
   return { playerId: draft.playerId, type: draft.type, amount: "" };
+}
+
+export function draftFromTransaction(transaction: Transaction): TransactionDraft {
+  return {
+    playerId: transaction.playerId,
+    type: transaction.type,
+    amount: String(transaction.amount),
+  };
+}
+
+export function editedTransaction(existing: Transaction, value: ReadyTransaction): Transaction {
+  return {
+    id: existing.id,
+    sessionId: existing.sessionId,
+    playerId: value.playerId,
+    type: value.type,
+    amount: value.amount,
+    timestamp: existing.timestamp,
+  };
 }
 
 export function parsePositiveInteger(value: string): number | null {

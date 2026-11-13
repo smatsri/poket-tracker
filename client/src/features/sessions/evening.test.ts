@@ -196,6 +196,25 @@ test("submitting a submitted evening does not send it again", async () => {
   assert.equal(client.calls.length, 1);
 });
 
+test("editing changes player, type, and amount without a new id or timestamp", async () => {
+  const repository = new MemoryLocalRepository();
+  const service = createEveningService(repository, api(() => { throw new Error("unused"); }), clock());
+  await service.startEvening();
+  const transaction = await service.addTransaction({ playerId: "player-001", type: "buy-in", amount: 50 });
+
+  const updated = await service.updateTransaction({
+    ...transaction,
+    playerId: "player-002",
+    type: "cash-out",
+    amount: 80,
+  });
+
+  assert.equal(updated.id, transaction.id);
+  assert.equal(updated.timestamp, transaction.timestamp);
+  assert.equal(updated.sessionId, transaction.sessionId);
+  assert.deepEqual((await repository.readActiveSession())?.session.transactions, [updated]);
+});
+
 test("edit and delete replace the saved transaction only after the repository confirms", async () => {
   const repository = new MemoryLocalRepository();
   const service = createEveningService(repository, api(() => { throw new Error("unused"); }), clock());

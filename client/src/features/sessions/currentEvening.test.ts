@@ -3,7 +3,7 @@ import test from "node:test";
 import { calculateSessionResult } from "../../domain/calculations.ts";
 import { formatResult } from "../../domain/format.ts";
 import type { ActiveSessionRecord, Player, Transaction, TransactionType } from "../../domain/models.ts";
-import { presentCurrentEvening, presentPlayerEvening } from "./currentEvening.ts";
+import { canCorrectTransactions, presentCurrentEvening, presentPlayerEvening } from "./currentEvening.ts";
 
 const players: Player[] = [
   { id: "p1", name: "דנה", createdAt: "2026-11-13T18:00:00Z" },
@@ -47,6 +47,9 @@ test("the empty state can start an evening and a draft or pending evening cannot
   assert.equal(presentCurrentEvening(record("pending", transactions), players).canRecord, false);
   assert.equal(presentCurrentEvening(record("submitted", transactions), players).canStart, true);
   assert.equal(presentCurrentEvening(record("submitted", transactions), players).canRecord, false);
+  assert.equal(canCorrectTransactions("draft"), true);
+  assert.equal(canCorrectTransactions("pending"), false);
+  assert.equal(canCorrectTransactions("submitted"), false);
 });
 
 test("the overview and every player row match the domain calculations", () => {

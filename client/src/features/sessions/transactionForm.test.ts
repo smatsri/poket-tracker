@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { amountFieldProps, draftAfterSave, emptyTransactionDraft, parsePositiveInteger, validateTransactionDraft } from "./transactionForm.ts";
+import type { Transaction } from "../../domain/models.ts";
+import { amountFieldProps, draftAfterSave, draftFromTransaction, editedTransaction, emptyTransactionDraft, parsePositiveInteger, validateTransactionDraft } from "./transactionForm.ts";
 
 test("the amount field asks a mobile browser for a numeric keyboard", () => {
   assert.equal(amountFieldProps.inputMode, "numeric");
@@ -40,4 +41,31 @@ test("decimals and other non-integers are rejected instead of rounded", () => {
 test("a successful save keeps the player and type and clears the amount", () => {
   const next = draftAfterSave({ playerId: "player-001", type: "cash-out", amount: "80" });
   assert.deepEqual(next, { playerId: "player-001", type: "cash-out", amount: "" });
+});
+
+test("editing keeps the transaction id and timestamp", () => {
+  const existing: Transaction = {
+    id: "tx-001",
+    sessionId: "session-001",
+    playerId: "player-001",
+    type: "buy-in",
+    amount: 50,
+    timestamp: "2026-11-13T18:00:00Z",
+  };
+  assert.deepEqual(draftFromTransaction(existing), { playerId: "player-001", type: "buy-in", amount: "50" });
+
+  const ready = validateTransactionDraft({ playerId: "player-002", type: "cash-out", amount: "80" });
+  assert.equal(ready.ok, true);
+  if (!ready.ok) {
+    return;
+  }
+
+  assert.deepEqual(editedTransaction(existing, ready.value), {
+    id: "tx-001",
+    sessionId: "session-001",
+    playerId: "player-002",
+    type: "cash-out",
+    amount: 80,
+    timestamp: "2026-11-13T18:00:00Z",
+  });
 });

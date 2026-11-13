@@ -1,10 +1,10 @@
 import { useEffect, useState } from "react";
 import type { EveningService } from "./evening.ts";
 import type { PlayerDirectory } from "../players/directory.ts";
-import type { ActiveSessionRecord, Player } from "../../domain/models.ts";
+import type { ActiveSessionRecord, Player, Transaction } from "../../domain/models.ts";
 import { navigate, onNavigate, useAppLocation } from "../../app/navigation.ts";
 import { PlayerPanel } from "../players/PlayerPanel.tsx";
-import { presentCurrentEvening, presentPlayerEvening, type PresentedResult } from "./currentEvening.ts";
+import { presentCurrentEvening, presentPlayerEvening, type PresentedResult, type PresentedTransaction } from "./currentEvening.ts";
 import { TransactionSheet } from "./TransactionSheet.tsx";
 
 export function CurrentEveningScreen({
@@ -20,7 +20,7 @@ export function CurrentEveningScreen({
   const [ready, setReady] = useState(false);
   const [starting, setStarting] = useState(false);
   const [startError, setStartError] = useState<string | null>(null);
-  const [sheet, setSheet] = useState<{ playerId: string | null } | null>(null);
+  const [sheet, setSheet] = useState<{ mode: "create"; playerId: string | null } | { mode: "edit"; transactionId: string } | null>(null);
 
   useEffect(() => {
     let active = true;
@@ -45,6 +45,7 @@ export function CurrentEveningScreen({
 
   const view = presentCurrentEvening(ready ? record : null, directory);
   const playerId = search.get("player");
+  const transactionId = search.get("transaction");
   const showHistory = search.get("view") === "transactions";
   const detail = record !== null && playerId !== null ? presentPlayerEvening(record, playerId, directory) : null;
 
@@ -58,7 +59,14 @@ export function CurrentEveningScreen({
     if (view.kind !== "active" || !view.canRecord) {
       return;
     }
-    setSheet({ playerId });
+    setSheet({ mode: "create", playerId });
+  }
+
+  function openEditor(transaction: Transaction) {
+    if (view.kind !== "active" || !view.canRecord) {
+      return;
+    }
+    setSheet({ mode: "edit", transactionId: transaction.id });
   }
 
   async function startEvening() {
@@ -78,10 +86,13 @@ export function CurrentEveningScreen({
     }
   }
 
+  const editing = sheet?.mode === "edit" ? (record?.session.transactions.find((item) => item.id === sheet.transactionId) ?? null) : null;
   const transactionSheet =
-    sheet !== null ? (
+    sheet !== null && (sheet.mode === "create" || editing !== null) ? (
       <TransactionSheet
-        presetPlayerId={sheet.playerId}
+        key={sheet.mode === "edit" ? sheet.transactionId : `create:${sheet.playerId ?? ""}`}
+        presetPlayerId={sheet.mode === "create" ? sheet.playerId : null}
+        editing={editing}
         directory={players}
         evening={evening}
         onClose={() => setSheet(null)}
@@ -105,6 +116,33 @@ export function CurrentEveningScreen({
           {startError !== null ? <p className="notice notice-alert">{startError}</p> : null}
         </article>
         <PlayerPanel directory={players} onSelect={() => undefined} />
+      </section>
+    );
+  }
+
+  if (transactionId !== null && record !== null) {
+    const transaction = record.session.transactions.find((item) => item.id === transactionId) ?? null;
+    const presented = view.history.find((item) => item.id === transactionId) ?? null;
+    return (
+      <section className="stack evening">
+        <a href="/" onClick={(event) => onNavigate(event, "/")}>
+          חזרה לערב
+        </a>
+        {transaction === null || presented === null ? (
+          <article className="card">
+            <p>הפעולה לא נמצאה.</p>
+          </article>
+        ) : (
+          <TransactionDetail
+            transaction={transaction}
+            presented={presented}
+            canCorrect={view.canRecord}
+            evening={evening}
+            onChanged={refreshEvening}
+            onEdit={() => openEditor(transaction)}
+          />
+        )}
+        {transactionSheet}
       </section>
     );
   }
@@ -220,24 +258,107 @@ function AddAction({ disabled, onAdd }: { disabled: boolean; onAdd: () => void }
   );
 }
 
-function TransactionList({ items, empty }: { items: { id: string; playerName: string; typeLabel: string; amount: string; time: string }[]; empty: string }) {
+function TransactionList({ items, empty }: { items: PresentedTransaction[]; empty: string }) {
   if (items.length === 0) {
     return <p className="muted">{empty}</p>;
   }
 
   return (
     <ul className="choice-list">
-      {items.map((item) => (
-        <li key={item.id} className="activity-row">
-          <span>
-            <span className="player-name">{item.playerName}</span>
-            <span className="muted">{item.typeLabel}</span>
-          </span>
-          <span className="money">{item.amount}</span>
-          <span className="muted">{item.time}</span>
-        </li>
-      ))}
+      {items.map((item) => {
+        const href = `/?transaction=${encodeURIComponent(item.id)}`;
+        return (
+          <li key={item.id}>
+            <a className="activity-row" href={href} onClick={(event) => onNavigate(event, href)}>
+              <span>
+                <span className="player-name">{item.playerName}</span>
+                <span className="muted">{item.typeLabel}</span>
+              </span>
+              <span className="money">{item.amount}</span>
+              <span className="muted">{item.time}</span>
+            </a>
+          </li>
+        );
+      })}
     </ul>
+  );
+}
+
+function TransactionDetail({
+  transaction,
+  presented,
+  canCorrect,
+  evening,
+  onChanged,
+  onEdit,
+}: {
+  transaction: Transaction;
+  presented: PresentedTransaction;
+  canCorrect: boolean;
+  evening: EveningService;
+  onChanged: () => Promise<void>;
+  onEdit: () => void;
+}) {
+  const [confirming, setConfirming] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  async function remove() {
+    setDeleting(true);
+    setError(null);
+    let removed = false;
+    try {
+      await evening.deleteTransaction(transaction.id);
+      removed = true;
+      await onChanged();
+    } catch {
+      if (!removed) {
+        setError("לא הצלחנו למחוק את הפעולה.");
+        return;
+      }
+    } finally {
+      setDeleting(false);
+    }
+    navigate("/");
+  }
+
+  return (
+    <>
+      <header className="stack">
+        <h1>{presented.playerName}</h1>
+        <p>{presented.typeLabel}</p>
+        <p className="money money-prominent">{presented.amount}</p>
+        <p className="muted">{presented.time}</p>
+      </header>
+      {canCorrect ? (
+        <div className="action-row">
+          <button type="button" className="button button-secondary" onClick={onEdit}>
+            עריכה
+          </button>
+          <button type="button" className="button button-destructive" onClick={() => setConfirming(true)}>
+            מחיקה
+          </button>
+        </div>
+      ) : null}
+      {confirming ? (
+        <div className="notice stack" role="status">
+          <p>למחוק את הפעולה?</p>
+          <div className="action-row">
+            <button type="button" className="button button-destructive" disabled={deleting} onClick={() => void remove()}>
+              מחיקה
+            </button>
+            <button type="button" className="button button-secondary" disabled={deleting} onClick={() => setConfirming(false)}>
+              להשאיר
+            </button>
+          </div>
+        </div>
+      ) : null}
+      {error !== null ? (
+        <p className="notice notice-alert" role="alert">
+          {error}
+        </p>
+      ) : null}
+    </>
   );
 }
 

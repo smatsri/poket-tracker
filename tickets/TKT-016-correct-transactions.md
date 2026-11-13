@@ -1,6 +1,6 @@
 # TKT-016 — Correct transactions before submission
 
-**Status:** todo  
+**Status:** done  
 **Issue:** #16  
 **Milestone:** M3 Live evening  
 **Depends on:** [TKT-015](TKT-015-add-transaction.md) (#15)
@@ -31,8 +31,8 @@ Let the user undo, edit, or delete an accidental draft transaction.
 
 ## Acceptance criteria
 
-- [ ] Undo removes the transaction that was just saved and updates all balances.
-- [ ] Edit can change player, type, and amount without creating a new transaction ID.
-- [ ] Delete requires confirmation and removes the transaction from the evening.
-- [ ] A persistence failure leaves the prior transaction and balances unchanged.
-- [ ] Pending and submitted sessions do not expose edit, delete, or undo.
+- [x] Undo removes the transaction that was just saved and updates all balances.
+- [x] Edit can change player, type, and amount without creating a new transaction ID.
+- [x] Delete requires confirmation and removes the transaction from the evening.
+- [x] A persistence failure leaves the prior transaction and balances unchanged.
+- [x] Pending and submitted sessions do not expose edit, delete, or undo.

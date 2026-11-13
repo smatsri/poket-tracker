@@ -1,6 +1,6 @@
 import { calculateSessionResult } from "../../domain/calculations.ts";
 import { formatResult } from "../../domain/format.ts";
-import type { ActiveSessionRecord, Player, PlayerSessionResult, Transaction } from "../../domain/models.ts";
+import type { ActiveSessionRecord, Player, PlayerSessionResult, SubmissionStatus, Transaction } from "../../domain/models.ts";
 
 const amountFormat = new Intl.NumberFormat("he-IL", { maximumFractionDigits: 0 });
 const dateFormat = new Intl.DateTimeFormat("he-IL", { day: "numeric", month: "long", year: "numeric" });
@@ -11,6 +11,10 @@ export const statusLabels = {
   pending: "ממתין לשליחה",
   submitted: "נשלח",
 } as const;
+
+export function canCorrectTransactions(status: SubmissionStatus): boolean {
+  return status === "draft";
+}
 
 export const transactionTypeLabels = {
   "buy-in": "כניסה",
@@ -79,7 +83,7 @@ export function presentCurrentEvening(
   return {
     kind: "active",
     canStart: record.status === "submitted",
-    canRecord: record.status === "draft",
+    canRecord: canCorrectTransactions(record.status),
     title: "ערב נוכחי",
     date: formatSessionDate(record.session.date),
     statusLabel: statusLabels[record.status],
