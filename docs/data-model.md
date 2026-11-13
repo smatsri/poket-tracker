@@ -89,7 +89,7 @@ CREATE INDEX idx_transactions_session_id ON transactions(session_id);
 CREATE INDEX idx_transactions_player_id ON transactions(player_id);
 ```
 
-The database connection must enable foreign keys on every connection. Zod validates calendar dates, RFC 3339 timestamps, identifier syntax, and unknown player references before SQL runs. The SQL checks are a second barrier, not the only validation.
+Startup applies this schema with `CREATE TABLE IF NOT EXISTS` and `CREATE INDEX IF NOT EXISTS`. The database connection enables foreign keys with `PRAGMA foreign_keys = ON` on every connection. Zod validates calendar dates, RFC 3339 timestamps, identifier syntax, and unknown player references before SQL runs. The SQL checks are a second barrier, not the only validation.
 
 Deleting or updating a stored session is outside version 1, so foreign keys do not need `ON DELETE` behavior.
 
@@ -115,7 +115,9 @@ sessionBalance = sessionCashOuts - sessionBuyIns
 
 `sessionBalance` equals the sum of player net results. A non-zero balance is valid. The client must not adjust amounts to force it to zero.
 
-Across completed sessions, a player's overall result is the sum of that player's per-session net results. Ranking sorts that overall result from highest to lowest, with player name as the tie-breaker.
+Across completed sessions, a player's overall result is the sum of that player's per-session net results. Ranking sorts that overall result from highest to lowest. Equal results sort by player name using Hebrew comparison, then by player ID.
+
+Player history walks completed sessions from oldest to newest (`date`, then `createdAt`, then `id`) and skips evenings where that player has no transactions. The cumulative result is the running sum of the remaining per-session nets. Evenings played is the length of that series, and its final value is the overall result. The results-by-session chart uses each session's `sessionBalance` in that same oldest-to-newest order. The player-comparison chart uses the ranked overall results. These views are calculated on the client and are not stored.
 
 ## Invariants
 

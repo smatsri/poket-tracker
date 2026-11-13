@@ -20,7 +20,7 @@ The authoritative contract is [docs/api/openapi.yaml](../docs/api/openapi.yaml).
 | M5 Acceptance | TKT-022 | Complete MVP checklist | done |
 | M6 Version 1.0: Historical Insights | TKT-023–TKT-028 | Group overview, player progression, and charts | done |
 
-M1 and M2 could proceed in parallel after TKT-001. M6 builds on the completed MVP statistics and history screens. Reuse existing client calculations and `GET /api/sessions`; do not add analytics endpoints unless a later ticket proves they are required.
+M0–M6 are done. Later work should reuse existing client calculations and `GET /api/sessions`. Do not add analytics endpoints unless a later ticket proves they are required.
 
 ## Sequence
 

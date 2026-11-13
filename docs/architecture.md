@@ -28,10 +28,9 @@ A session participant is any distinct player referenced by that session's transa
 
 ## Client structure
 
-Target layout:
-
 ```text
 client/src/
+  main.tsx
   app/                 # shell, routes, navigation
   domain/              # models, validation, calculations
   data/local/          # IndexedDB
@@ -41,17 +40,21 @@ client/src/
   styles/              # tokens and global RTL styles
 ```
 
-Domain code must stay independent of React, IndexedDB, and HTTP. The suggested feature folders can be created as the corresponding tickets need them.
+Domain code stays independent of React, IndexedDB, and HTTP.
 
-The client has three routes, selected from a persistent bottom navigation bar:
+The bottom navigation bar has three destinations. Nested paths stay on the parent item.
 
 | Route | Hebrew label | Purpose |
 | --- | --- | --- |
 | `/` | ערב נוכחי | Record the active evening |
 | `/history` | היסטוריה | Browse completed evenings |
-| `/stats` | סיכומים | Aggregate player results |
+| `/history/:sessionId` | היסטוריה | Read-only summary of one evening |
+| `/history/:sessionId/transactions` | היסטוריה | Transactions for that evening |
+| `/history/:sessionId/players/:playerId` | היסטוריה | That player's transactions in the evening |
+| `/stats` | סיכומים | Group overview, ranking, and charts |
+| `/stats/:playerId` | סיכומים | One player's progression across evenings |
 
-Player management opens from the current evening and the transaction sheet. It is not a primary navigation item.
+Player management opens from the current evening and the transaction sheet. It is not a primary navigation item. The statistics screen shows the completed-evening count, the transaction count, ranking with evenings played, a results-by-session chart, and a player-comparison chart. A player's page adds the cumulative-result chart.
 
 ## Local session lifecycle
 
@@ -104,16 +107,16 @@ The server compares a retry by session ID, session date, and the set of transact
 
 ## Server structure
 
-Target layout:
-
 ```text
 server/src/
-  server.ts            # process entry
+  index.ts             # process entry
   app.ts               # Express application
+  config.ts            # port, SQLite path, CORS origin
   routes/              # HTTP parsing and status codes
   services/            # player and session operations
   db/                  # connection, schema, SQL
-  validation/          # Zod schemas
+  schemas.ts           # Zod schemas
+  http/                # JSON error document
 ```
 
 Routes validate input, call one service, and translate the result to HTTP. Services coordinate database transactions. Database modules own SQL. There is no repository framework and no dependency-injection framework.
@@ -153,7 +156,7 @@ These decisions close gaps in the source specifications.
 | Balance | מאזן |
 | History | היסטוריה |
 | Summary | סיכום |
-| Statistics | סטטיסטיקות |
+| Statistics | סיכומים |
 
 Local status labels are `פתוח` for draft, `ממתין לשליחה` for pending, and `נשלח` for submitted.
 

@@ -1,17 +1,17 @@
 # Poker Tracker – Product Roadmap 1.0
 
-**Status:** Planned  
+**Status:** Done  
 **Version:** 1.0  
-**Previous milestone:** MVP (M0–M5)  
-**Active milestone:** M6 Version 1.0: Historical Insights (`TKT-023`–`TKT-028`)
+**Previous milestone:** MVP (M0–M5), complete  
+**Shipped in:** M6 Version 1.0: Historical Insights (`TKT-023`–`TKT-028`)
 
 ## 1. Product direction
 
 Poker Tracker is a tool for managing and understanding the ongoing activity of one regular poker group.
 
-The application currently supports recording poker evenings, reviewing completed sessions, and calculating basic player statistics.
+The application records poker evenings, reviews completed sessions, and calculates player statistics.
 
-Version 1.0 should build on that foundation and make the group's history more useful and understandable over time.
+Version 1.0 builds on that foundation and makes the group's history more useful and understandable over time. That work is shipped. Acceptance evidence is in [TKT-028](../tickets/TKT-028-v1-acceptance.md).
 
 The goal is not to build a professional poker analytics platform. It is to provide a clear picture of the group's activity and financial results.
 
@@ -33,42 +33,38 @@ These constraints keep the product focused and avoid introducing unnecessary com
 
 **Turn the existing session history into a useful longitudinal view of the poker group.**
 
-The work should focus on three areas.
+The shipped work covers three areas.
 
 ### 3.1 Group overview
 
-Improve the existing statistics screen to provide a clearer overview of the group's history.
-
-Potential information:
+The statistics screen (`/stats`, סיכומים) shows:
 
 - Total number of completed evenings.
 - Total number of transactions.
-- Overall group results.
-- Player ranking by cumulative net result.
-- Changes in results over time.
+- Player ranking by cumulative net result, including evenings played.
+- Results by session, as a chart of each evening's session balance.
+- Player comparison, as a chart of cumulative results.
+
+Players with no transactions stay out of the ranking and the comparison chart.
 
 ### 3.2 Player history
 
-Make it easier to understand an individual player's activity across multiple evenings.
+A player's page (`/stats/:playerId`) shows:
 
-A player view should include:
-
-- Cumulative profit/loss.
+- Cumulative profit/loss, equal to that player's overall result.
 - Number of evenings played.
 - Results for individual evenings.
-- Historical progression of the player's cumulative result.
+- Historical progression of the player's cumulative result, oldest evening first.
 
 ### 3.3 Data visualization
 
-Introduce a small number of meaningful charts.
-
-Initial candidates:
+Three charts are included:
 
 1. **Cumulative result over time** – how a player's overall result changes from evening to evening.
-2. **Results by session** – profit/loss for each player in individual evenings.
+2. **Results by session** – the group's session balance for each evening.
 3. **Player comparison** – cumulative results across the group.
 
-Charts should support the existing statistics and history, not replace them.
+Charts support the existing statistics and history. They do not replace them. The results-by-session chart is the group's session balance (cash-outs minus buy-ins), not each player's result inside that evening.
 
 The first implementation should prioritize clarity and mobile usability over visual complexity.
 
@@ -100,7 +96,7 @@ These may be considered in later versions if actual usage justifies them.
 
 ## 6. Definition of done
 
-Version 1.0 is complete when:
+Version 1.0 is complete. [TKT-028](../tickets/TKT-028-v1-acceptance.md) recorded that:
 
 - The existing MVP functionality continues to work.
 - The group overview provides a useful picture of results over time.
@@ -112,9 +108,7 @@ Version 1.0 is complete when:
 
 ## 7. Development approach
 
-Version 1.0 should be developed incrementally.
-
-Suggested order:
+Version 1.0 was developed incrementally, in this order:
 
 1. Review the existing statistics and history implementation.
 2. Define the exact information and interactions required for the group overview.
@@ -124,7 +118,7 @@ Suggested order:
 6. Implement the new views and charts.
 7. Test calculations, historical consistency, and mobile usability.
 
-Do not begin implementation by redesigning the architecture. First establish what can be reused.
+No analytics endpoints were added. The views calculate from sessions returned by `GET /api/sessions`. Later work should reuse that path before changing the architecture.
 
 ## 8. Future direction
 

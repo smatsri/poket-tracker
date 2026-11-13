@@ -55,7 +55,7 @@ Required submission-state coverage, using an in-memory repository double:
 - Starting an evening is rejected while the active status is `draft` or `pending`.
 - Starting an evening after `submitted` creates a new session ID.
 
-IndexedDB itself is verified by the manual restart check below. A browser automation dependency is not part of version 1.
+An in-memory IndexedDB double covers the repository contract. The browser store is verified by the manual restart check below. A browser automation dependency is not part of version 1.
 
 ## Manual MVP checklist
 
@@ -90,4 +90,4 @@ Run this on a phone-sized viewport, 360px wide, in a Chromium browser, after at 
 
 ## Traceability
 
-Every must-have and all ten acceptance criteria in the UI specification are mapped to tickets in [tickets/README.md](../tickets/README.md). A ticket is not complete until its own acceptance criteria and the relevant rows of this document pass.
+Every must-have and all ten acceptance criteria in the UI specification are mapped to tickets in [tickets/README.md](../tickets/README.md). Those tickets are done. A later ticket is not complete until its own acceptance criteria and the relevant rows of this document pass.

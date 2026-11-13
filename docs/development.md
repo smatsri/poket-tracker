@@ -46,7 +46,7 @@ No authentication variables exist in version 1. Do not add secrets to the reposi
 
 ## Commands
 
-TKT-001 introduces these root commands:
+Root commands:
 
 | Command | Result |
 | --- | --- |
@@ -71,20 +71,11 @@ npx --yes @redocly/cli lint docs/api/openapi.yaml --config docs/api/redocly.yaml
 - Keep financial calculations in `client/src/domain/`.
 - Keep SQL in `server/src/db/`.
 - Return the error document defined in the contract. Do not return stack traces, SQL text, or driver errors.
-- Add a dependency only when a ticket names it. The approved runtime dependencies are React, React DOM, Express, Zod, better-sqlite3, and `@fontsource/heebo`. Vite and TypeScript are development dependencies.
+- Add a runtime dependency only when a new ticket names it. The approved runtime dependencies are React, React DOM, Express, Zod, better-sqlite3, and `@fontsource/heebo`. Vite, TypeScript, and `tsx` are development dependencies.
 
-## Recommended order
+## Current state
 
-The ticket index in [tickets/README.md](../tickets/README.md) is the execution plan.
-
-1. Scaffold both workspaces and their commands.
-2. Initialize SQLite, then add validation, players, session submission, and session retrieval.
-3. Lock the server behavior with integration tests.
-4. Build client domain calculations, IndexedDB recovery, the API layer, and submission state.
-5. Build the Hebrew shell, then the live evening flow, and then history and statistics.
-6. Run the manual MVP checklist in [docs/testing.md](testing.md).
-
-Server and client-core work can proceed in parallel after the workspace scaffold. The live submission interface needs both sides. History and statistics need session retrieval.
+Milestones M0–M6 in [tickets/README.md](../tickets/README.md) are done. That work built the workspaces, the SQLite API, client calculations and submission, the Hebrew evening flow, history, statistics, and the Version 1.0 charts. Acceptance evidence is in [TKT-022](../tickets/TKT-022-mvp-acceptance.md) and [TKT-028](../tickets/TKT-028-v1-acceptance.md). Later work should reuse `GET /api/sessions` and the client calculations before adding an endpoint.
 
 ## GitHub issues
 
@@ -100,7 +91,7 @@ When a ticket becomes `done`, update `**Status:**` in the ticket file and push a
 
 ## Local API check
 
-After the server tickets are complete, this sequence should work against a fresh database:
+This sequence checks a fresh database:
 
 ```bash
 curl -s -X POST http://localhost:3001/api/players \
