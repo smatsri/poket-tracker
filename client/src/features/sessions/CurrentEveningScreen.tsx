@@ -4,7 +4,7 @@ import type { PlayerDirectory } from "../players/directory.ts";
 import type { ActiveSessionRecord, Player, Transaction } from "../../domain/models.ts";
 import { navigate, onNavigate, useAppLocation } from "../../app/navigation.ts";
 import { PlayerPanel } from "../players/PlayerPanel.tsx";
-import { presentCurrentEvening, presentPlayerEvening, statusLabels, type ActiveEveningView, type PresentedTransaction } from "./currentEvening.ts";
+import { presentCurrentEvening, presentEveningLoadFailure, presentPlayerEvening, statusLabels, type ActiveEveningView, type PresentedTransaction } from "./currentEvening.ts";
 import { ResultText } from "./ResultText.tsx";
 import { classifySubmissionFailure, submissionActions, submissionMessages, type SubmissionFailure } from "./submission.ts";
 import { TransactionSheet } from "./TransactionSheet.tsx";
@@ -20,6 +20,7 @@ export function CurrentEveningScreen({
   const [record, setRecord] = useState<ActiveSessionRecord | null>(null);
   const [directory, setDirectory] = useState<Player[]>([]);
   const [ready, setReady] = useState(false);
+  const [loadError, setLoadError] = useState(false);
   const [starting, setStarting] = useState(false);
   const [startError, setStartError] = useState<string | null>(null);
   const [sheet, setSheet] = useState<{ mode: "create"; playerId: string | null } | { mode: "edit"; transactionId: string } | null>(null);
@@ -29,20 +30,20 @@ export function CurrentEveningScreen({
 
   useEffect(() => {
     let active = true;
-    Promise.all([evening.readCurrent(), players.load()])
-      .then(([current, loaded]) => {
-        if (!active) {
-          return;
-        }
-        setRecord(current);
-        setDirectory(loaded.players);
-        setReady(true);
-      })
-      .catch(() => {
-        if (active) {
-          setReady(true);
-        }
-      });
+    const current = evening.readCurrent().then(
+      (record) => ({ ok: true as const, record }),
+      () => ({ ok: false as const }),
+    );
+    const loaded = players.load().catch(() => ({ ok: false as const, players: [] as Player[], source: "cache" as const }));
+    Promise.all([current, loaded]).then(([eveningResult, playerResult]) => {
+      if (!active) {
+        return;
+      }
+      setLoadError(!eveningResult.ok);
+      setRecord(eveningResult.ok ? eveningResult.record : null);
+      setDirectory(playerResult.players);
+      setReady(true);
+    });
     return () => {
       active = false;
     };
@@ -103,7 +104,7 @@ export function CurrentEveningScreen({
   }
 
   async function startEvening() {
-    if (!actions.canStartAnother || submitting || starting) {
+    if (loadError || !actions.canStartAnother || submitting || starting) {
       return;
     }
 
@@ -135,6 +136,20 @@ export function CurrentEveningScreen({
 
   if (!ready) {
     return <p className="muted">טוען את הערב…</p>;
+  }
+
+  if (loadError) {
+    const failure = presentEveningLoadFailure();
+    return (
+      <section className="stack">
+        <h1>ערב נוכחי</h1>
+        <article className="card">
+          <p className="notice notice-alert" role="alert">
+            {failure.message}
+          </p>
+        </article>
+      </section>
+    );
   }
 
   if (view.kind === "empty") {

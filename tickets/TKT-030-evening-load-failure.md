@@ -1,6 +1,6 @@
 # TKT-030 — Show a failed evening load instead of an empty evening
 
-**Status:** todo  
+**Status:** done  
 **Issue:** #30  
 **Milestone:** M7 Contract hardening  
 **Depends on:** none
@@ -29,6 +29,6 @@ A failed read of the active evening is shown as a load error, not as an evening 
 
 ## Acceptance criteria
 
-- [ ] A failed read shows a load error and hides the start action.
-- [ ] A missing active evening still shows the empty state and its start action.
-- [ ] `npm test` from the repository root passes.
+- [x] A failed read shows a load error and hides the start action.
+- [x] A missing active evening still shows the empty state and its start action.
+- [x] `npm test` from the repository root passes.

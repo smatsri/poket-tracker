@@ -3,7 +3,8 @@ import test from "node:test";
 import { calculateSessionResult } from "../../domain/calculations.ts";
 import { formatResult } from "../../domain/format.ts";
 import type { ActiveSessionRecord, Player, Transaction, TransactionType } from "../../domain/models.ts";
-import { canCorrectTransactions, presentCurrentEvening, presentPlayerEvening } from "./currentEvening.ts";
+import { readFileSync } from "node:fs";
+import { canCorrectTransactions, presentCurrentEvening, presentEveningLoadFailure, presentPlayerEvening } from "./currentEvening.ts";
 
 const players: Player[] = [
   { id: "p1", name: "דנה", createdAt: "2026-11-13T18:00:00Z" },
@@ -37,6 +38,31 @@ const transactions = [
   transaction("t6", "p1", "cash-out", 20, "2026-11-13T21:00:00Z"),
   transaction("t7", "p2", "rebuy", 10, "2026-11-13T21:30:00Z"),
 ];
+
+test("a failed read shows a load error and hides the start action", () => {
+  const failed = presentEveningLoadFailure();
+  assert.equal(failed.kind, "error");
+  assert.equal(failed.canStart, false);
+  assert.equal(failed.message, "לא הצלחנו לטעון את הערב.");
+
+  const source = readFileSync(new URL("./CurrentEveningScreen.tsx", import.meta.url), "utf8");
+  const errorBranch = source.slice(source.indexOf("if (loadError)"), source.indexOf('if (view.kind === "empty")'));
+  assert.match(errorBranch, /presentEveningLoadFailure/);
+  assert.doesNotMatch(errorBranch, /startEvening|התחלת ערב/);
+  const start = source.slice(source.indexOf("async function startEvening"), source.indexOf("const editing"));
+  assert.match(start, /if \(loadError \|\|/);
+  assert.ok(start.indexOf("loadError") < start.indexOf("evening.startEvening"));
+});
+
+test("a missing active evening still shows the empty state and its start action", () => {
+  const empty = presentCurrentEvening(null, players);
+  assert.equal(empty.kind, "empty");
+  assert.equal(empty.canStart, true);
+  const source = readFileSync(new URL("./CurrentEveningScreen.tsx", import.meta.url), "utf8");
+  const emptyBranch = source.slice(source.indexOf('if (view.kind === "empty")'), source.indexOf("if (transactionId"));
+  assert.match(emptyBranch, /התחלת ערב חדש/);
+  assert.match(emptyBranch, /startEvening/);
+});
 
 test("the empty state can start an evening and a draft or pending evening cannot", () => {
   assert.equal(presentCurrentEvening(null, players).canStart, true);

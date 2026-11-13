@@ -38,6 +38,13 @@ export interface EmptyEveningView {
   canRecord: false;
 }
 
+export interface FailedEveningView {
+  kind: "error";
+  canStart: false;
+  canRecord: false;
+  message: string;
+}
+
 export interface ActiveEveningView {
   kind: "active";
   canStart: boolean;
@@ -54,6 +61,15 @@ export interface ActiveEveningView {
 }
 
 export type CurrentEveningView = EmptyEveningView | ActiveEveningView;
+
+export function presentEveningLoadFailure(): FailedEveningView {
+  return {
+    kind: "error",
+    canStart: false,
+    canRecord: false,
+    message: "לא הצלחנו לטעון את הערב.",
+  };
+}
 
 export function presentCurrentEvening(
   record: ActiveSessionRecord | null,
