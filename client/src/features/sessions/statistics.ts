@@ -18,6 +18,7 @@ export const statsCopy = {
   progression: "התקדמות מצטברת",
   byEvening: "לפי ערב",
   bySession: "תוצאות לפי ערב",
+  comparison: "השוואת שחקנים",
   missingPlayer: "לשחקן הזה אין ערבים שהסתיימו.",
   networkError: "אין חיבור לשרת, ולכן אי אפשר להציג את הסיכומים.",
   loadError: "השרת לא הצליח להחזיר את הסיכומים.",
@@ -88,6 +89,25 @@ export interface SessionResultsChartModel {
   plotLeft: number;
   plotRight: number;
   bars: SessionResultBar[];
+}
+
+export interface PlayerComparisonBar {
+  playerId: string;
+  name: string;
+  value: number;
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+}
+
+export interface PlayerComparisonChartModel {
+  width: number;
+  height: number;
+  zeroY: number | null;
+  plotLeft: number;
+  plotRight: number;
+  bars: PlayerComparisonBar[];
 }
 
 export interface CumulativeChartPoint {
@@ -220,6 +240,41 @@ export function mapSessionResultsChart(
         sessionId: point.sessionId,
         date: point.date,
         value: point.balance,
+        x: chartPadding + index * slot + (slot - barWidth) / 2,
+        y: Math.min(valueY, zeroY),
+        width: barWidth,
+        height: Math.abs(valueY - zeroY),
+      };
+    }),
+  };
+}
+
+export function mapPlayerComparisonChart(
+  players: readonly { playerId: string; name: string; net: number }[],
+  width: number,
+  height: number,
+): PlayerComparisonChartModel {
+  const scale = plotScale(players.map((player) => player.net), width, height);
+  if (players.length === 0 || scale.zeroY === null) {
+    return { width, height, zeroY: null, plotLeft: scale.plotLeft, plotRight: scale.plotRight, bars: [] };
+  }
+
+  const slot = scale.innerWidth / players.length;
+  const barWidth = slot / 2;
+  const zeroY = scale.zeroY;
+
+  return {
+    width,
+    height,
+    zeroY,
+    plotLeft: scale.plotLeft,
+    plotRight: scale.plotRight,
+    bars: players.map((player, index) => {
+      const valueY = scale.yFor(player.net);
+      return {
+        playerId: player.playerId,
+        name: player.name,
+        value: player.net,
         x: chartPadding + index * slot + (slot - barWidth) / 2,
         y: Math.min(valueY, zeroY),
         width: barWidth,

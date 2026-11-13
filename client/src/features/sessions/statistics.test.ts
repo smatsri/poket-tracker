@@ -12,6 +12,7 @@ import {
   parseStatsLocation,
   playerCumulativeSeries,
   mapCumulativeChart,
+  mapPlayerComparisonChart,
   mapSessionResultsChart,
   presentPlayerStatistics,
   sessionBalanceSeries,
@@ -263,6 +264,70 @@ test("session results chart maps chronological session balances", () => {
   assert.doesNotMatch(chartSource, /fetch\(|\/api\//);
   const css = readFileSync(new URL("../../styles/global.css", import.meta.url), "utf8");
   assert.match(css, /\.session-chart \{[^}]*width:\s*100%/s);
+});
+
+test("player comparison chart uses the ranked overall nets", () => {
+  const empty = mapPlayerComparisonChart([], 320, 160);
+  assert.deepEqual(empty.bars, []);
+  assert.equal(empty.zeroY, null);
+
+  const view = presentStatistics([older, newer]);
+  assert.equal(view.players.some((player) => player.playerId === "absent"), false);
+  const chart = mapPlayerComparisonChart(
+    view.players.map((player) => ({ playerId: player.playerId, name: player.name, net: player.result.value })),
+    100,
+    50,
+  );
+  assert.deepEqual(
+    chart.bars.map((bar) => [bar.playerId, bar.name, bar.value]),
+    view.players.map((player) => [player.playerId, player.name, player.result.value]),
+  );
+  assert.deepEqual(
+    chart.bars.map((bar) => [bar.playerId, bar.value]),
+    [
+      ["avi", 20],
+      ["dana", -30],
+    ],
+  );
+  assert.ok((chart.bars[0]?.x ?? 0) < (chart.bars[1]?.x ?? 0));
+  assert.equal((chart.bars[0]?.y ?? 0) + (chart.bars[0]?.height ?? 0), chart.zeroY);
+  assert.equal(chart.bars[1]?.y, chart.zeroY);
+
+  const tied = document("session-c", "2026-11-14", "2026-11-14T22:00:00Z", [dana, avi], [
+    transaction("session-c", "c1", "dana", "cash-out", 10),
+    transaction("session-c", "c2", "avi", "cash-out", 10),
+  ]);
+  const tiedView = presentStatistics([tied]);
+  const tiedChart = mapPlayerComparisonChart(
+    tiedView.players.map((player) => ({ playerId: player.playerId, name: player.name, net: player.result.value })),
+    100,
+    50,
+  );
+  assert.deepEqual(
+    tiedChart.bars.map((bar) => bar.name),
+    ["אבי", "דנה"],
+  );
+  assert.deepEqual(
+    tiedChart.bars.map((bar) => bar.value),
+    tiedView.players.map((player) => player.result.value),
+  );
+
+  const gain = mapPlayerComparisonChart([{ playerId: "avi", name: "אבי", net: 20 }], 100, 50);
+  assert.equal(gain.zeroY, 34);
+  assert.equal(gain.bars[0]?.x, 33);
+  assert.equal(gain.bars[0]?.y, 16);
+  assert.equal(gain.bars[0]?.width, 34);
+  assert.equal(gain.bars[0]?.height, 18);
+
+  const source = readFileSync(new URL("./StatisticsScreen.tsx", import.meta.url), "utf8");
+  assert.match(source, /PlayerComparisonChart players=\{view\.players\}/);
+  assert.match(source, /view\.players\.map/);
+  const chartSource = readFileSync(new URL("./PlayerComparisonChart.tsx", import.meta.url), "utf8");
+  assert.match(chartSource, /mapPlayerComparisonChart/);
+  assert.match(chartSource, /player\.result\.value/);
+  assert.doesNotMatch(chartSource, /fetch\(|\/api\//);
+  const css = readFileSync(new URL("../../styles/global.css", import.meta.url), "utf8");
+  assert.match(css, /\.comparison-chart \{[^}]*width:\s*100%/s);
 });
 
 test("no completed sessions produces the Hebrew empty state", () => {

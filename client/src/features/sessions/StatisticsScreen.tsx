@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { onNavigate, useAppLocation } from "../../app/navigation.ts";
 import type { ApiClient, SessionDocument } from "../../data/api/client.ts";
 import { CumulativeChart } from "./CumulativeChart.tsx";
+import { PlayerComparisonChart } from "./PlayerComparisonChart.tsx";
 import { SessionResultsChart } from "./SessionResultsChart.tsx";
 import { ResultText } from "./ResultText.tsx";
 import {
@@ -98,6 +99,12 @@ function StatisticsBody({ view }: { view: StatisticsView }) {
             <h2>{statsCopy.bySession}</h2>
             <SessionResultsChart sessions={view.sessions} />
           </article>
+          {view.players.length > 0 ? (
+            <article className="card stack">
+              <h2>{statsCopy.comparison}</h2>
+              <PlayerComparisonChart players={view.players} />
+            </article>
+          ) : null}
           <section className="stack">
             <h2>{statsCopy.players}</h2>
             <ul className="choice-list">

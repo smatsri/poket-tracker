@@ -1,6 +1,6 @@
 # TKT-027 — Chart player comparison
 
-**Status:** todo  
+**Status:** done  
 **Issue:** #27  
 **Milestone:** M6 Version 1.0: Historical Insights  
 **Depends on:** [TKT-024](TKT-024-group-overview-enrichment.md) (#24), [TKT-025](TKT-025-chart-cumulative-result.md) (#25)
@@ -31,8 +31,8 @@ Compare players' cumulative results on the group statistics screen with a simple
 
 ## Acceptance criteria
 
-- [ ] The statistics overview shows a player-comparison chart when ranked players exist.
-- [ ] Chart values match the overall nets shown in the ranking list.
-- [ ] Players who never appear in a transaction remain excluded.
-- [ ] The chart remains usable at 360px width.
-- [ ] Automated tests cover the comparison data mapping.
+- [x] The statistics overview shows a player-comparison chart when ranked players exist.
+- [x] Chart values match the overall nets shown in the ranking list.
+- [x] Players who never appear in a transaction remain excluded.
+- [x] The chart remains usable at 360px width.
+- [x] Automated tests cover the comparison data mapping.

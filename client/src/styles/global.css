@@ -258,6 +258,30 @@ h2 {
   fill: var(--color-text);
 }
 
+.comparison-chart {
+  display: block;
+  width: 100%;
+  height: auto;
+  direction: ltr;
+}
+
+.comparison-chart-zero {
+  stroke: var(--color-border);
+  stroke-width: 1;
+}
+
+.comparison-chart-bar-positive {
+  fill: var(--color-positive);
+}
+
+.comparison-chart-bar-negative {
+  fill: var(--color-negative);
+}
+
+.comparison-chart-bar-neutral {
+  fill: var(--color-text);
+}
+
 .totals {
   display: flex;
   flex-direction: column;

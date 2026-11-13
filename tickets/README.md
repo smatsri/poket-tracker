@@ -52,7 +52,7 @@ M1 and M2 could proceed in parallel after TKT-001. M6 builds on the completed MV
 | [TKT-024](TKT-024-group-overview-enrichment.md) | Enrich the group statistics overview | done | TKT-023 |
 | [TKT-025](TKT-025-chart-cumulative-result.md) | Chart a player's cumulative result over time | done | TKT-023 |
 | [TKT-026](TKT-026-chart-results-by-session.md) | Chart results by session | done | TKT-024, TKT-025 |
-| [TKT-027](TKT-027-chart-player-comparison.md) | Chart player comparison | todo | TKT-024, TKT-025 |
+| [TKT-027](TKT-027-chart-player-comparison.md) | Chart player comparison | done | TKT-024, TKT-025 |
 | [TKT-028](TKT-028-v1-acceptance.md) | Verify the Version 1.0 acceptance criteria | todo | TKT-025, TKT-026, TKT-027 |
 
 ## Requirement coverage
