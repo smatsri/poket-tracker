@@ -1,6 +1,6 @@
 # Data model
 
-The canonical entities are shared by the client and server. Field names in TypeScript and JSON are camelCase. SQLite column names are snake_case.
+The canonical entities are shared by the client and server. Field names in TypeScript and JSON are camelCase. PostgreSQL column names are snake_case. `date` and `timestamp` are quoted because they are reserved words.
 
 ## Entities
 
@@ -59,11 +59,11 @@ The player store is a cache of the last successful server response. It can be re
 
 The active-session record is the recovery source after refresh, browser restart, or failed submission. Submission status is not a database column on the server.
 
-## SQLite schema
+## PostgreSQL schema
+
+Startup applies numbered SQL migrations and records each applied id in `schema_migrations`. Applying the same migration again is a no-op. Dates and timestamps are `TEXT`. Amounts are `INTEGER`.
 
 ```sql
-PRAGMA foreign_keys = ON;
-
 CREATE TABLE players (
   id TEXT PRIMARY KEY,
   name TEXT NOT NULL CHECK (length(name) BETWEEN 1 AND 80),
@@ -72,7 +72,7 @@ CREATE TABLE players (
 
 CREATE TABLE sessions (
   id TEXT PRIMARY KEY,
-  date TEXT NOT NULL CHECK (date GLOB '[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]'),
+  "date" TEXT NOT NULL CHECK ("date" ~ '^[0-9]{4}-[0-9]{2}-[0-9]{2}$'),
   created_at TEXT NOT NULL
 );
 
@@ -82,14 +82,14 @@ CREATE TABLE transactions (
   player_id TEXT NOT NULL REFERENCES players(id),
   type TEXT NOT NULL CHECK (type IN ('buy-in', 'rebuy', 'cash-out')),
   amount INTEGER NOT NULL CHECK (amount >= 1),
-  timestamp TEXT NOT NULL
+  "timestamp" TEXT NOT NULL
 );
 
 CREATE INDEX idx_transactions_session_id ON transactions(session_id);
 CREATE INDEX idx_transactions_player_id ON transactions(player_id);
 ```
 
-Startup applies this schema with `CREATE TABLE IF NOT EXISTS` and `CREATE INDEX IF NOT EXISTS`. The database connection enables foreign keys with `PRAGMA foreign_keys = ON` on every connection. Zod validates calendar dates, RFC 3339 timestamps, identifier syntax, and unknown player references before SQL runs. The SQL checks are a second barrier, not the only validation.
+PostgreSQL enforces the foreign keys. Zod validates calendar dates, RFC 3339 timestamps, identifier syntax, and unknown player references before SQL runs. The SQL checks are a second barrier, not the only validation.
 
 Deleting or updating a stored session is outside version 1, so foreign keys do not need `ON DELETE` behavior.
 

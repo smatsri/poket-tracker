@@ -2,17 +2,17 @@ import { randomUUID } from "node:crypto";
 import { getDatabase } from "../db/database.js";
 import { insertPlayer, selectPlayers, type StoredPlayer } from "../db/players.js";
 
-export function createPlayer(name: string): StoredPlayer {
+export async function createPlayer(name: string): Promise<StoredPlayer> {
   const player: StoredPlayer = {
     id: randomUUID(),
     name,
     createdAt: new Date().toISOString(),
   };
 
-  insertPlayer(getDatabase(), player);
+  await insertPlayer(getDatabase(), player);
   return player;
 }
 
-export function listPlayers(): StoredPlayer[] {
+export async function listPlayers(): Promise<StoredPlayer[]> {
   return selectPlayers(getDatabase());
 }

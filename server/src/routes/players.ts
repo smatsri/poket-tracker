@@ -4,11 +4,11 @@ import { createPlayer, listPlayers } from "../services/playerService.js";
 
 export const playerRouter = Router();
 
-playerRouter.get("/", (_req, res) => {
-  res.status(200).json({ players: listPlayers() });
+playerRouter.get("/", async (_req, res) => {
+  res.status(200).json({ players: await listPlayers() });
 });
 
-playerRouter.post("/", (req, res) => {
+playerRouter.post("/", async (req, res) => {
   const body = parse(playerCreateRequest, req.body);
-  res.status(201).json(createPlayer(body.name));
+  res.status(201).json(await createPlayer(body.name));
 });

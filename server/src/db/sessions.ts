@@ -1,5 +1,5 @@
-import type Database from "better-sqlite3";
 import type { StoredPlayer } from "./players.js";
+import type { Sql } from "./sql.js";
 
 export interface StoredTransaction {
   id: string;
@@ -17,90 +17,97 @@ export interface StoredSession {
   players: StoredPlayer[];
 }
 
-export function missingPlayerIds(database: Database.Database, playerIds: string[]): string[] {
-  const exists = database.prepare("SELECT 1 AS present FROM players WHERE id = ?");
-  return playerIds.filter((playerId) => exists.get(playerId) === undefined);
+export async function missingPlayerIds(database: Sql, playerIds: string[]): Promise<string[]> {
+  const missing: string[] = [];
+  for (const playerId of playerIds) {
+    const result = await database.query("SELECT 1 AS present FROM players WHERE id = $1", [playerId]);
+    if (result.rows.length === 0) {
+      missing.push(playerId);
+    }
+  }
+  return missing;
 }
 
-export function selectSession(database: Database.Database, id: string): StoredSession | undefined {
-  const session = database
-    .prepare("SELECT id, date, created_at AS createdAt FROM sessions WHERE id = ?")
-    .get(id) as { id: string; date: string; createdAt: string } | undefined;
-
+export async function selectSession(database: Sql, id: string): Promise<StoredSession | undefined> {
+  const sessions = await database.query<{ id: string; date: string; createdAt: string }>(
+    `SELECT id, "date", created_at AS "createdAt" FROM sessions WHERE id = $1`,
+    [id],
+  );
+  const session = sessions.rows[0];
   if (!session) {
     return undefined;
   }
 
-  const transactions = database
-    .prepare(
-      `SELECT id, player_id AS playerId, type, amount, timestamp
-       FROM transactions
-       WHERE session_id = ?
-       ORDER BY timestamp ASC, id ASC`,
-    )
-    .all(id) as StoredTransaction[];
+  const transactions = await database.query<StoredTransaction>(
+    `SELECT id, player_id AS "playerId", type, amount, "timestamp"
+     FROM transactions
+     WHERE session_id = $1
+     ORDER BY "timestamp" ASC, id ASC`,
+    [id],
+  );
 
-  const players = database
-    .prepare(
-      `SELECT DISTINCT players.id, players.name, players.created_at AS createdAt
-       FROM players
-       JOIN transactions ON transactions.player_id = players.id
-       WHERE transactions.session_id = ?
-       ORDER BY players.name ASC, players.id ASC`,
-    )
-    .all(id) as StoredPlayer[];
+  const players = await database.query<StoredPlayer>(
+    `SELECT DISTINCT players.id, players.name, players.created_at AS "createdAt"
+     FROM players
+     JOIN transactions ON transactions.player_id = players.id
+     WHERE transactions.session_id = $1
+     ORDER BY players.name ASC, players.id ASC`,
+    [id],
+  );
 
-  return { ...session, transactions, players };
+  return { ...session, transactions: transactions.rows, players: players.rows };
 }
 
-export function selectSessions(
-  database: Database.Database,
+export async function selectSessions(
+  database: Sql,
   bounds: { from?: string; to?: string },
-): StoredSession[] {
-  const rows = database
-    .prepare(
-      `SELECT id
-       FROM sessions
-       WHERE (? IS NULL OR date >= ?)
-         AND (? IS NULL OR date <= ?)
-       ORDER BY date DESC, created_at DESC, id DESC`,
-    )
-    .all(bounds.from ?? null, bounds.from ?? null, bounds.to ?? null, bounds.to ?? null) as Array<{ id: string }>;
+): Promise<StoredSession[]> {
+  const rows = await database.query<{ id: string }>(
+    `SELECT id
+     FROM sessions
+     WHERE ($1::text IS NULL OR "date" >= $1)
+       AND ($2::text IS NULL OR "date" <= $2)
+     ORDER BY "date" DESC, created_at DESC, id DESC`,
+    [bounds.from ?? null, bounds.to ?? null],
+  );
 
-  return rows.map((row) => {
-    const session = selectSession(database, row.id);
+  const sessions: StoredSession[] = [];
+  for (const row of rows.rows) {
+    const session = await selectSession(database, row.id);
     if (!session) {
       throw new Error("Stored session is missing");
     }
-    return session;
-  });
+    sessions.push(session);
+  }
+  return sessions;
 }
 
-export function insertSession(
-  database: Database.Database,
+export async function insertSession(
+  database: Sql,
   session: { id: string; date: string; createdAt: string },
-): void {
-  database
-    .prepare("INSERT INTO sessions (id, date, created_at) VALUES (?, ?, ?)")
-    .run(session.id, session.date, session.createdAt);
+): Promise<void> {
+  await database.query(`INSERT INTO sessions (id, "date", created_at) VALUES ($1, $2, $3)`, [
+    session.id,
+    session.date,
+    session.createdAt,
+  ]);
 }
 
-export function insertTransaction(
-  database: Database.Database,
+export async function insertTransaction(
+  database: Sql,
   sessionId: string,
   transaction: StoredTransaction,
-): void {
-  database
-    .prepare(
-      `INSERT INTO transactions (id, session_id, player_id, type, amount, timestamp)
-       VALUES (?, ?, ?, ?, ?, ?)`,
-    )
-    .run(
+): Promise<void> {
+  await database.query(
+    `INSERT INTO transactions (id, session_id, player_id, type, amount, "timestamp")
+     VALUES ($1, $2, $3, $4, $5, $6)`,
+    [
       transaction.id,
       sessionId,
       transaction.playerId,
       transaction.type,
       transaction.amount,
       transaction.timestamp,
-    );
+    ],
+  );
 }

@@ -1,6 +1,6 @@
 # TKT-033 — Replace SQLite with PostgreSQL
 
-**Status:** todo  
+**Status:** done  
 **Issue:** #33  
 **Milestone:** M8 Production deployment  
 **Depends on:** none
@@ -35,10 +35,10 @@ The existing player and session API runs on PostgreSQL, with the same responses 
 
 ## Acceptance criteria
 
-- [ ] `POST /api/sessions` inserts the session and every transaction, or inserts none of them.
-- [ ] An identical retry returns `200` and the stored session. Different content for the same session id returns `409` and leaves the stored session unchanged.
-- [ ] A duplicate transaction id returns `409`. An unknown player id returns `400`.
-- [ ] Applying migrations twice does not duplicate tables or fail.
-- [ ] The schema has no profit, balance, or statistics columns.
-- [ ] `npm test` from the repository root passes without `better-sqlite3` and without a running Neon database.
-- [ ] Compose starts only PostgreSQL. The development doc gives the local `DATABASE_URL`. The client and server are not services in that file.
+- [x] `POST /api/sessions` inserts the session and every transaction, or inserts none of them.
+- [x] An identical retry returns `200` and the stored session. Different content for the same session id returns `409` and leaves the stored session unchanged.
+- [x] A duplicate transaction id returns `409`. An unknown player id returns `400`.
+- [x] Applying migrations twice does not duplicate tables or fail.
+- [x] The schema has no profit, balance, or statistics columns.
+- [x] `npm test` from the repository root passes without `better-sqlite3` and without a running Neon database.
+- [x] Compose starts only PostgreSQL. The development doc gives the local `DATABASE_URL`. The client and server are not services in that file.

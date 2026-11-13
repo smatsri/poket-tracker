@@ -4,17 +4,17 @@ import { getSession, listSessions, submitSession } from "../services/sessionServ
 
 export const sessionRouter = Router();
 
-sessionRouter.get("/", (req, res) => {
+sessionRouter.get("/", async (req, res) => {
   const query = parse(sessionListQuery, req.query);
-  res.status(200).json({ sessions: listSessions(query) });
+  res.status(200).json({ sessions: await listSessions(query) });
 });
 
-sessionRouter.get("/:sessionId", (req, res) => {
+sessionRouter.get("/:sessionId", async (req, res) => {
   const sessionId = parse(identifier, req.params.sessionId);
-  res.status(200).json(getSession(sessionId));
+  res.status(200).json(await getSession(sessionId));
 });
 
-sessionRouter.post("/", (req, res) => {
-  const result = submitSession(parse(sessionCreateRequest, req.body));
+sessionRouter.post("/", async (req, res) => {
+  const result = await submitSession(parse(sessionCreateRequest, req.body));
   res.status(result.status).json(result.session);
 });

@@ -1,4 +1,4 @@
-import type Database from "better-sqlite3";
+import type { Sql } from "./sql.js";
 
 export interface StoredPlayer {
   id: string;
@@ -6,18 +6,19 @@ export interface StoredPlayer {
   createdAt: string;
 }
 
-export function insertPlayer(database: Database.Database, player: StoredPlayer): void {
-  database
-    .prepare("INSERT INTO players (id, name, created_at) VALUES (?, ?, ?)")
-    .run(player.id, player.name, player.createdAt);
+export async function insertPlayer(database: Sql, player: StoredPlayer): Promise<void> {
+  await database.query("INSERT INTO players (id, name, created_at) VALUES ($1, $2, $3)", [
+    player.id,
+    player.name,
+    player.createdAt,
+  ]);
 }
 
-export function selectPlayers(database: Database.Database): StoredPlayer[] {
-  return database
-    .prepare(
-      `SELECT id, name, created_at AS createdAt
-       FROM players
-       ORDER BY created_at ASC, id ASC`,
-    )
-    .all() as StoredPlayer[];
+export async function selectPlayers(database: Sql): Promise<StoredPlayer[]> {
+  const result = await database.query<StoredPlayer>(
+    `SELECT id, name, created_at AS "createdAt"
+     FROM players
+     ORDER BY created_at ASC, id ASC`,
+  );
+  return result.rows;
 }

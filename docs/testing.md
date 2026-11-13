@@ -4,7 +4,7 @@ Version 1 uses automated tests for domain rules and server integrity, plus a man
 
 ## Server automation
 
-Use Node's built-in test runner from the server package. Each test gets its own temporary SQLite file and closes it before exit. Tests call the Express application in-process, so they do not depend on a fixed port.
+Use Node's built-in test runner from the server package. Server tests use an in-memory PGlite database and close it before exit. They do not open `DATABASE_URL`. Tests call the Express application in-process, so they do not depend on a fixed port.
 
 Required coverage:
 

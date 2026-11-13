@@ -11,7 +11,7 @@ Version 1.0 is implemented. It covers the live evening, history, statistics, pla
 | Document | Purpose |
 | --- | --- |
 | [docs/architecture.md](docs/architecture.md) | Runtime boundaries, submission flow, and locked product decisions |
-| [docs/data-model.md](docs/data-model.md) | Domain entities, SQLite schema, and financial formulas |
+| [docs/data-model.md](docs/data-model.md) | Domain entities, PostgreSQL schema, and financial formulas |
 | [docs/api/openapi.yaml](docs/api/openapi.yaml) | Authoritative HTTP contract |
 | [docs/development.md](docs/development.md) | Workspace layout, configuration, and local commands |
 | [docs/testing.md](docs/testing.md) | Automated and manual acceptance strategy |
@@ -30,7 +30,7 @@ The documents above describe the shipped application and supersede the source sp
 ## Stack
 
 - Client: React, TypeScript, Vite, IndexedDB, and CSS
-- Server: Node.js, TypeScript, Express, SQLite, better-sqlite3, and Zod
+- Server: Node.js, TypeScript, Express, PostgreSQL, pg, and Zod
 - Contract: OpenAPI 3.1
 
 ```bash

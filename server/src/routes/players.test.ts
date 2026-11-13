@@ -1,12 +1,9 @@
 import assert from "node:assert/strict";
 import { createServer } from "node:http";
-import fs from "node:fs";
-import os from "node:os";
-import path from "node:path";
 import { after, before, beforeEach, describe, test } from "node:test";
 import type { Express } from "express";
 import { createApp } from "../app.js";
-import { closeDatabase, getDatabase, openAppDatabase } from "../db/database.js";
+import { closeDatabase, getDatabase, openTestDatabase } from "../db/database.js";
 import { insertPlayer } from "../db/players.js";
 
 const identifierPattern = /^[A-Za-z0-9_-]+$/;
@@ -32,9 +29,9 @@ function listen(app: Express): Promise<{ url: string; close: () => Promise<void>
   });
 }
 
-function playerCount(): number {
-  const row = getDatabase().prepare("SELECT COUNT(*) AS count FROM players").get() as { count: number };
-  return row.count;
+async function playerCount(): Promise<number> {
+  const result = await getDatabase().query<{ count: number }>("SELECT COUNT(*)::int AS count FROM players");
+  return Number(result.rows[0]?.count);
 }
 
 function assertPlayerDocument(value: unknown): asserts value is {
@@ -54,12 +51,10 @@ function assertPlayerDocument(value: unknown): asserts value is {
 
 describe("player endpoints", { concurrency: false }, () => {
   let url = "";
-  let directory = "";
   let closeServer: () => Promise<void> = async () => undefined;
 
   before(async () => {
-    directory = fs.mkdtempSync(path.join(os.tmpdir(), "poker-players-"));
-    openAppDatabase(path.join(directory, "poker.sqlite"));
+    await openTestDatabase();
     const server = await listen(createApp());
     url = server.url;
     closeServer = server.close;
@@ -67,12 +62,11 @@ describe("player endpoints", { concurrency: false }, () => {
 
   after(async () => {
     await closeServer();
-    closeDatabase();
-    fs.rmSync(directory, { recursive: true, force: true });
+    await closeDatabase();
   });
 
-  beforeEach(() => {
-    getDatabase().exec("DELETE FROM players");
+  beforeEach(async () => {
+    await getDatabase().exec("DELETE FROM players");
   });
 
   test("a valid name returns 201 with id, normalized name, and createdAt", async () => {
@@ -86,7 +80,7 @@ describe("player endpoints", { concurrency: false }, () => {
     const body: unknown = await response.json();
     assertPlayerDocument(body);
     assert.equal(body.name, "Dana Levi");
-    assert.equal(playerCount(), 1);
+    assert.equal(await playerCount(), 1);
   });
 
   test("repeating the same name returns a second player with a different id", async () => {
@@ -110,7 +104,7 @@ describe("player endpoints", { concurrency: false }, () => {
     assert.equal(firstBody.name, "Dana Levi");
     assert.equal(secondBody.name, "Dana Levi");
     assert.notEqual(firstBody.id, secondBody.id);
-    assert.equal(playerCount(), 2);
+    assert.equal(await playerCount(), 2);
   });
 
   test("a blank name returns 400 and stores nothing", async () => {
@@ -128,7 +122,7 @@ describe("player endpoints", { concurrency: false }, () => {
       });
     }
 
-    assert.equal(playerCount(), 0);
+    assert.equal(await playerCount(), 0);
   });
 
   test("the list includes every stored player in createdAt then id order", async () => {
@@ -137,9 +131,9 @@ describe("player endpoints", { concurrency: false }, () => {
     assert.deepEqual(await empty.json(), { players: [] });
 
     const database = getDatabase();
-    insertPlayer(database, { id: "player-c", name: "Cara", createdAt: "2026-11-12T18:00:00.000Z" });
-    insertPlayer(database, { id: "player-a", name: "Ada", createdAt: "2026-11-12T18:00:00.000Z" });
-    insertPlayer(database, { id: "player-b", name: "Bea", createdAt: "2026-11-12T19:00:00.000Z" });
+    await insertPlayer(database, { id: "player-c", name: "Cara", createdAt: "2026-11-12T18:00:00.000Z" });
+    await insertPlayer(database, { id: "player-a", name: "Ada", createdAt: "2026-11-12T18:00:00.000Z" });
+    await insertPlayer(database, { id: "player-b", name: "Bea", createdAt: "2026-11-12T19:00:00.000Z" });
 
     const response = await fetch(`${url}/api/players`);
     assert.equal(response.status, 200);

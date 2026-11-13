@@ -9,7 +9,7 @@ flowchart LR
   ui --> apiLayer[ApiLayer]
   apiLayer --> routes[ExpressRoutes]
   routes --> services[Services]
-  services --> sqlite[(SQLite)]
+  services --> postgres[(PostgreSQL)]
 ```
 
 The React UI calls domain functions for balances and calls the API layer for players and completed sessions. Components do not call `fetch`, contain SQL, or recalculate money with ad hoc expressions.
@@ -111,7 +111,7 @@ The server compares a retry by session ID, session date, and the set of transact
 server/src/
   index.ts             # process entry
   app.ts               # Express application
-  config.ts            # port, SQLite path, CORS origin
+  config.ts            # port, database URL, CORS origin
   routes/              # HTTP parsing and status codes
   services/            # player and session operations
   db/                  # connection, schema, SQL
@@ -121,7 +121,7 @@ server/src/
 
 Routes validate input, call one service, and translate the result to HTTP. Services coordinate database transactions. Database modules own SQL. There is no repository framework and no dependency-injection framework.
 
-Session creation inserts the session and all of its transactions in one SQLite transaction. Any failure rolls the entire operation back.
+Session creation inserts the session and all of its transactions in one PostgreSQL transaction. Any failure rolls the entire operation back.
 
 ## Locked decisions
 

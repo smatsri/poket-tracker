@@ -1,20 +1,30 @@
 import { createApp } from "./app.js";
-import { port, sqlitePath } from "./config.js";
+import { databaseUrl, port } from "./config.js";
 import { closeDatabase, openAppDatabase } from "./db/database.js";
 
-openAppDatabase(sqlitePath);
+async function main(): Promise<void> {
+  if (!databaseUrl) {
+    throw new Error("DATABASE_URL is required");
+  }
 
-const app = createApp();
+  await openAppDatabase(databaseUrl);
+
+  const app = createApp();
+  app.listen(port, () => {
+    console.log(`Server listening on port ${port}`);
+  });
+}
 
 function shutdown(): void {
-  closeDatabase();
-  process.exit(0);
+  void closeDatabase().finally(() => {
+    process.exit(0);
+  });
 }
 
 process.once("SIGINT", shutdown);
 process.once("SIGTERM", shutdown);
 
-app.listen(port, () => {
-  console.log(`Server listening on port ${port}`);
-  console.log(`SQLite path ${sqlitePath}`);
+main().catch((error: unknown) => {
+  console.error(error);
+  process.exit(1);
 });

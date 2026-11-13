@@ -1,13 +1,9 @@
 import assert from "node:assert/strict";
 import { createServer } from "node:http";
-import fs from "node:fs";
-import os from "node:os";
-import path from "node:path";
 import { after, before, beforeEach, describe, test } from "node:test";
-import type Database from "better-sqlite3";
 import type { Express } from "express";
 import { createApp } from "../app.js";
-import { closeDatabase, getDatabase, openAppDatabase } from "../db/database.js";
+import { closeDatabase, getDatabase, openTestDatabase } from "../db/database.js";
 import { insertPlayer } from "../db/players.js";
 import { insertSession, insertTransaction, type StoredTransaction } from "../db/sessions.js";
 
@@ -61,11 +57,14 @@ function listen(app: Express): Promise<{ url: string; close: () => Promise<void>
   });
 }
 
-function counts(): { sessions: number; transactions: number } {
+async function counts(): Promise<{ sessions: number; transactions: number }> {
   const database = getDatabase();
-  const sessions = database.prepare("SELECT COUNT(*) AS count FROM sessions").get() as { count: number };
-  const transactions = database.prepare("SELECT COUNT(*) AS count FROM transactions").get() as { count: number };
-  return { sessions: sessions.count, transactions: transactions.count };
+  const sessions = await database.query<{ count: number }>("SELECT COUNT(*)::int AS count FROM sessions");
+  const transactions = await database.query<{ count: number }>("SELECT COUNT(*)::int AS count FROM transactions");
+  return {
+    sessions: Number(sessions.rows[0]?.count),
+    transactions: Number(transactions.rows[0]?.count),
+  };
 }
 
 function assertSessionDocument(value: unknown): asserts value is {
@@ -92,31 +91,24 @@ function assertSessionDocument(value: unknown): asserts value is {
   }
 }
 
-function forceSessionLookupMiss(database: Database.Database): { restore: () => void; lookups: () => number } {
-  const original = database.prepare.bind(database);
+function forceSessionLookupMiss(): { restore: () => void; lookups: () => number } {
   let lookups = 0;
   let missed = false;
-  const wrapped = (sql: string) => {
-    const statement = original(sql);
-    if (!sql.includes("FROM sessions WHERE id = ?")) {
-      return statement;
+  getDatabase().setQueryInterceptor((sql) => {
+    if (!sql.includes("FROM sessions WHERE id = $1")) {
+      return undefined;
     }
 
     lookups += 1;
-    const read = statement.get.bind(statement) as (...args: unknown[]) => unknown;
-    statement.get = ((...args: unknown[]) => {
-      if (!missed) {
-        missed = true;
-        return undefined;
-      }
-      return read(...args);
-    }) as typeof statement.get;
-    return statement;
-  };
-  database.prepare = wrapped as Database.Database["prepare"];
+    if (!missed) {
+      missed = true;
+      return { rows: [] };
+    }
+    return undefined;
+  });
   return {
     restore: () => {
-      database.prepare = original as unknown as Database.Database["prepare"];
+      getDatabase().setQueryInterceptor(undefined);
     },
     lookups: () => lookups,
   };
@@ -133,12 +125,10 @@ async function postSession(url: string, body: unknown): Promise<{ status: number
 
 describe("session submission", { concurrency: false }, () => {
   let url = "";
-  let directory = "";
   let closeServer: () => Promise<void> = async () => undefined;
 
   before(async () => {
-    directory = fs.mkdtempSync(path.join(os.tmpdir(), "poker-sessions-"));
-    openAppDatabase(path.join(directory, "poker.sqlite"));
+    await openTestDatabase();
     const server = await listen(createApp());
     url = server.url;
     closeServer = server.close;
@@ -146,17 +136,17 @@ describe("session submission", { concurrency: false }, () => {
 
   after(async () => {
     await closeServer();
-    closeDatabase();
-    fs.rmSync(directory, { recursive: true, force: true });
+    await closeDatabase();
   });
 
-  beforeEach(() => {
+  beforeEach(async () => {
     const database = getDatabase();
-    database.exec("DELETE FROM transactions");
-    database.exec("DELETE FROM sessions");
-    database.exec("DELETE FROM players");
-    insertPlayer(database, { id: "player-ada", name: "Ada", createdAt: "2026-11-12T17:00:00.000Z" });
-    insertPlayer(database, { id: "player-bea", name: "Bea", createdAt: "2026-11-12T17:05:00.000Z" });
+    database.setQueryInterceptor(undefined);
+    await database.exec("DELETE FROM transactions");
+    await database.exec("DELETE FROM sessions");
+    await database.exec("DELETE FROM players");
+    await insertPlayer(database, { id: "player-ada", name: "Ada", createdAt: "2026-11-12T17:00:00.000Z" });
+    await insertPlayer(database, { id: "player-bea", name: "Bea", createdAt: "2026-11-12T17:05:00.000Z" });
   });
 
   test("the first valid submission returns 201 and persists the session", async () => {
@@ -175,7 +165,7 @@ describe("session submission", { concurrency: false }, () => {
       response.body.players.map((player) => player.id),
       ["player-ada", "player-bea"],
     );
-    assert.deepEqual(counts(), { sessions: 1, transactions: 2 });
+    assert.deepEqual(await counts(), { sessions: 1, transactions: 2 });
   });
 
   test("an identical retry returns 200 and preserves createdAt", async () => {
@@ -195,7 +185,7 @@ describe("session submission", { concurrency: false }, () => {
     assertSessionDocument(retry.body);
     assert.equal(retry.body.createdAt, first.body.createdAt);
     assert.equal(retry.body.transactions[0]?.timestamp, "2026-11-12T18:15:00Z");
-    assert.deepEqual(counts(), { sessions: 1, transactions: 2 });
+    assert.deepEqual(await counts(), { sessions: 1, transactions: 2 });
   });
 
   test("a changed amount or date returns 409 and preserves the stored record", async () => {
@@ -214,16 +204,18 @@ describe("session submission", { concurrency: false }, () => {
       });
     }
 
-    const stored = getDatabase()
-      .prepare("SELECT amount FROM transactions WHERE id = ?")
-      .get("tx-001") as { amount: number };
-    const session = getDatabase()
-      .prepare("SELECT date, created_at AS createdAt FROM sessions WHERE id = ?")
-      .get("session-001") as { date: string; createdAt: string };
-    assert.equal(stored.amount, 50);
-    assert.equal(session.date, "2026-11-12");
-    assert.equal(session.createdAt, first.body.createdAt);
-    assert.deepEqual(counts(), { sessions: 1, transactions: 2 });
+    const stored = await getDatabase().query<{ amount: number }>(
+      "SELECT amount FROM transactions WHERE id = $1",
+      ["tx-001"],
+    );
+    const session = await getDatabase().query<{ date: string; createdAt: string }>(
+      `SELECT "date", created_at AS "createdAt" FROM sessions WHERE id = $1`,
+      ["session-001"],
+    );
+    assert.equal(Number(stored.rows[0]?.amount), 50);
+    assert.equal(session.rows[0]?.date, "2026-11-12");
+    assert.equal(session.rows[0]?.createdAt, first.body.createdAt);
+    assert.deepEqual(await counts(), { sessions: 1, transactions: 2 });
   });
 
   test("an existing session id with a different transaction set returns 409", async () => {
@@ -236,11 +228,15 @@ describe("session submission", { concurrency: false }, () => {
     assert.deepEqual(response.body, {
       error: { code: "CONFLICT", message: "Session already exists with different content" },
     });
-    const ids = getDatabase()
-      .prepare("SELECT id FROM transactions WHERE session_id = ? ORDER BY id")
-      .all("session-001") as Array<{ id: string }>;
-    assert.deepEqual(ids.map((row) => row.id), ["tx-001", "tx-002"]);
-    assert.deepEqual(counts(), { sessions: 1, transactions: 2 });
+    const ids = await getDatabase().query<{ id: string }>(
+      "SELECT id FROM transactions WHERE session_id = $1 ORDER BY id",
+      ["session-001"],
+    );
+    assert.deepEqual(
+      ids.rows.map((row) => row.id),
+      ["tx-001", "tx-002"],
+    );
+    assert.deepEqual(await counts(), { sessions: 1, transactions: 2 });
   });
 
   test("invalid session fields return 400 and store nothing", async () => {
@@ -260,7 +256,7 @@ describe("session submission", { concurrency: false }, () => {
       assert.deepEqual(response.body, {
         error: { code: "VALIDATION_ERROR", message: "Invalid request" },
       });
-      assert.deepEqual(counts(), { sessions: 0, transactions: 0 });
+      assert.deepEqual(await counts(), { sessions: 0, transactions: 0 });
     }
   });
 
@@ -273,7 +269,7 @@ describe("session submission", { concurrency: false }, () => {
     assert.deepEqual(response.body, {
       error: { code: "VALIDATION_ERROR", message: "Invalid request" },
     });
-    assert.deepEqual(counts(), { sessions: 0, transactions: 0 });
+    assert.deepEqual(await counts(), { sessions: 0, transactions: 0 });
   });
 
   test("a duplicate transaction id in one request returns 400 and stores nothing", async () => {
@@ -285,7 +281,7 @@ describe("session submission", { concurrency: false }, () => {
     assert.deepEqual(response.body, {
       error: { code: "VALIDATION_ERROR", message: "Invalid request" },
     });
-    assert.deepEqual(counts(), { sessions: 0, transactions: 0 });
+    assert.deepEqual(await counts(), { sessions: 0, transactions: 0 });
   });
 
   test("reusing a stored transaction id rolls back the new session", async () => {
@@ -302,32 +298,32 @@ describe("session submission", { concurrency: false }, () => {
     assert.deepEqual(response.body, {
       error: { code: "CONFLICT", message: "Transaction ID already exists" },
     });
-    const second = getDatabase().prepare("SELECT id FROM sessions WHERE id = ?").get("session-002");
-    assert.equal(second, undefined);
-    assert.deepEqual(counts(), { sessions: 1, transactions: 1 });
+    const second = await getDatabase().query("SELECT id FROM sessions WHERE id = $1", ["session-002"]);
+    assert.equal(second.rows.length, 0);
+    assert.deepEqual(await counts(), { sessions: 1, transactions: 1 });
   });
 
-  function seedSession(
+  async function seedSession(
     session: { id: string; date: string; createdAt: string },
     transactions: StoredTransaction[] = [],
-  ): void {
+  ): Promise<void> {
     const database = getDatabase();
-    insertSession(database, session);
+    await insertSession(database, session);
     for (const transaction of transactions) {
-      insertTransaction(database, session.id, transaction);
+      await insertTransaction(database, session.id, transaction);
     }
   }
 
   async function getJson(path: string): Promise<{ status: number; body: unknown }> {
-    const before = counts();
+    const before = await counts();
     const response = await fetch(`${url}${path}`);
     const body: unknown = await response.json();
-    assert.deepEqual(counts(), before);
+    assert.deepEqual(await counts(), before);
     return { status: response.status, body };
   }
 
   test("a stored session is returned with ordered transactions and distinct players", async () => {
-    seedSession({ id: "session-001", date: "2026-11-12", createdAt: "2026-11-12T22:00:00.000Z" }, [
+    await seedSession({ id: "session-001", date: "2026-11-12", createdAt: "2026-11-12T22:00:00.000Z" }, [
       { id: "tx-b", playerId: "player-bea", type: "cash-out", amount: 80, timestamp: "2026-11-12T19:00:00Z" },
       { id: "tx-c", playerId: "player-ada", type: "rebuy", amount: 20, timestamp: "2026-11-12T18:15:00Z" },
       { id: "tx-a", playerId: "player-ada", type: "buy-in", amount: 50, timestamp: "2026-11-12T18:15:00Z" },
@@ -350,7 +346,7 @@ describe("session submission", { concurrency: false }, () => {
   });
 
   test("an empty session returns an empty players array", async () => {
-    seedSession({ id: "session-empty", date: "2026-11-12", createdAt: "2026-11-12T22:00:00.000Z" });
+    await seedSession({ id: "session-empty", date: "2026-11-12", createdAt: "2026-11-12T22:00:00.000Z" });
 
     const response = await getJson("/api/sessions/session-empty");
     assert.equal(response.status, 200);
@@ -376,10 +372,10 @@ describe("session submission", { concurrency: false }, () => {
   });
 
   test("the unfiltered list returns every session newest date first", async () => {
-    seedSession({ id: "session-c", date: "2026-11-13", createdAt: "2026-11-13T10:00:00.000Z" });
-    seedSession({ id: "session-m", date: "2026-11-12", createdAt: "2026-11-12T20:00:00.000Z" });
-    seedSession({ id: "session-a", date: "2026-11-12", createdAt: "2026-11-12T20:00:00.000Z" });
-    seedSession({ id: "session-z", date: "2026-11-12", createdAt: "2026-11-12T18:00:00.000Z" });
+    await seedSession({ id: "session-c", date: "2026-11-13", createdAt: "2026-11-13T10:00:00.000Z" });
+    await seedSession({ id: "session-m", date: "2026-11-12", createdAt: "2026-11-12T20:00:00.000Z" });
+    await seedSession({ id: "session-a", date: "2026-11-12", createdAt: "2026-11-12T20:00:00.000Z" });
+    await seedSession({ id: "session-z", date: "2026-11-12", createdAt: "2026-11-12T18:00:00.000Z" });
 
     const response = await getJson("/api/sessions");
     assert.equal(response.status, 200);
@@ -396,10 +392,10 @@ describe("session submission", { concurrency: false }, () => {
   });
 
   test("from and to bounds are inclusive and either bound may be omitted", async () => {
-    seedSession({ id: "session-11", date: "2026-11-11", createdAt: "2026-11-11T10:00:00.000Z" });
-    seedSession({ id: "session-12", date: "2026-11-12", createdAt: "2026-11-12T10:00:00.000Z" });
-    seedSession({ id: "session-13", date: "2026-11-13", createdAt: "2026-11-13T10:00:00.000Z" });
-    seedSession({ id: "session-14", date: "2026-11-14", createdAt: "2026-11-14T10:00:00.000Z" });
+    await seedSession({ id: "session-11", date: "2026-11-11", createdAt: "2026-11-11T10:00:00.000Z" });
+    await seedSession({ id: "session-12", date: "2026-11-12", createdAt: "2026-11-12T10:00:00.000Z" });
+    await seedSession({ id: "session-13", date: "2026-11-13", createdAt: "2026-11-13T10:00:00.000Z" });
+    await seedSession({ id: "session-14", date: "2026-11-14", createdAt: "2026-11-14T10:00:00.000Z" });
 
     const both = await getJson("/api/sessions?from=2026-11-12&to=2026-11-13");
     const fromOnly = await getJson("/api/sessions?from=2026-11-13");
@@ -423,7 +419,7 @@ describe("session submission", { concurrency: false }, () => {
   });
 
   test("a reversed or invalid date range returns 400", async () => {
-    seedSession({ id: "session-12", date: "2026-11-12", createdAt: "2026-11-12T10:00:00.000Z" });
+    await seedSession({ id: "session-12", date: "2026-11-12", createdAt: "2026-11-12T10:00:00.000Z" });
 
     const reversed = await getJson("/api/sessions?from=2026-11-13&to=2026-11-12");
     const invalid = await getJson("/api/sessions?from=2026-02-31");
@@ -434,7 +430,7 @@ describe("session submission", { concurrency: false }, () => {
         error: { code: "VALIDATION_ERROR", message: "Invalid request" },
       });
     }
-    assert.deepEqual(counts(), { sessions: 1, transactions: 0 });
+    assert.deepEqual(await counts(), { sessions: 1, transactions: 0 });
   });
 
   test("an identical submission that loses the session-id insert returns 200 and keeps one session", async () => {
@@ -442,14 +438,14 @@ describe("session submission", { concurrency: false }, () => {
     assert.equal(first.status, 201);
     assertSessionDocument(first.body);
 
-    const conflict = forceSessionLookupMiss(getDatabase());
+    const conflict = forceSessionLookupMiss();
     try {
       const retry = await postSession(url, sessionBody());
       assert.equal(retry.status, 200);
       assertSessionDocument(retry.body);
       assert.equal(retry.body.createdAt, first.body.createdAt);
       assert.equal(conflict.lookups(), 2);
-      assert.deepEqual(counts(), { sessions: 1, transactions: 2 });
+      assert.deepEqual(await counts(), { sessions: 1, transactions: 2 });
     } finally {
       conflict.restore();
     }
@@ -460,7 +456,7 @@ describe("session submission", { concurrency: false }, () => {
     assert.equal(first.status, 201);
     assertSessionDocument(first.body);
 
-    const conflict = forceSessionLookupMiss(getDatabase());
+    const conflict = forceSessionLookupMiss();
     try {
       const response = await postSession(url, sessionBody({
         transactions: [{ ...buyIn, amount: 60 }, cashOut],
@@ -470,16 +466,18 @@ describe("session submission", { concurrency: false }, () => {
         error: { code: "CONFLICT", message: "Session already exists with different content" },
       });
       assert.equal(conflict.lookups(), 2);
-      const stored = getDatabase()
-        .prepare("SELECT amount FROM transactions WHERE id = ?")
-        .get("tx-001") as { amount: number };
-      const session = getDatabase()
-        .prepare("SELECT date, created_at AS createdAt FROM sessions WHERE id = ?")
-        .get("session-001") as { date: string; createdAt: string };
-      assert.equal(stored.amount, 50);
-      assert.equal(session.date, "2026-11-12");
-      assert.equal(session.createdAt, first.body.createdAt);
-      assert.deepEqual(counts(), { sessions: 1, transactions: 2 });
+      const stored = await getDatabase().query<{ amount: number }>(
+        "SELECT amount FROM transactions WHERE id = $1",
+        ["tx-001"],
+      );
+      const session = await getDatabase().query<{ date: string; createdAt: string }>(
+        `SELECT "date", created_at AS "createdAt" FROM sessions WHERE id = $1`,
+        ["session-001"],
+      );
+      assert.equal(Number(stored.rows[0]?.amount), 50);
+      assert.equal(session.rows[0]?.date, "2026-11-12");
+      assert.equal(session.rows[0]?.createdAt, first.body.createdAt);
+      assert.deepEqual(await counts(), { sessions: 1, transactions: 2 });
     } finally {
       conflict.restore();
     }
@@ -492,6 +490,6 @@ describe("session submission", { concurrency: false }, () => {
     assertSessionDocument(response.body);
     assert.deepEqual(response.body.transactions, []);
     assert.deepEqual(response.body.players, []);
-    assert.deepEqual(counts(), { sessions: 1, transactions: 0 });
+    assert.deepEqual(await counts(), { sessions: 1, transactions: 0 });
   });
 });

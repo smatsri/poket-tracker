@@ -1,42 +1,36 @@
 import assert from "node:assert/strict";
-import fs from "node:fs";
-import os from "node:os";
-import path from "node:path";
 import test from "node:test";
-import type Database from "better-sqlite3";
-import { openDatabase } from "./database.js";
+import { createPgliteDatabase } from "./database.js";
+import { applyMigrations } from "./migrate.js";
+import type { Database } from "./sql.js";
 
-function temporaryDatabasePath(): string {
-  const directory = fs.mkdtempSync(path.join(os.tmpdir(), "poker-schema-"));
-  return path.join(directory, "poker.sqlite");
-}
-
-function withDatabase(run: (database: Database.Database, filePath: string) => void): void {
-  const filePath = temporaryDatabasePath();
-  const database = openDatabase(filePath);
-
+async function withDatabase(run: (database: Database) => Promise<void>): Promise<void> {
+  const database = await createPgliteDatabase();
   try {
-    run(database, filePath);
+    await run(database);
   } finally {
-    database.close();
-    fs.rmSync(path.dirname(filePath), { recursive: true, force: true });
+    await database.close();
   }
 }
 
-function insertPlayer(database: Database.Database, id = "player-1"): void {
-  database
-    .prepare("INSERT INTO players (id, name, created_at) VALUES (?, ?, ?)")
-    .run(id, "Ada", "2026-11-12T18:00:00Z");
+async function insertPlayer(database: Database, id = "player-1"): Promise<void> {
+  await database.query("INSERT INTO players (id, name, created_at) VALUES ($1, $2, $3)", [
+    id,
+    "Ada",
+    "2026-11-12T18:00:00Z",
+  ]);
 }
 
-function insertSession(database: Database.Database, id = "session-1"): void {
-  database
-    .prepare("INSERT INTO sessions (id, date, created_at) VALUES (?, ?, ?)")
-    .run(id, "2026-11-12", "2026-11-12T18:00:00Z");
+async function insertSession(database: Database, id = "session-1"): Promise<void> {
+  await database.query(`INSERT INTO sessions (id, "date", created_at) VALUES ($1, $2, $3)`, [
+    id,
+    "2026-11-12",
+    "2026-11-12T18:00:00Z",
+  ]);
 }
 
-function insertTransaction(
-  database: Database.Database,
+async function insertTransaction(
+  database: Database,
   values: {
     id?: string;
     sessionId?: string;
@@ -44,87 +38,91 @@ function insertTransaction(
     type?: string;
     amount?: number;
   } = {},
-): void {
-  database
-    .prepare(
-      `INSERT INTO transactions (id, session_id, player_id, type, amount, timestamp)
-       VALUES (?, ?, ?, ?, ?, ?)`,
-    )
-    .run(
+): Promise<void> {
+  await database.query(
+    `INSERT INTO transactions (id, session_id, player_id, type, amount, "timestamp")
+     VALUES ($1, $2, $3, $4, $5, $6)`,
+    [
       values.id ?? "tx-1",
       values.sessionId ?? "session-1",
       values.playerId ?? "player-1",
       values.type ?? "buy-in",
       values.amount ?? 1,
       "2026-11-12T18:15:00Z",
-    );
+    ],
+  );
 }
 
-test("creates the sqlite file and applies the schema twice", () => {
-  const filePath = temporaryDatabasePath();
-  assert.equal(fs.existsSync(filePath), false);
+async function tableNames(database: Database): Promise<string[]> {
+  const tables = await database.query<{ name: string }>(
+    `SELECT table_name AS name
+     FROM information_schema.tables
+     WHERE table_schema = 'public' AND table_type = 'BASE TABLE'
+     ORDER BY table_name`,
+  );
+  return tables.rows.map((table) => table.name);
+}
 
-  const first = openDatabase(filePath);
-  assert.equal(fs.existsSync(filePath), true);
-  first.close();
+test("applies migrations twice without duplicating tables", async () => {
+  await withDatabase(async (database) => {
+    await applyMigrations(database);
 
-  const second = openDatabase(filePath);
-  try {
-    const tables = second
-      .prepare(
-        `SELECT name
-         FROM sqlite_master
-         WHERE type = 'table' AND name NOT LIKE 'sqlite_%'
-         ORDER BY name`,
-      )
-      .all() as Array<{ name: string }>;
+    assert.deepEqual(await tableNames(database), [
+      "players",
+      "schema_migrations",
+      "sessions",
+      "transactions",
+    ]);
 
+    const versions = await database.query<{ id: string }>("SELECT id FROM schema_migrations ORDER BY id");
     assert.deepEqual(
-      tables.map((table) => table.name),
-      ["players", "sessions", "transactions"],
+      versions.rows.map((row) => row.id),
+      ["001"],
     );
-  } finally {
-    second.close();
-    fs.rmSync(path.dirname(filePath), { recursive: true, force: true });
-  }
-});
-
-test("rejects a transaction with an unknown player or session", () => {
-  withDatabase((database) => {
-    insertPlayer(database);
-    insertSession(database);
-
-    assert.throws(() => insertTransaction(database, { playerId: "missing-player" }));
-    assert.throws(() => insertTransaction(database, { id: "tx-2", sessionId: "missing-session" }));
   });
 });
 
-test("rejects a transaction type outside buy-in, rebuy, and cash-out", () => {
-  withDatabase((database) => {
-    insertPlayer(database);
-    insertSession(database);
+test("rejects a transaction with an unknown player or session", async () => {
+  await withDatabase(async (database) => {
+    await insertPlayer(database);
+    await insertSession(database);
 
-    assert.throws(() => insertTransaction(database, { type: "tip" }));
+    await assert.rejects(() => insertTransaction(database, { playerId: "missing-player" }));
+    await assert.rejects(() => insertTransaction(database, { id: "tx-2", sessionId: "missing-session" }));
   });
 });
 
-test("rejects an amount below 1", () => {
-  withDatabase((database) => {
-    insertPlayer(database);
-    insertSession(database);
+test("rejects a transaction type outside buy-in, rebuy, and cash-out", async () => {
+  await withDatabase(async (database) => {
+    await insertPlayer(database);
+    await insertSession(database);
 
-    assert.throws(() => insertTransaction(database, { amount: 0 }));
-    assert.throws(() => insertTransaction(database, { id: "tx-2", amount: -5 }));
+    await assert.rejects(() => insertTransaction(database, { type: "tip" }));
   });
 });
 
-test("stores no profit, balance, or statistics columns", () => {
-  withDatabase((database) => {
+test("rejects an amount below 1", async () => {
+  await withDatabase(async (database) => {
+    await insertPlayer(database);
+    await insertSession(database);
+
+    await assert.rejects(() => insertTransaction(database, { amount: 0 }));
+    await assert.rejects(() => insertTransaction(database, { id: "tx-2", amount: -5 }));
+  });
+});
+
+test("stores no profit, balance, or statistics columns", async () => {
+  await withDatabase(async (database) => {
     const forbidden = new Set(["profit", "balance", "statistics"]);
 
     for (const table of ["players", "sessions", "transactions"]) {
-      const columns = database.pragma(`table_info(${table})`) as Array<{ name: string }>;
-      const names = columns.map((column) => column.name);
+      const columns = await database.query<{ name: string }>(
+        `SELECT column_name AS name
+         FROM information_schema.columns
+         WHERE table_schema = 'public' AND table_name = $1`,
+        [table],
+      );
+      const names = columns.rows.map((column) => column.name);
 
       assert.ok(names.length > 0);
       for (const name of names) {
