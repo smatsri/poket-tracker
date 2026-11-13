@@ -6,7 +6,7 @@ Each ticket is also a GitHub issue. `**Issue:**` is that issue, and the [poker t
 
 When a ticket becomes `done`, set that status in the ticket file, then push a commit to the default branch whose message contains `Closes #<issue>`. Use the GitHub issue number from `**Issue:**`, not the ticket id. Closing the issue moves its project card to Done. Milestones are GitHub milestones, and `Depends on` is a blocked-by link.
 
-The authoritative contract is [docs/api/openapi.yaml](../docs/api/openapi.yaml). Product behavior is locked in [docs/architecture.md](../docs/architecture.md), [docs/data-model.md](../docs/data-model.md), and [docs/testing.md](../docs/testing.md). Version 1.0 product direction is in [docs/roadmap-v1.0.md](../docs/roadmap-v1.0.md).
+The authoritative contract is [docs/api/openapi.yaml](../docs/api/openapi.yaml). Product behavior is locked in [docs/architecture.md](../docs/architecture.md), [docs/data-model.md](../docs/data-model.md), and [docs/testing.md](../docs/testing.md). Production hosting is locked in [docs/deployment.md](../docs/deployment.md). Version 1.0 product direction is in [docs/roadmap-v1.0.md](../docs/roadmap-v1.0.md).
 
 ## Milestones
 
@@ -20,13 +20,14 @@ The authoritative contract is [docs/api/openapi.yaml](../docs/api/openapi.yaml).
 | M5 Acceptance | TKT-022 | Complete MVP checklist | done |
 | M6 Version 1.0: Historical Insights | TKT-023–TKT-028 | Group overview, player progression, and charts | done |
 | M7 Contract hardening | TKT-029–TKT-032 | The locked contracts hold for the cases the reviews found | done |
+| M8 Production deployment | TKT-033–TKT-040 | The app is reachable on a phone through Cloud Run and Neon | todo |
 
-M0–M7 are done. Later work should reuse existing client calculations and `GET /api/sessions`. Do not add analytics endpoints unless a later ticket proves they are required.
+M0–M7 are done. M8 follows [docs/deployment.md](../docs/deployment.md). Later product work should reuse existing client calculations and `GET /api/sessions`. Do not add analytics endpoints unless a later ticket proves they are required.
 
 These review notes stay out of the backlog:
 
 - Stored transactions are ordered by timestamp text. The client sorts by UTC instant before display.
-- The server listens on every interface. Authentication stays deferred.
+- The server listens on every interface. Operator authentication is M8, in [docs/deployment.md](../docs/deployment.md).
 - A `409` leaves the evening pending, with no edit and no new evening. That is locked decision 14 in [docs/architecture.md](../docs/architecture.md).
 
 ## Sequence
@@ -65,6 +66,14 @@ These review notes stay out of the backlog:
 | [TKT-030](TKT-030-evening-load-failure.md) | Show a failed evening load instead of an empty evening | done | None |
 | [TKT-031](TKT-031-malformed-route.md) | Ignore a malformed history or statistics path | done | None |
 | [TKT-032](TKT-032-session-id-conflict.md) | Cover a concurrent session-id conflict | done | None |
+| [TKT-033](TKT-033-postgresql-access.md) | Replace SQLite with PostgreSQL | todo | None |
+| [TKT-034](TKT-034-concurrent-session-submit.md) | Prove concurrent session submits on Postgres | todo | TKT-033 |
+| [TKT-035](TKT-035-production-http-host.md) | Serve the production client from Express | todo | None |
+| [TKT-036](TKT-036-operator-basic-auth.md) | Require the operator password | todo | TKT-035 |
+| [TKT-037](TKT-037-production-image.md) | Build the production container image | todo | TKT-033, TKT-035, TKT-036 |
+| [TKT-038](TKT-038-first-cloud-deploy.md) | Deploy Cloud Run and Neon | todo | TKT-037 |
+| [TKT-039](TKT-039-github-actions-deploy.md) | Deploy from GitHub Actions | todo | TKT-034, TKT-037, TKT-038 |
+| [TKT-040](TKT-040-backup-restore.md) | Verify a database restore | todo | TKT-038 |
 
 ## Requirement coverage
 
@@ -105,11 +114,11 @@ These items stay outside Version 1.0:
 
 - Additional charts beyond the three Version 1.0 views, plus filters, search, and advanced analytics
 - Editing or deleting a session after server confirmation
-- Player accounts, authentication, and multiple application users
+- Player accounts and multiple application users. Operator access for the hosted app is M8, in [docs/deployment.md](../docs/deployment.md)
 - Multi-device collaboration, real-time sync, and offline access to the full history
 - Attendance without a transaction
 - Debt management and payments between players
 - Scheduling and attendance for future evenings
 - Hand tracking, strategy tools, chat, and AI features
-- Pagination and cloud infrastructure
+- Pagination, and hosting beyond the single service in [docs/deployment.md](../docs/deployment.md)
 - Multiple independent poker groups
