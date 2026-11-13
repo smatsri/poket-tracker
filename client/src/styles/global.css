@@ -234,6 +234,30 @@ h2 {
   fill: var(--color-primary);
 }
 
+.session-chart {
+  display: block;
+  width: 100%;
+  height: auto;
+  direction: ltr;
+}
+
+.session-chart-zero {
+  stroke: var(--color-border);
+  stroke-width: 1;
+}
+
+.session-chart-bar-positive {
+  fill: var(--color-positive);
+}
+
+.session-chart-bar-negative {
+  fill: var(--color-negative);
+}
+
+.session-chart-bar-neutral {
+  fill: var(--color-text);
+}
+
 .totals {
   display: flex;
   flex-direction: column;

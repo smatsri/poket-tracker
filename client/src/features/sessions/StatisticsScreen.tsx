@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { onNavigate, useAppLocation } from "../../app/navigation.ts";
 import type { ApiClient, SessionDocument } from "../../data/api/client.ts";
 import { CumulativeChart } from "./CumulativeChart.tsx";
+import { SessionResultsChart } from "./SessionResultsChart.tsx";
 import { ResultText } from "./ResultText.tsx";
 import {
   loadStatistics,
@@ -92,6 +93,10 @@ function StatisticsBody({ view }: { view: StatisticsView }) {
               <span className="muted">{statsCopy.transactions}</span>
               <strong>{view.transactionCount}</strong>
             </p>
+          </article>
+          <article className="card stack">
+            <h2>{statsCopy.bySession}</h2>
+            <SessionResultsChart sessions={view.sessions} />
           </article>
           <section className="stack">
             <h2>{statsCopy.players}</h2>

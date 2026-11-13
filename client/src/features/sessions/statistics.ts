@@ -1,6 +1,6 @@
 import type { ApiClient, SessionDocument } from "../../data/api/client.ts";
 import { ApiRequestError } from "../../data/api/errors.ts";
-import { calculatePlayerResults, rankOverallResults } from "../../domain/calculations.ts";
+import { calculatePlayerResults, calculateSessionResult, rankOverallResults } from "../../domain/calculations.ts";
 import type { Player, Session } from "../../domain/models.ts";
 import { presentResult, type PresentedResult } from "./currentEvening.ts";
 import { sessionSummaryPath } from "./sessionHistory.ts";
@@ -17,6 +17,7 @@ export const statsCopy = {
   eveningsPlayed: "ערבים",
   progression: "התקדמות מצטברת",
   byEvening: "לפי ערב",
+  bySession: "תוצאות לפי ערב",
   missingPlayer: "לשחקן הזה אין ערבים שהסתיימו.",
   networkError: "אין חיבור לשרת, ולכן אי אפשר להציג את הסיכומים.",
   loadError: "השרת לא הצליח להחזיר את הסיכומים.",
@@ -39,7 +40,14 @@ export interface StatisticsView {
   transactionCount: number;
   sessionsLabel: string;
   transactionsLabel: string;
+  sessions: SessionBalancePoint[];
   players: RankedPlayerRow[];
+}
+
+export interface SessionBalancePoint {
+  sessionId: string;
+  date: string;
+  balance: number;
 }
 
 export interface PlayerEveningRow {
@@ -61,6 +69,25 @@ export interface PlayerCumulativePoint {
   date: string;
   net: number;
   cumulative: number;
+}
+
+export interface SessionResultBar {
+  sessionId: string;
+  date: string;
+  value: number;
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+}
+
+export interface SessionResultsChartModel {
+  width: number;
+  height: number;
+  zeroY: number | null;
+  plotLeft: number;
+  plotRight: number;
+  bars: SessionResultBar[];
 }
 
 export interface CumulativeChartPoint {
@@ -133,6 +160,7 @@ export function presentStatistics(documents: readonly SessionDocument[]): Statis
       transactionCount: 0,
       sessionsLabel: `${statsCopy.sessions}: 0`,
       transactionsLabel: `${statsCopy.transactions}: 0`,
+      sessions: [],
       players: [],
     };
   }
@@ -145,6 +173,7 @@ export function presentStatistics(documents: readonly SessionDocument[]): Statis
     transactionCount,
     sessionsLabel: `${statsCopy.sessions}: ${sessionCount}`,
     transactionsLabel: `${statsCopy.transactions}: ${transactionCount}`,
+    sessions: sessionBalanceSeries(documents),
     players: rankOverallResults(sessionsOf(documents), playersOf(documents)).map((player) => ({
       playerId: player.playerId,
       name: player.name.length > 0 ? player.name : player.playerId,
@@ -157,38 +186,96 @@ export function presentStatistics(documents: readonly SessionDocument[]): Statis
 
 const chartPadding = 16;
 
+export function sessionBalanceSeries(documents: readonly SessionDocument[]): SessionBalancePoint[] {
+  return [...documents].sort(oldestFirst).map((document) => ({
+    sessionId: document.session.id,
+    date: formatSessionDate(document.session.date),
+    balance: calculateSessionResult(document.session).sessionBalance,
+  }));
+}
+
+export function mapSessionResultsChart(
+  points: readonly Pick<SessionBalancePoint, "sessionId" | "date" | "balance">[],
+  width: number,
+  height: number,
+): SessionResultsChartModel {
+  const scale = plotScale(points.map((point) => point.balance), width, height);
+  if (points.length === 0 || scale.zeroY === null) {
+    return { width, height, zeroY: null, plotLeft: scale.plotLeft, plotRight: scale.plotRight, bars: [] };
+  }
+
+  const slot = scale.innerWidth / points.length;
+  const barWidth = slot / 2;
+  const zeroY = scale.zeroY;
+
+  return {
+    width,
+    height,
+    zeroY,
+    plotLeft: scale.plotLeft,
+    plotRight: scale.plotRight,
+    bars: points.map((point, index) => {
+      const valueY = scale.yFor(point.balance);
+      return {
+        sessionId: point.sessionId,
+        date: point.date,
+        value: point.balance,
+        x: chartPadding + index * slot + (slot - barWidth) / 2,
+        y: Math.min(valueY, zeroY),
+        width: barWidth,
+        height: Math.abs(valueY - zeroY),
+      };
+    }),
+  };
+}
+
 export function mapCumulativeChart(
   points: readonly Pick<PlayerCumulativePoint, "sessionId" | "date" | "cumulative">[],
   width: number,
   height: number,
 ): CumulativeChart {
-  const plotLeft = chartPadding;
-  const plotRight = Math.max(width - chartPadding, plotLeft);
-  if (points.length === 0) {
-    return { width, height, zeroY: null, plotLeft, plotRight, points: [] };
+  const scale = plotScale(points.map((point) => point.cumulative), width, height);
+  if (points.length === 0 || scale.zeroY === null) {
+    return { width, height, zeroY: null, plotLeft: scale.plotLeft, plotRight: scale.plotRight, points: [] };
   }
-
-  const min = Math.min(0, ...points.map((point) => point.cumulative));
-  const max = Math.max(0, ...points.map((point) => point.cumulative));
-  const span = max - min || 1;
-  const innerWidth = Math.max(width - chartPadding * 2, 0);
-  const innerHeight = Math.max(height - chartPadding * 2, 0);
-  const yFor = (value: number) => chartPadding + ((max - value) / span) * innerHeight;
 
   return {
     width,
     height,
-    zeroY: yFor(0),
-    plotLeft,
-    plotRight,
+    zeroY: scale.zeroY,
+    plotLeft: scale.plotLeft,
+    plotRight: scale.plotRight,
     points: points.map((point, index) => ({
       sessionId: point.sessionId,
       date: point.date,
       value: point.cumulative,
-      x: chartPadding + (points.length === 1 ? innerWidth / 2 : (index / (points.length - 1)) * innerWidth),
-      y: yFor(point.cumulative),
+      x: chartPadding + (points.length === 1 ? scale.innerWidth / 2 : (index / (points.length - 1)) * scale.innerWidth),
+      y: scale.yFor(point.cumulative),
     })),
   };
+}
+
+function plotScale(values: readonly number[], width: number, height: number) {
+  const plotLeft = chartPadding;
+  const plotRight = Math.max(width - chartPadding, plotLeft);
+  const innerWidth = Math.max(width - chartPadding * 2, 0);
+  const innerHeight = Math.max(height - chartPadding * 2, 0);
+  if (values.length === 0) {
+    return {
+      plotLeft,
+      plotRight,
+      innerWidth,
+      innerHeight,
+      zeroY: null as number | null,
+      yFor: (_value: number) => chartPadding,
+    };
+  }
+
+  const min = Math.min(0, ...values);
+  const max = Math.max(0, ...values);
+  const span = max - min || 1;
+  const yFor = (value: number) => chartPadding + ((max - value) / span) * innerHeight;
+  return { plotLeft, plotRight, innerWidth, innerHeight, zeroY: yFor(0), yFor };
 }
 
 export function playerCumulativeSeries(documents: readonly SessionDocument[], playerId: string): PlayerCumulativePoint[] {

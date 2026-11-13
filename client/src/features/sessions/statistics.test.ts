@@ -3,7 +3,7 @@ import { readFileSync } from "node:fs";
 import test from "node:test";
 import type { SessionDocument } from "../../data/api/client.ts";
 import { networkError } from "../../data/api/errors.ts";
-import { calculatePlayerResults, rankOverallResults } from "../../domain/calculations.ts";
+import { calculatePlayerResults, calculateSessionResult, rankOverallResults } from "../../domain/calculations.ts";
 import { formatResult } from "../../domain/format.ts";
 import type { Player, Transaction, TransactionType } from "../../domain/models.ts";
 import { matchRoute } from "../../app/routes.ts";
@@ -12,7 +12,9 @@ import {
   parseStatsLocation,
   playerCumulativeSeries,
   mapCumulativeChart,
+  mapSessionResultsChart,
   presentPlayerStatistics,
+  sessionBalanceSeries,
   presentStatistics,
   presentStatisticsFailure,
   statsCopy,
@@ -202,6 +204,65 @@ test("cumulative chart points follow the chronological series", () => {
   const chartSource = readFileSync(new URL("./CumulativeChart.tsx", import.meta.url), "utf8");
   assert.match(chartSource, /mapCumulativeChart/);
   assert.doesNotMatch(chartSource, /fetch\(|\/api\//);
+});
+
+test("session results chart maps chronological session balances", () => {
+  const empty = mapSessionResultsChart([], 320, 160);
+  assert.deepEqual(empty.bars, []);
+  assert.equal(empty.zeroY, null);
+  assert.deepEqual(presentStatistics([]).sessions, []);
+
+  const view = presentStatistics([newer, older]);
+  const expected = [older, newer].map((item) => ({
+    sessionId: item.session.id,
+    balance: calculateSessionResult(item.session).sessionBalance,
+  }));
+  assert.deepEqual(
+    view.sessions.map((point) => [point.sessionId, point.balance]),
+    expected.map((point) => [point.sessionId, point.balance]),
+  );
+  assert.deepEqual(
+    sessionBalanceSeries([newer, older]).map((point) => [point.sessionId, point.balance]),
+    expected.map((point) => [point.sessionId, point.balance]),
+  );
+  assert.equal(view.sessions[0]?.balance, -60);
+  assert.equal(view.sessions[1]?.balance, 50);
+
+  const sameDay = document("session-late", "2026-11-13", "2026-11-13T23:00:00Z", [avi], [
+    transaction("session-late", "d1", "avi", "buy-in", 10),
+  ]);
+  assert.deepEqual(
+    sessionBalanceSeries([sameDay, newer]).map((point) => point.sessionId),
+    ["session-b", "session-late"],
+  );
+
+  const chart = mapSessionResultsChart(view.sessions, 100, 50);
+  assert.deepEqual(
+    chart.bars.map((bar) => [bar.sessionId, bar.value]),
+    view.sessions.map((point) => [point.sessionId, point.balance]),
+  );
+  assert.ok((chart.bars[0]?.x ?? 0) < (chart.bars[1]?.x ?? 0));
+  assert.equal(chart.bars[0]?.y, chart.zeroY);
+  assert.ok((chart.bars[0]?.height ?? 0) > 0);
+  assert.equal((chart.bars[1]?.y ?? 0) + (chart.bars[1]?.height ?? 0), chart.zeroY);
+  assert.ok((chart.bars[1]?.y ?? 0) < (chart.zeroY ?? 0));
+
+  const loss = mapSessionResultsChart([{ sessionId: "session-a", date: "12 בנובמבר 2026", balance: -60 }], 100, 50);
+  assert.equal(loss.zeroY, 16);
+  assert.equal(loss.bars[0]?.x, 33);
+  assert.equal(loss.bars[0]?.y, 16);
+  assert.equal(loss.bars[0]?.width, 34);
+  assert.equal(loss.bars[0]?.height, 18);
+
+  const source = readFileSync(new URL("./StatisticsScreen.tsx", import.meta.url), "utf8");
+  assert.match(source, /SessionResultsChart sessions=\{view\.sessions\}/);
+  assert.match(source, /view\.sessionCount/);
+  assert.match(source, /view\.players\.map/);
+  const chartSource = readFileSync(new URL("./SessionResultsChart.tsx", import.meta.url), "utf8");
+  assert.match(chartSource, /mapSessionResultsChart/);
+  assert.doesNotMatch(chartSource, /fetch\(|\/api\//);
+  const css = readFileSync(new URL("../../styles/global.css", import.meta.url), "utf8");
+  assert.match(css, /\.session-chart \{[^}]*width:\s*100%/s);
 });
 
 test("no completed sessions produces the Hebrew empty state", () => {

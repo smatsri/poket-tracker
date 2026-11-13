@@ -1,6 +1,6 @@
 # TKT-026 — Chart results by session
 
-**Status:** todo  
+**Status:** done  
 **Issue:** #26  
 **Milestone:** M6 Version 1.0: Historical Insights  
 **Depends on:** [TKT-024](TKT-024-group-overview-enrichment.md) (#24), [TKT-025](TKT-025-chart-cumulative-result.md) (#25)
@@ -31,8 +31,8 @@ Show profit and loss across individual completed evenings with a second chart th
 
 ## Acceptance criteria
 
-- [ ] The statistics overview shows a results-by-session chart when at least one completed evening exists.
-- [ ] Each chart value matches the client-calculated session balance for that evening.
-- [ ] The chart remains usable at 360px width.
-- [ ] Existing overview counts and ranking still render correctly.
-- [ ] Automated tests cover the session series mapping.
+- [x] The statistics overview shows a results-by-session chart when at least one completed evening exists.
+- [x] Each chart value matches the client-calculated session balance for that evening.
+- [x] The chart remains usable at 360px width.
+- [x] Existing overview counts and ranking still render correctly.
+- [x] Automated tests cover the session series mapping.
