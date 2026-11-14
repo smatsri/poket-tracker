@@ -1,6 +1,6 @@
 # TKT-037 — Build the production container image
 
-**Status:** todo  
+**Status:** done  
 **Issue:** #37  
 **Milestone:** M8 Production deployment  
 **Depends on:** [TKT-033](TKT-033-postgresql-access.md) (#33), [TKT-035](TKT-035-production-http-host.md) (#35), [TKT-036](TKT-036-operator-basic-auth.md) (#36)
@@ -28,7 +28,7 @@ One Node 22 image can run the production server without a local database file or
 
 ## Acceptance criteria
 
-- [ ] `docker build` produces an image that starts with `node` on the compiled server.
-- [ ] The runtime image does not contain `better-sqlite3` or a SQLite database file.
-- [ ] With `DATABASE_URL` and `APP_PASSWORD` set, the container serves `/health` and requires Basic Auth for `/`.
-- [ ] A missing `APP_PASSWORD` in production mode prevents the container from staying up.
+- [x] `docker build` produces an image that starts with `node` on the compiled server.
+- [x] The runtime image does not contain `better-sqlite3` or a SQLite database file.
+- [x] With `DATABASE_URL` and `APP_PASSWORD` set, the container serves `/health` and requires Basic Auth for `/`.
+- [x] A missing `APP_PASSWORD` in production mode prevents the container from staying up.

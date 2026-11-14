@@ -65,6 +65,19 @@ Root commands:
 
 Run the client and server in separate terminals during development. The server must be started before player creation or session submission can succeed.
 
+Build and run the production image against the Compose database. The image listens on `PORT` and `0.0.0.0`. `NODE_ENV` is `production` in the image, so `APP_PASSWORD` is required. Use `sslmode=disable` for the local database. Do not put the password in the image or the repository.
+
+```bash
+docker build -t poker-tracker .
+docker run --rm -p 8080:8080 \
+  -e PORT=8080 \
+  -e DATABASE_URL=postgres://postgres:postgres@host.docker.internal:5432/poker?sslmode=disable \
+  -e APP_PASSWORD=replace-with-a-long-password \
+  poker-tracker
+```
+
+On Linux, add `--add-host=host.docker.internal:host-gateway` so the container can reach PostgreSQL on the host.
+
 Validate the contract with Redocly before changing it:
 
 ```bash

@@ -1,0 +1,17 @@
+.git
+.github
+.cursor
+node_modules
+client/node_modules
+server/node_modules
+client/dist
+server/dist
+server/data
+dist
+.env
+.env.*
+coverage
+tickets
+docs
+specs
+*.md
