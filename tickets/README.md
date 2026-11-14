@@ -71,7 +71,7 @@ These review notes stay out of the backlog:
 | [TKT-035](TKT-035-production-http-host.md) | Serve the production client from Express | done | None |
 | [TKT-036](TKT-036-operator-basic-auth.md) | Require the operator password | done | TKT-035 |
 | [TKT-037](TKT-037-production-image.md) | Build the production container image | done | TKT-033, TKT-035, TKT-036 |
-| [TKT-038](TKT-038-first-cloud-deploy.md) | Deploy Cloud Run and Neon | todo | TKT-037 |
+| [TKT-038](TKT-038-first-cloud-deploy.md) | Deploy Cloud Run and Neon | done | TKT-037 |
 | [TKT-039](TKT-039-github-actions-deploy.md) | Deploy from GitHub Actions | todo | TKT-034, TKT-037, TKT-038 |
 | [TKT-040](TKT-040-backup-restore.md) | Verify a database restore | todo | TKT-038 |
 

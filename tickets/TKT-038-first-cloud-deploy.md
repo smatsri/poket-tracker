@@ -1,6 +1,6 @@
 # TKT-038 — Deploy Cloud Run and Neon
 
-**Status:** todo  
+**Status:** done  
 **Issue:** #38  
 **Milestone:** M8 Production deployment  
 **Depends on:** [TKT-037](TKT-037-production-image.md) (#37)
@@ -32,9 +32,9 @@ The operator can open the Cloud Run URL on a phone, sign in with the operator pa
 
 ## Acceptance criteria
 
-- [ ] The public URL is the Cloud Run hostname in `me-west1`, and the database is the Neon project in `aws-eu-central-1`.
-- [ ] The service scales to zero and does not set a minimum instance.
-- [ ] A phone browser is prompted for the operator password before the application loads.
-- [ ] After signing in, creating a player and submitting a session works on a non-production branch.
-- [ ] `GET /health` does not require a password and does not query Neon.
-- [ ] A billing budget alert exists, and no secret value is committed.
+- [x] The public URL is the Cloud Run hostname in `me-west1`, and the database is the Neon project in `aws-eu-central-1`.
+- [x] The service scales to zero and does not set a minimum instance.
+- [x] A phone browser is prompted for the operator password before the application loads.
+- [x] After signing in, creating a player and submitting a session works on a non-production branch.
+- [x] `GET /health` does not require a password and does not query Neon.
+- [x] A billing budget alert exists, and no secret value is committed.
