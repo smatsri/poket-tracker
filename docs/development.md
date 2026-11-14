@@ -16,7 +16,8 @@ poket-tracker/
     package.json
     src/
   docs/
-  specs/
+    specs/
+  ideas/
   tickets/
 ```
 

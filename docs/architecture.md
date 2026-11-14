@@ -163,4 +163,4 @@ Local status labels are `פתוח` for draft, `ממתין לשליחה` for pend
 
 ## Visual baseline
 
-The visual source is [specs/Visual Design Language.md](../specs/Visual%20Design%20Language.md). The interface is light, rounded, and mobile-first, with Heebo, generous spacing, and green as the action accent. Positive amounts use `#249B45`, negative amounts use `#D94B4B`, and the sign is always visible as well. Layout uses CSS logical properties and supports a 360px-wide viewport and mobile safe areas.
+The visual source is [specs/Visual Design Language.md](specs/Visual%20Design%20Language.md). The interface is light, rounded, and mobile-first, with Heebo, generous spacing, and green as the action accent. Positive amounts use `#249B45`, negative amounts use `#D94B4B`, and the sign is always visible as well. Layout uses CSS logical properties and supports a 360px-wide viewport and mobile safe areas.

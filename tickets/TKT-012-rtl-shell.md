@@ -12,7 +12,7 @@ Create the shared visual foundation for a mobile Hebrew application.
 ## Scope
 
 - Set the document language to Hebrew and the direction to RTL.
-- Load Heebo through the `@fontsource/heebo` package and apply the color, radius, spacing, and type tokens from [specs/Visual Design Language.md](../specs/Visual%20Design%20Language.md).
+- Load Heebo through the `@fontsource/heebo` package and apply the color, radius, spacing, and type tokens from [docs/specs/Visual Design Language.md](../docs/specs/Visual%20Design%20Language.md).
 - Add the three bottom-navigation destinations: `/` labeled `ערב נוכחי`, `/history` labeled `היסטוריה`, and `/stats` labeled `סיכומים`.
 - Use visible Hebrew labels and direction-aware icons.
 - Respect mobile safe areas and a minimum 44px touch target.
