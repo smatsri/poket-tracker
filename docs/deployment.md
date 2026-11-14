@@ -86,7 +86,24 @@ The first deploy is manual: billing budget alert, Artifact Registry, the Neon pr
 
 Neon Free keeps about six hours of instant-restore history and one manual snapshot. That window is not the backup.
 
-`pg_dump` in custom format uses the direct URL. The dump lives outside Neon. Restore with `pg_restore` into a fresh branch or project, then check row counts for `players`, `sessions`, and `transactions` and read one known session through the API. One successful restore is required before the database is the only copy of a real evening.
+`pg_dump` in custom format uses the direct URL. The dump lives outside Neon and outside this repository. Restore with `pg_restore` into a fresh branch or project, then check row counts for `players`, `sessions`, and `transactions` and read one known session through the API. One successful restore is required before the database is the only copy of a real evening.
+
+The pooled URL stays on the running application. The restore target is a new branch or project, never the production branch. A Neon branch starts as a copy of its parent, so drop `public` on that restore target before `pg_restore`. Do not drop it on the production branch.
+
+```bash
+mkdir -p "$HOME/poker-tracker-backups"
+pg_dump --format=custom --no-owner --no-acl --schema=public \
+  --dbname="$DIRECT_DATABASE_URL" \
+  --file="$HOME/poker-tracker-backups/poker.dump"
+
+psql "$RESTORE_DIRECT_URL" -c "DROP SCHEMA public CASCADE"
+
+pg_restore --no-owner --no-acl --exit-on-error \
+  --dbname="$RESTORE_DIRECT_URL" \
+  "$HOME/poker-tracker-backups/poker.dump"
+```
+
+`$DIRECT_DATABASE_URL` is the direct Neon connection string. `$RESTORE_DIRECT_URL` is the direct string of the fresh branch or project. Do not commit the dump file. The `pg_dump` and `pg_restore` client must be at least as new as the Neon server, or the dump is rejected.
 
 ## Cost bounds
 
