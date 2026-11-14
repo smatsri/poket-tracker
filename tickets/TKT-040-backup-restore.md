@@ -1,6 +1,6 @@
 # TKT-040 — Verify a database restore
 
-**Status:** todo  
+**Status:** done  
 **Issue:** #40  
 **Milestone:** M8 Production deployment  
 **Depends on:** [TKT-038](TKT-038-first-cloud-deploy.md) (#38)
@@ -28,7 +28,7 @@ A dump taken from the direct Neon URL can be restored into an empty database and
 
 ## Acceptance criteria
 
-- [ ] The documented dump command uses the direct Neon URL and writes a file outside the repository.
-- [ ] A restore into a fresh branch or project reproduces the dumped players, sessions, and transactions.
-- [ ] One known session id read through the API matches the dumped session.
-- [ ] The dump file is not committed, and the production branch is not the restore target.
+- [x] The documented dump command uses the direct Neon URL and writes a file outside the repository.
+- [x] A restore into a fresh branch or project reproduces the dumped players, sessions, and transactions.
+- [x] One known session id read through the API matches the dumped session.
+- [x] The dump file is not committed, and the production branch is not the restore target.

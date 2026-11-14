@@ -3,3 +3,4 @@ dist/
 client/dist/
 server/dist/
 server/data/
+*.dump

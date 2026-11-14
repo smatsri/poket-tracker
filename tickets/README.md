@@ -20,9 +20,9 @@ The authoritative contract is [docs/api/openapi.yaml](../docs/api/openapi.yaml).
 | M5 Acceptance | TKT-022 | Complete MVP checklist | done |
 | M6 Version 1.0: Historical Insights | TKT-023–TKT-028 | Group overview, player progression, and charts | done |
 | M7 Contract hardening | TKT-029–TKT-032 | The locked contracts hold for the cases the reviews found | done |
-| M8 Production deployment | TKT-033–TKT-040 | The app is reachable on a phone through Cloud Run and Neon | todo |
+| M8 Production deployment | TKT-033–TKT-040 | The app is reachable on a phone through Cloud Run and Neon | done |
 
-M0–M7 are done. M8 follows [docs/deployment.md](../docs/deployment.md). Later product work should reuse existing client calculations and `GET /api/sessions`. Do not add analytics endpoints unless a later ticket proves they are required.
+M0–M8 are done. Hosting stays locked in [docs/deployment.md](../docs/deployment.md). Later product work should reuse existing client calculations and `GET /api/sessions`. Do not add analytics endpoints unless a later ticket proves they are required.
 
 These review notes stay out of the backlog:
 
@@ -72,8 +72,8 @@ These review notes stay out of the backlog:
 | [TKT-036](TKT-036-operator-basic-auth.md) | Require the operator password | done | TKT-035 |
 | [TKT-037](TKT-037-production-image.md) | Build the production container image | done | TKT-033, TKT-035, TKT-036 |
 | [TKT-038](TKT-038-first-cloud-deploy.md) | Deploy Cloud Run and Neon | done | TKT-037 |
-| [TKT-039](TKT-039-github-actions-deploy.md) | Deploy from GitHub Actions | todo | TKT-034, TKT-037, TKT-038 |
-| [TKT-040](TKT-040-backup-restore.md) | Verify a database restore | todo | TKT-038 |
+| [TKT-039](TKT-039-github-actions-deploy.md) | Deploy from GitHub Actions | done | TKT-034, TKT-037, TKT-038 |
+| [TKT-040](TKT-040-backup-restore.md) | Verify a database restore | done | TKT-038 |
 
 ## Requirement coverage
 
