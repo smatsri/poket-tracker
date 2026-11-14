@@ -32,6 +32,7 @@ Server environment:
 PORT=3001
 DATABASE_URL=postgres://postgres:postgres@localhost:5432/poker
 CLIENT_ORIGIN=http://localhost:5173
+APP_PASSWORD=
 ```
 
 Client environment:
@@ -46,7 +47,7 @@ Start local PostgreSQL with `docker compose up -d` before the server. That Compo
 
 The server reads `DATABASE_URL`, opens a pool, and applies numbered migrations on startup. `npm test` uses in-memory PGlite and does not need Compose or a Neon database. When `DATABASE_URL` points at an empty PostgreSQL database, that same command runs the server suite there, including overlapping session submits. CORS allows only `CLIENT_ORIGIN`.
 
-No authentication variables exist in version 1. Do not add secrets to the repository.
+Leave `APP_PASSWORD` unset for local development. The password gate stays off unless `NODE_ENV` is `production` or `APP_PASSWORD` is set. A set password requires HTTP Basic username `operator`. Production refuses to start when `APP_PASSWORD` is unset. Do not commit the password or any other secret.
 
 ## Commands
 

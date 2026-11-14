@@ -1,6 +1,6 @@
 # TKT-036 — Require the operator password
 
-**Status:** todo  
+**Status:** done  
 **Issue:** #36  
 **Milestone:** M8 Production deployment  
 **Depends on:** [TKT-035](TKT-035-production-http-host.md) (#35)
@@ -31,9 +31,9 @@ A browser must present the operator password before it can load the application 
 
 ## Acceptance criteria
 
-- [ ] An unauthenticated request for `/` and for `/api/players` receives `401` and `WWW-Authenticate`.
-- [ ] The correct Basic credentials can load the shell and call the API.
-- [ ] `GET /health` stays public and still does not open a database connection.
-- [ ] Production startup fails when `APP_PASSWORD` is unset.
-- [ ] Development startup without `APP_PASSWORD` still serves the local API.
-- [ ] `npm test` from the repository root passes.
+- [x] An unauthenticated request for `/` and for `/api/players` receives `401` and `WWW-Authenticate`.
+- [x] The correct Basic credentials can load the shell and call the API.
+- [x] `GET /health` stays public and still does not open a database connection.
+- [x] Production startup fails when `APP_PASSWORD` is unset.
+- [x] Development startup without `APP_PASSWORD` still serves the local API.
+- [x] `npm test` from the repository root passes.

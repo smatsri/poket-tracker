@@ -2,12 +2,15 @@ import type { Server } from "node:http";
 import { createApp } from "./app.js";
 import { databaseUrl, httpHost, port } from "./config.js";
 import { closeDatabase, openAppDatabase } from "./db/database.js";
+import { assertProductionPassword } from "./http/auth.js";
 import { openHttpServer, stopServer } from "./http/server.js";
 
 let server: Server | undefined;
 let stopping = false;
 
 async function main(): Promise<void> {
+  assertProductionPassword();
+
   if (!databaseUrl) {
     throw new Error("DATABASE_URL is required");
   }
