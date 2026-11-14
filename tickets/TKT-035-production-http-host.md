@@ -1,6 +1,6 @@
 # TKT-035 — Serve the production client from Express
 
-**Status:** todo  
+**Status:** done  
 **Issue:** #35  
 **Milestone:** M8 Production deployment  
 **Depends on:** none
@@ -31,9 +31,9 @@ One Express process serves the built React app and the existing API on the same 
 
 ## Acceptance criteria
 
-- [ ] A production build loaded from Express can call `/api` without an absolute API origin.
-- [ ] Refreshing `/history` and `/stats` returns the application shell.
-- [ ] `GET /health` returns `200` without a database.
-- [ ] The process binds `0.0.0.0` and uses `PORT`.
-- [ ] `SIGTERM` closes the HTTP server before the database.
-- [ ] `npm test` and `npm run typecheck` from the repository root pass.
+- [x] A production build loaded from Express can call `/api` without an absolute API origin.
+- [x] Refreshing `/history` and `/stats` returns the application shell.
+- [x] `GET /health` returns `200` without a database.
+- [x] The process binds `0.0.0.0` and uses `PORT`.
+- [x] `SIGTERM` closes the HTTP server before the database.
+- [x] `npm test` and `npm run typecheck` from the repository root pass.

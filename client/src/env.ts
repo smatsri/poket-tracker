@@ -1,2 +1,3 @@
-export const apiBaseUrl =
-  import.meta.env.VITE_API_BASE_URL ?? "http://localhost:3001";
+import { resolveApiBaseUrl } from "./data/api/baseUrl.ts";
+
+export const apiBaseUrl = resolveApiBaseUrl(import.meta.env.VITE_API_BASE_URL);

@@ -68,7 +68,7 @@ These review notes stay out of the backlog:
 | [TKT-032](TKT-032-session-id-conflict.md) | Cover a concurrent session-id conflict | done | None |
 | [TKT-033](TKT-033-postgresql-access.md) | Replace SQLite with PostgreSQL | done | None |
 | [TKT-034](TKT-034-concurrent-session-submit.md) | Prove concurrent session submits on Postgres | done | TKT-033 |
-| [TKT-035](TKT-035-production-http-host.md) | Serve the production client from Express | todo | None |
+| [TKT-035](TKT-035-production-http-host.md) | Serve the production client from Express | done | None |
 | [TKT-036](TKT-036-operator-basic-auth.md) | Require the operator password | todo | TKT-035 |
 | [TKT-037](TKT-037-production-image.md) | Build the production container image | todo | TKT-033, TKT-035, TKT-036 |
 | [TKT-038](TKT-038-first-cloud-deploy.md) | Deploy Cloud Run and Neon | todo | TKT-037 |

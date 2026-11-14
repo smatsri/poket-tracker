@@ -29,9 +29,6 @@ const errorCodes = ["VALIDATION_ERROR", "NOT_FOUND", "CONFLICT", "INTERNAL_ERROR
 
 export function createApiClient(baseUrl: string, fetchImpl: typeof fetch = fetch): ApiClient {
   const origin = baseUrl.replace(/\/$/, "");
-  if (origin.length === 0) {
-    throw new Error("API base URL is empty");
-  }
 
   return {
     listPlayers: async () => {

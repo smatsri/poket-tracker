@@ -1,6 +1,11 @@
+import type { Server } from "node:http";
 import { createApp } from "./app.js";
-import { databaseUrl, port } from "./config.js";
+import { databaseUrl, httpHost, port } from "./config.js";
 import { closeDatabase, openAppDatabase } from "./db/database.js";
+import { openHttpServer, stopServer } from "./http/server.js";
+
+let server: Server | undefined;
+let stopping = false;
 
 async function main(): Promise<void> {
   if (!databaseUrl) {
@@ -9,14 +14,21 @@ async function main(): Promise<void> {
 
   await openAppDatabase(databaseUrl);
 
-  const app = createApp();
-  app.listen(port, () => {
-    console.log(`Server listening on port ${port}`);
+  server = openHttpServer(createApp(), port);
+  server.once("listening", () => {
+    console.log(`Server listening on ${httpHost}:${port}`);
   });
 }
 
 function shutdown(): void {
-  void closeDatabase().finally(() => {
+  if (stopping) {
+    return;
+  }
+  stopping = true;
+
+  const current = server;
+  const done = current === undefined ? closeDatabase() : stopServer(current, closeDatabase);
+  void done.finally(() => {
     process.exit(0);
   });
 }

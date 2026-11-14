@@ -4,6 +4,7 @@ import { dirname, join, relative } from "node:path";
 import test from "node:test";
 import { fileURLToPath } from "node:url";
 import type { Session } from "../../domain/models.ts";
+import { resolveApiBaseUrl } from "./baseUrl.ts";
 import { createApiClient } from "./client.ts";
 import { ApiRequestError } from "./errors.ts";
 
@@ -150,6 +151,20 @@ test("an unexpected response is distinct from a classified HTTP error", async ()
   const malformed = createApiClient(baseUrl, async () => json(200, { players: [{ id: "bad id", name: "אבי", createdAt }] }));
   const invalid = await rejected(malformed.listPlayers());
   assert.equal(invalid.kind, "unexpected");
+});
+
+test("an empty API base URL calls /api on the page origin", async () => {
+  assert.equal(resolveApiBaseUrl(undefined), "http://localhost:3001");
+  assert.equal(resolveApiBaseUrl(""), "");
+
+  const calls: string[] = [];
+  const client = createApiClient("", async (url) => {
+    calls.push(String(url));
+    return json(200, { players: [] });
+  });
+
+  assert.deepEqual(await client.listPlayers(), []);
+  assert.deepEqual(calls, ["/api/players"]);
 });
 
 test("only the API layer calls fetch", () => {
