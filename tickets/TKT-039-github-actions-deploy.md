@@ -1,6 +1,6 @@
 # TKT-039 — Deploy from GitHub Actions
 
-**Status:** todo  
+**Status:** done  
 **Issue:** #39  
 **Milestone:** M8 Production deployment  
 **Depends on:** [TKT-034](TKT-034-concurrent-session-submit.md) (#34), [TKT-037](TKT-037-production-image.md) (#37), [TKT-038](TKT-038-first-cloud-deploy.md) (#38)
@@ -28,7 +28,7 @@ A push to `main` tests the server against Postgres, publishes the image, and dep
 
 ## Acceptance criteria
 
-- [ ] A push to `main` fails the workflow when the Postgres test suite fails, and does not deploy that image.
-- [ ] A green push publishes an image to Artifact Registry in `me-west1` and deploys it to the existing Cloud Run service.
-- [ ] The workflow logs and GitHub secrets do not contain the database URLs or the operator password.
-- [ ] The deployed service still requires the operator password and still serves `/health` without one.
+- [x] A push to `main` fails the workflow when the Postgres test suite fails, and does not deploy that image.
+- [x] A green push publishes an image to Artifact Registry in `me-west1` and deploys it to the existing Cloud Run service.
+- [x] The workflow logs and GitHub secrets do not contain the database URLs or the operator password.
+- [x] The deployed service still requires the operator password and still serves `/health` without one.

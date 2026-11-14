@@ -1,0 +1,75 @@
+name: Deploy
+
+on:
+  push:
+    branches:
+      - main
+
+concurrency:
+  group: production-deploy
+  cancel-in-progress: false
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: poker
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d poker"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    env:
+      DATABASE_URL: postgres://postgres:postgres@localhost:5432/poker
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm test
+
+  deploy:
+    needs: test
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: google-github-actions/auth@v2
+        with:
+          project_id: toker-tracker
+          workload_identity_provider: projects/757035259311/locations/global/workloadIdentityPools/github/providers/github
+          service_account: github-deploy@toker-tracker.iam.gserviceaccount.com
+      - uses: google-github-actions/setup-gcloud@v2
+      - name: Publish and deploy the image built in this run
+        run: |
+          gcloud auth configure-docker me-west1-docker.pkg.dev --quiet
+          image="me-west1-docker.pkg.dev/toker-tracker/poker-tracker/app:${GITHUB_SHA}"
+          docker build -t "$image" .
+          docker push "$image"
+          gcloud run deploy poker-tracker \
+            --project=toker-tracker \
+            --region=me-west1 \
+            --image="$image" \
+            --service-account=757035259311-compute@developer.gserviceaccount.com \
+            --allow-unauthenticated \
+            --min-instances=0 \
+            --max-instances=2 \
+            --cpu=1 \
+            --memory=512Mi \
+            --timeout=60 \
+            --port=8080 \
+            --cpu-throttling \
+            --no-cpu-boost \
+            --set-secrets=DATABASE_URL=database-url:latest,DIRECT_DATABASE_URL=direct-database-url:latest,APP_PASSWORD=app-password:latest \
+            --quiet
