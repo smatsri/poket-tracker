@@ -124,6 +124,8 @@ No analytics endpoints were added. The views calculate from sessions returned by
 
 Version 1.0 is a continuation of the current product, not a major architectural expansion.
 
+The next accepted work is [M9 Evening usability](roadmap-m9.md). It comes from using this version during a real evening.
+
 Future versions may explore:
 
 - Managing future poker evenings.

@@ -97,6 +97,8 @@ npx --yes @redocly/cli lint docs/api/openapi.yaml --config docs/api/redocly.yaml
 
 Milestones M0–M8 in [tickets/README.md](../tickets/README.md) are done. That work built the workspaces, the player and session API, client calculations and submission, the Hebrew evening flow, history, statistics, the Version 1.0 charts, and the contract-hardening fixes. The API stores players, sessions, and transactions in PostgreSQL. Acceptance evidence is in [TKT-022](../tickets/TKT-022-mvp-acceptance.md), [TKT-028](../tickets/TKT-028-v1-acceptance.md), and TKT-029–TKT-032. Production hosting is locked in [deployment.md](deployment.md). Later product work should reuse `GET /api/sessions` and the client calculations before adding an endpoint.
 
+M9 Evening usability is specified in [roadmap-m9.md](roadmap-m9.md) and is not built yet. Its tickets are TKT-041–TKT-048.
+
 ## GitHub issues
 
 Each file in [tickets/](../tickets/) is an issue on `smatsri/poket-tracker`, and those issues are on the [poker tracker](https://github.com/users/smatsri/projects/8) project. The markdown file stays the spec. The GitHub issue body is only a link to that file.
