@@ -179,6 +179,9 @@ test("the amount, action, and save stay outside the scrolling player list", () =
   assert.match(footer, /createActionChoices/);
   assert.match(footer, /amount-field/);
   assert.match(footer, /שמירה/);
+  const toolbar = source.slice(source.indexOf("sheet-toolbar"), scroll);
+  assert.match(toolbar, /ביטול/);
+  assert.doesNotMatch(source, /<p>הפעולה נשמרה\.<\/p>/);
   const styles = readFileSync(new URL("../../styles/global.css", import.meta.url), "utf8");
   assert.match(styles, /\.sheet-scroll \{[^}]*overflow:\s*auto/s);
   assert.match(styles, /\.sheet \{[^}]*overflow:\s*hidden/s);

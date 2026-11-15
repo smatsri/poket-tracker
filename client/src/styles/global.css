@@ -424,6 +424,13 @@ a.activity-row {
   gap: var(--space-3);
 }
 
+.sheet-header-actions {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: var(--space-2);
+}
+
 .type-field {
   margin: 0;
   padding: 0;

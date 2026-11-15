@@ -102,6 +102,7 @@ export function TransactionSheet({
         setSaving(true);
         setErrors({});
         setSaveError(null);
+        setUndoError(null);
         let saved: Transaction[] = [];
         try {
           saved = await evening.addTransactions(values);
@@ -178,6 +179,8 @@ export function TransactionSheet({
       await evening.deleteTransaction(undoId);
       removed = true;
       await onPersisted();
+      const current = await evening.readCurrent();
+      setTransactions(current?.session.transactions ?? []);
     } catch {
       if (!removed) {
         setUndoError("לא הצלחנו לבטל את הפעולה.");
@@ -202,19 +205,17 @@ export function TransactionSheet({
         <div className="sheet-toolbar">
           <header className="sheet-header">
             <h2 id="transaction-sheet-title">{editing === null ? "הוספת פעולה" : "עריכת פעולה"}</h2>
-            <button type="button" className="button button-secondary" onClick={onClose}>
-              סגירה
-            </button>
-          </header>
-          {undoId !== null ? (
-            <div className="notice stack" role="status">
-              <p>הפעולה נשמרה.</p>
-              <button type="button" className="button button-secondary" disabled={undoing} onClick={() => void undo()}>
-                ביטול
+            <div className="sheet-header-actions">
+              {undoId !== null ? (
+                <button type="button" className="button button-secondary" disabled={undoing} onClick={() => void undo()}>
+                  ביטול
+                </button>
+              ) : null}
+              <button type="button" className="button button-secondary" onClick={onClose}>
+                סגירה
               </button>
-              {undoError !== null ? <p className="notice notice-alert">{undoError}</p> : null}
             </div>
-          ) : null}
+          </header>
         </div>
         <div className="sheet-scroll stack">
           <PlayerPanel
@@ -324,6 +325,11 @@ export function TransactionSheet({
           {saveError !== null ? (
             <p className="notice notice-alert" role="alert">
               {saveError}
+            </p>
+          ) : null}
+          {undoError !== null ? (
+            <p className="notice notice-alert" role="alert">
+              {undoError}
             </p>
           ) : null}
           <button type="button" className="button button-primary" disabled={saving} onClick={() => void save()}>
