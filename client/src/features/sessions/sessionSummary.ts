@@ -64,7 +64,6 @@ export type SummaryFailureView =
 
 export function presentSessionSummary(document: SessionDocument): SessionSummaryView {
   const result = calculateSessionResult(document.session);
-  const names = new Map(document.players.map((player) => [player.id, player.name]));
   const history = presentTransactionHistory(document.session, document.players, "readonly");
   const playerCount = new Set(document.players.map((player) => player.id)).size;
 
@@ -79,7 +78,7 @@ export function presentSessionSummary(document: SessionDocument): SessionSummary
     transactionCount: document.session.transactions.length,
     playersLabel: `${summaryCopy.players}: ${playerCount}`,
     transactionsLabel: `${summaryCopy.transactionCount}: ${document.session.transactions.length}`,
-    players: result.players.map((player) => presentSummaryPlayer(document.session.id, player, names)),
+    players: result.players.map((player) => presentSummaryPlayer(document.session.id, player, document.players)),
     transactions: history.transactions,
     transactionsHref: sessionTransactionsPath(document.session.id),
     summaryHref: `/history/${encodeURIComponent(document.session.id)}`,
@@ -124,9 +123,9 @@ export function loadSessionSummary(api: Pick<ApiClient, "getSession">, sessionId
   return api.getSession(sessionId);
 }
 
-function presentSummaryPlayer(sessionId: string, player: PlayerSessionResult, names: ReadonlyMap<string, string>): SummaryPlayerRow {
+function presentSummaryPlayer(sessionId: string, player: PlayerSessionResult, players: SessionDocument["players"]): SummaryPlayerRow {
   return {
-    ...presentPlayerResult(player, names),
+    ...presentPlayerResult(player, players),
     href: sessionPlayerPath(sessionId, player.playerId),
   };
 }

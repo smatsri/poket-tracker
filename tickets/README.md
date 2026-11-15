@@ -77,7 +77,7 @@ These review notes stay out of the backlog:
 | [TKT-038](TKT-038-first-cloud-deploy.md) | Deploy Cloud Run and Neon | done | TKT-037 |
 | [TKT-039](TKT-039-github-actions-deploy.md) | Deploy from GitHub Actions | done | TKT-034, TKT-037, TKT-038 |
 | [TKT-040](TKT-040-backup-restore.md) | Verify a database restore | done | TKT-038 |
-| [TKT-041](TKT-041-player-names.md) | Keep player names visible | todo | None |
+| [TKT-041](TKT-041-player-names.md) | Keep player names visible | done | None |
 | [TKT-042](TKT-042-close-to-summary.md) | Open the summary after a confirmed close | todo | None |
 | [TKT-043](TKT-043-add-action-sheet.md) | Shorten the add-action sheet | todo | None |
 | [TKT-044](TKT-044-bulk-buy-in.md) | Add the same amount for several players | todo | TKT-043 |

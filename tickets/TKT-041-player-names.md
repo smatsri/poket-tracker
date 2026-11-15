@@ -1,6 +1,6 @@
 # TKT-041 — Keep player names visible
 
-**Status:** todo  
+**Status:** done  
 **Issue:** #42  
 **Milestone:** M9 Evening usability  
 **Depends on:** None
@@ -30,7 +30,7 @@ Show a player's stored name wherever that player appears, including after refres
 
 ## Acceptance criteria
 
-- [ ] A player with a stored name still shows that name after refresh and after moving between the evening, history, and statistics.
-- [ ] A failed player reload keeps the names from the last successful load.
-- [ ] A player whose name cannot be resolved shows `שחקן לא ידוע` on every surface listed above.
-- [ ] Automated tests cover a resolved name, a cached name after a failed load, and an unknown player.
+- [x] A player with a stored name still shows that name after refresh and after moving between the evening, history, and statistics.
+- [x] A failed player reload keeps the names from the last successful load.
+- [x] A player whose name cannot be resolved shows `שחקן לא ידוע` on every surface listed above.
+- [x] Automated tests cover a resolved name, a cached name after a failed load, and an unknown player.

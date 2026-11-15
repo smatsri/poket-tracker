@@ -24,7 +24,7 @@ const transactions = [
   transaction("t4", "p2", "cash-out", 20, "2026-11-13T21:00:00Z"),
 ];
 
-test("all transactions are visible newest first, and a missing name shows the player id", () => {
+test("all transactions are visible newest first, and a missing name is unknown", () => {
   const history = presentTransactionHistory({ date: "2026-11-13", transactions }, cache, "draft");
 
   assert.deepEqual(
@@ -34,7 +34,7 @@ test("all transactions are visible newest first, and a missing name shows the pl
   assert.equal(history.transactions[0]?.playerName, "נועה");
   assert.equal(history.transactions[0]?.typeLabel, "יציאה");
   assert.equal(history.transactions[0]?.amount, "20");
-  assert.equal(history.transactions[1]?.playerName, "missing");
+  assert.equal(history.transactions[1]?.playerName, "שחקן לא ידוע");
   assert.equal(history.transactions[1]?.typeLabel, "יציאה");
   assert.equal(history.canCorrect, true);
   assert.notEqual(history.date, "");
@@ -46,7 +46,7 @@ test("a reviewed session uses its own players and cannot change a transaction", 
   assert.equal(history.canCorrect, false);
   assert.equal(historyAccess("pending"), "readonly");
   assert.equal(history.transactions.find((item) => item.id === "t4")?.playerName, "נועה מהשרת");
-  assert.equal(history.transactions.find((item) => item.playerId === "missing")?.playerName, "missing");
+  assert.equal(history.transactions.find((item) => item.playerId === "missing")?.playerName, "שחקן לא ידוע");
 });
 
 test("an empty session has an empty transaction list", () => {

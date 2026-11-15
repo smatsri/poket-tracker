@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import type { Player } from "../../domain/models.ts";
 import { createSingleFlight } from "../singleFlight.ts";
 import type { PlayerDirectory } from "./directory.ts";
+import { playerDisplayName } from "./playerName.ts";
 
 const cachedPlayersNote = "לא הצלחנו לרענן את הרשימה. אפשר לבחור מהשחקנים השמורים.";
 const emptyLoadNote = "לא הצלחנו לטעון שחקנים מהשרת. אפשר לנסות שוב כשהחיבור חוזר.";
@@ -50,8 +51,6 @@ export function PlayerPanel({
     };
   }, [directory]);
 
-  const selected = players.find((player) => player.id === selectedId) ?? null;
-
   function select(player: Player) {
     if (controlledId === undefined) {
       setInternalId(player.id);
@@ -99,13 +98,13 @@ export function PlayerPanel({
                 aria-pressed={player.id === selectedId}
                 onClick={() => select(player)}
               >
-                {player.name}
+                {playerDisplayName(player.id, players)}
               </button>
             </li>
           ))}
         </ul>
       ) : null}
-      {selected !== null ? <p>נבחר לפעולה: {selected.name}</p> : null}
+      {selectedId !== null ? <p>נבחר לפעולה: {playerDisplayName(selectedId, players)}</p> : null}
       <form
         className="stack"
         onSubmit={(event) => {

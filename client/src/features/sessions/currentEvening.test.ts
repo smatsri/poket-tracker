@@ -122,7 +122,7 @@ test("recent activity shows at most five transactions, newest first", () => {
   assert.equal(view.recent[0]?.typeLabel, "כניסה נוספת");
 });
 
-test("the full history keeps every transaction and shows a missing name as the player id", () => {
+test("the full history keeps every transaction and shows an unknown player", () => {
   const withUnknown = [...transactions, transaction("t8", "gone", "buy-in", 15, "2026-11-13T17:00:00Z")];
   const view = presentCurrentEvening(record("draft", withUnknown), players);
   assert.equal(view.kind, "active");
@@ -130,7 +130,7 @@ test("the full history keeps every transaction and shows a missing name as the p
     return;
   }
 
-  assert.equal(view.history.at(-1)?.playerName, "gone");
+  assert.equal(view.history.at(-1)?.playerName, "שחקן לא ידוע");
   assert.equal(view.history.length, withUnknown.length);
 });
 

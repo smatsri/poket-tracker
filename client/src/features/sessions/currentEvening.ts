@@ -1,6 +1,7 @@
 import { calculateSessionResult } from "../../domain/calculations.ts";
 import { formatResult } from "../../domain/format.ts";
 import type { ActiveSessionRecord, Player, PlayerSessionResult, SubmissionStatus } from "../../domain/models.ts";
+import { playerDisplayName } from "../players/playerName.ts";
 import { historyAccess, presentTransactionHistory, type PresentedTransaction } from "./transactionHistory.ts";
 
 const amountFormat = new Intl.NumberFormat("he-IL", { maximumFractionDigits: 0 });
@@ -80,7 +81,6 @@ export function presentCurrentEvening(
   }
 
   const result = calculateSessionResult(record.session);
-  const names = new Map(players.map((player) => [player.id, player.name]));
   const history = presentTransactionHistory(record.session, players, historyAccess(record.status));
 
   return {
@@ -93,7 +93,7 @@ export function presentCurrentEvening(
     totalBuyIns: amountFormat.format(result.sessionBuyIns),
     totalCashOuts: amountFormat.format(result.sessionCashOuts),
     balance: presentResult(result.sessionBalance),
-    players: result.players.map((player) => presentPlayerResult(player, names)),
+    players: result.players.map((player) => presentPlayerResult(player, players)),
     recent: history.transactions.slice(0, 5),
     history: history.transactions,
   };
@@ -123,10 +123,10 @@ export function presentPlayerEvening(
   };
 }
 
-export function presentPlayerResult(player: PlayerSessionResult, names: ReadonlyMap<string, string>): PresentedPlayerRow {
+export function presentPlayerResult(player: PlayerSessionResult, players: readonly Player[]): PresentedPlayerRow {
   return {
     playerId: player.playerId,
-    name: names.get(player.playerId) ?? player.playerId,
+    name: playerDisplayName(player.playerId, players),
     totalBuyIns: amountFormat.format(player.totalBuyIns),
     totalCashOuts: amountFormat.format(player.totalCashOuts),
     net: presentResult(player.netResult),
