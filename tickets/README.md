@@ -79,7 +79,7 @@ These review notes stay out of the backlog:
 | [TKT-040](TKT-040-backup-restore.md) | Verify a database restore | done | TKT-038 |
 | [TKT-041](TKT-041-player-names.md) | Keep player names visible | done | None |
 | [TKT-042](TKT-042-close-to-summary.md) | Open the summary after a confirmed close | done | None |
-| [TKT-043](TKT-043-add-action-sheet.md) | Shorten the add-action sheet | todo | None |
+| [TKT-043](TKT-043-add-action-sheet.md) | Shorten the add-action sheet | done | None |
 | [TKT-044](TKT-044-bulk-buy-in.md) | Add the same amount for several players | todo | TKT-043 |
 | [TKT-045](TKT-045-session-name-location.md) | Name and locate an evening | todo | None |
 | [TKT-046](TKT-046-history-metrics.md) | Show the history gap | todo | None |

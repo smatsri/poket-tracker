@@ -4,7 +4,8 @@ import { dirname, join } from "node:path";
 import test from "node:test";
 import { fileURLToPath } from "node:url";
 import type { ActiveSessionRecord, Player } from "../../domain/models.ts";
-import { activeSessionStore, createIndexedDbRepository, currentSessionKey, playersStore } from "./indexedDb.ts";
+import { activeSessionStore, createIndexedDbRepository, currentSessionKey, operatorSettingsStore, playersStore } from "./indexedDb.ts";
+import { initialOperatorSettings } from "./operatorSettings.ts";
 
 const createdAt = "2026-11-12T21:00:00Z";
 
@@ -59,6 +60,19 @@ test("replacing the active session overwrites the current record", async () => {
   await repository.replaceActiveSession(replacement);
 
   assert.deepEqual(await repository.readActiveSession(), replacement);
+});
+
+test("operator settings survive reopening and stay off the session", async () => {
+  const fake = createFakeIndexedDb();
+  const repository = createIndexedDbRepository(fake.factory);
+  await repository.saveActiveSession(record);
+  assert.deepEqual(await repository.readOperatorSettings(), initialOperatorSettings);
+
+  const saved = { defaultAmount: 100, currencyLabel: "₪" };
+  await repository.saveOperatorSettings(saved);
+  assert.deepEqual(await createIndexedDbRepository(fake.factory).readOperatorSettings(), saved);
+  assert.deepEqual(await repository.readActiveSession(), record);
+  assert.equal(JSON.stringify(record).includes("currencyLabel"), false);
 });
 
 test("replacing the player cache removes players that were not in the replacement list", async () => {
@@ -212,7 +226,7 @@ class FakeTransaction {
   }
 
   objectStore(name: string): FakeObjectStore {
-    if (name !== activeSessionStore && name !== playersStore) {
+    if (name !== activeSessionStore && name !== playersStore && name !== operatorSettingsStore) {
       throw new Error(`Unexpected store ${name}`);
     }
     return new FakeObjectStore(this);

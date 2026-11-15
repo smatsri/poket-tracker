@@ -1,6 +1,9 @@
 import { useEffect, useRef, useState } from "react";
-import type { Player } from "../../domain/models.ts";
+import { formatSignedAmount } from "../../data/local/operatorSettings.ts";
+import type { Player, Transaction } from "../../domain/models.ts";
 import { createSingleFlight } from "../singleFlight.ts";
+import { useOperatorSettings } from "../settings/OperatorSettings.tsx";
+import { createPlayerNet } from "../sessions/transactionForm.ts";
 import type { PlayerDirectory } from "./directory.ts";
 import { playerDisplayName } from "./playerName.ts";
 
@@ -11,11 +14,14 @@ export function PlayerPanel({
   directory,
   onSelect,
   selectedId: controlledId,
+  eveningTransactions,
 }: {
   directory: PlayerDirectory;
   onSelect: (player: Player) => void;
   selectedId?: string | null;
+  eveningTransactions?: readonly Transaction[];
 }) {
+  const { settings } = useOperatorSettings();
   const [players, setPlayers] = useState<Player[]>([]);
   const [internalId, setInternalId] = useState<string | null>(null);
   const selectedId = controlledId === undefined ? internalId : controlledId;
@@ -98,7 +104,10 @@ export function PlayerPanel({
                 aria-pressed={player.id === selectedId}
                 onClick={() => select(player)}
               >
-                {playerDisplayName(player.id, players)}
+                <span>{playerDisplayName(player.id, players)}</span>
+                {eveningTransactions !== undefined ? (
+                  <span dir="ltr">{formatSignedAmount(createPlayerNet(player.id, eveningTransactions), settings.currencyLabel)}</span>
+                ) : null}
               </button>
             </li>
           ))}

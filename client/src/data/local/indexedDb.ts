@@ -1,10 +1,12 @@
 import type { ActiveSessionRecord, Player } from "../../domain/models.ts";
+import { initialOperatorSettings, parseOperatorSettings, type OperatorSettings } from "./operatorSettings.ts";
 import type { LocalRepository } from "./repository.ts";
 
 export const databaseName = "poker-tracker";
-export const databaseVersion = 1;
+export const databaseVersion = 2;
 export const activeSessionStore = "activeSession";
 export const playersStore = "players";
+export const operatorSettingsStore = "operatorSettings";
 export const currentSessionKey = "current";
 
 const persistenceError = "Failed to persist local data";
@@ -62,6 +64,25 @@ export function createIndexedDbRepository(factory: IDBFactory = indexedDB): Loca
         await completed;
       });
     },
+
+    readOperatorSettings(): Promise<OperatorSettings> {
+      return withDatabase(factory, async (database) => {
+        const transaction = database.transaction(operatorSettingsStore, "readonly");
+        const completed = waitForTransaction(transaction);
+        const stored = await requestResult<unknown>(transaction.objectStore(operatorSettingsStore).get(currentSessionKey));
+        await completed;
+        return parseOperatorSettings(stored) ?? initialOperatorSettings;
+      });
+    },
+
+    saveOperatorSettings(settings: OperatorSettings): Promise<void> {
+      return withDatabase(factory, async (database) => {
+        const transaction = database.transaction(operatorSettingsStore, "readwrite");
+        const completed = waitForTransaction(transaction);
+        transaction.objectStore(operatorSettingsStore).put(settings, currentSessionKey);
+        await completed;
+      });
+    },
   };
 }
 
@@ -93,6 +114,9 @@ function openDatabase(factory: IDBFactory): Promise<IDBDatabase> {
       }
       if (!database.objectStoreNames.contains(playersStore)) {
         database.createObjectStore(playersStore, { keyPath: "id" });
+      }
+      if (!database.objectStoreNames.contains(operatorSettingsStore)) {
+        database.createObjectStore(operatorSettingsStore);
       }
     };
     request.onsuccess = () => resolve(request.result);

@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { onNavigate, useAppLocation } from "../../app/navigation.ts";
 import type { ApiClient, SessionDocument } from "../../data/api/client.ts";
-import { ResultText } from "./ResultText.tsx";
+import { MoneyText, ResultText } from "./ResultText.tsx";
 import {
   historyCopy,
   loadSessionHistory,
@@ -202,11 +202,15 @@ function SummaryBody({ view }: { view: SessionSummaryView }) {
       <article className="card totals">
         <p>
           <span className="muted">{summaryCopy.buyIns}</span>
-          <strong>{view.totalBuyIns}</strong>
+          <strong>
+            <MoneyText value={view.totalBuyIns} />
+          </strong>
         </p>
         <p>
           <span className="muted">{summaryCopy.cashOuts}</span>
-          <strong>{view.totalCashOuts}</strong>
+          <strong>
+            <MoneyText value={view.totalCashOuts} />
+          </strong>
         </p>
         <p>
           <span className="muted">{summaryCopy.balance}</span>
@@ -223,7 +227,8 @@ function SummaryBody({ view }: { view: SessionSummaryView }) {
                 <span className="player-row-main">
                   <span className="player-name">{player.name}</span>
                   <span className="muted">
-                    {summaryCopy.buyIns} {player.totalBuyIns} · {summaryCopy.cashOuts} {player.totalCashOuts}
+                    {summaryCopy.buyIns} <MoneyText value={player.totalBuyIns} /> · {summaryCopy.cashOuts}{" "}
+                    <MoneyText value={player.totalCashOuts} />
                   </span>
                 </span>
                 <ResultText result={player.net} prominent />
@@ -270,7 +275,7 @@ function PlayerTransactions({
         <h1>{player.name}</h1>
         <ResultText result={player.net} prominent />
         <p className="muted">
-          {summaryCopy.buyIns} {player.buyIns} · {summaryCopy.cashOuts} {player.cashOuts}
+          {summaryCopy.buyIns} <MoneyText value={player.buyIns} /> · {summaryCopy.cashOuts} <MoneyText value={player.cashOuts} />
         </p>
       </header>
       <ReadOnlyTransactions items={player.transactions} empty={summaryCopy.missingPlayer} />
@@ -311,7 +316,7 @@ function ReadOnlyTransactions({ items, empty }: { items: PresentedTransaction[];
               <span className="player-name">{item.playerName}</span>
               <span className="muted">{item.typeLabel}</span>
             </span>
-            <span className="money">{item.amount}</span>
+            <MoneyText value={item.amount} />
             <span className="muted">{item.time}</span>
           </div>
         </li>

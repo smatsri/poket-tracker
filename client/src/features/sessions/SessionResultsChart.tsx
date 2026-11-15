@@ -1,10 +1,12 @@
-import { formatResult } from "../../domain/format.ts";
+import { formatSignedAmount } from "../../data/local/operatorSettings.ts";
+import { useOperatorSettings } from "../settings/OperatorSettings.tsx";
 import { mapSessionResultsChart, statsCopy, type SessionBalancePoint } from "./statistics.ts";
 
 const chartWidth = 320;
 const chartHeight = 160;
 
 export function SessionResultsChart({ sessions }: { sessions: readonly SessionBalancePoint[] }) {
+  const { settings } = useOperatorSettings();
   const chart = mapSessionResultsChart(sessions, chartWidth, chartHeight);
   if (chart.bars.length === 0) {
     return null;
@@ -26,7 +28,7 @@ export function SessionResultsChart({ sessions }: { sessions: readonly SessionBa
           height={bar.height}
         >
           <title>
-            {bar.date} {formatResult(bar.value)}
+            {bar.date} {formatSignedAmount(bar.value, settings.currencyLabel)}
           </title>
         </rect>
       ))}

@@ -59,6 +59,19 @@ The player store is a cache of the last successful server response. It can be re
 
 The active-session record is the recovery source after refresh, browser restart, or failed submission. Submission status is not a database column on the server.
 
+```ts
+interface OperatorSettings {
+  defaultAmount: number; // positive integer, initial 50
+  currencyLabel: string; // display only, initial ₪
+}
+```
+
+| Store | Key | Value |
+| --- | --- | --- |
+| `operatorSettings` | constant `current` | `OperatorSettings` |
+
+The currency label and default amount are local display settings. They are not sent to the server and are not copied onto transactions or sessions. Changing them does not change a transaction that was already saved.
+
 ## PostgreSQL schema
 
 Startup applies numbered SQL migrations and records each applied id in `schema_migrations`. Applying the same migration again is a no-op. Dates and timestamps are `TEXT`. Amounts are `INTEGER`.

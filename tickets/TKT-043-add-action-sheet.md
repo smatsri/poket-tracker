@@ -1,6 +1,6 @@
 # TKT-043 — Shorten the add-action sheet
 
-**Status:** todo  
+**Status:** done  
 **Issue:** #44  
 **Milestone:** M9 Evening usability  
 **Depends on:** None
@@ -37,10 +37,10 @@ Record money in or money out with a default amount, two choices, and the player'
 
 ## Acceptance criteria
 
-- [ ] Create offers `הוספת כסף` and `יציאה`, and a first add for a player is stored as `buy-in` while a later add is stored as `rebuy`.
-- [ ] The edit sheet shows the stored type and can change it.
-- [ ] The create sheet shows the player's current-evening net, or zero when that player has no transactions.
-- [ ] A new amount starts at the saved default, the default survives reload, and changing it does not change a transaction already saved.
-- [ ] Amounts stay positive integers, and the currency label appears on formatted amounts without being stored on a transaction.
-- [ ] On a phone-width sheet, the amount, the action, and save stay visible while the player list scrolls.
-- [ ] Automated tests cover the type rule, the default, and the net on the player row.
+- [x] Create offers `הוספת כסף` and `יציאה`, and a first add for a player is stored as `buy-in` while a later add is stored as `rebuy`.
+- [x] The edit sheet shows the stored type and can change it.
+- [x] The create sheet shows the player's current-evening net, or zero when that player has no transactions.
+- [x] A new amount starts at the saved default, the default survives reload, and changing it does not change a transaction already saved.
+- [x] Amounts stay positive integers, and the currency label appears on formatted amounts without being stored on a transaction.
+- [x] On a phone-width sheet, the amount, the action, and save stay visible while the player list scrolls.
+- [x] Automated tests cover the type rule, the default, and the net on the player row.
