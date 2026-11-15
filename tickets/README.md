@@ -83,7 +83,7 @@ These review notes stay out of the backlog:
 | [TKT-044](TKT-044-bulk-buy-in.md) | Add the same amount for several players | done | TKT-043 |
 | [TKT-045](TKT-045-session-name-location.md) | Name and locate an evening | done | None |
 | [TKT-046](TKT-046-history-metrics.md) | Show the history gap | done | None |
-| [TKT-047](TKT-047-player-rename-delete.md) | Rename a player and delete an unused one | todo | None |
+| [TKT-047](TKT-047-player-rename-delete.md) | Rename a player and delete an unused one | done | None |
 | [TKT-048](TKT-048-session-cache.md) | Cache closed sessions for display | todo | TKT-045 |
 
 ## Requirement coverage

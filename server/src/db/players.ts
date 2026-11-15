@@ -14,6 +14,27 @@ export async function insertPlayer(database: Sql, player: StoredPlayer): Promise
   ]);
 }
 
+export async function updatePlayerName(database: Sql, id: string, name: string): Promise<StoredPlayer | undefined> {
+  const result = await database.query<StoredPlayer>(
+    `UPDATE players
+     SET name = $2
+     WHERE id = $1
+     RETURNING id, name, created_at AS "createdAt"`,
+    [id, name],
+  );
+  return result.rows[0];
+}
+
+export async function playerIsReferenced(database: Sql, id: string): Promise<boolean> {
+  const result = await database.query("SELECT 1 AS present FROM transactions WHERE player_id = $1 LIMIT 1", [id]);
+  return result.rows.length > 0;
+}
+
+export async function deletePlayer(database: Sql, id: string): Promise<boolean> {
+  const result = await database.query<{ id: string }>("DELETE FROM players WHERE id = $1 RETURNING id", [id]);
+  return result.rows.length > 0;
+}
+
 export async function selectPlayers(database: Sql): Promise<StoredPlayer[]> {
   const result = await database.query<StoredPlayer>(
     `SELECT id, name, created_at AS "createdAt"

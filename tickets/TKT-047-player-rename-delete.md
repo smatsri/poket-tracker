@@ -1,6 +1,6 @@
 # TKT-047 — Rename a player and delete an unused one
 
-**Status:** todo  
+**Status:** done  
 **Issue:** #48  
 **Milestone:** M9 Evening usability  
 **Depends on:** None
@@ -34,8 +34,8 @@ Correct a player's name, and remove a player who has never been part of an eveni
 
 ## Acceptance criteria
 
-- [ ] Renaming a player updates the directory and every evening that already references that player.
-- [ ] A renamed player's transactions keep their ids, types, and amounts.
-- [ ] A player with no transactions can be deleted and disappears from the directory.
-- [ ] A player with any transaction cannot be deleted, the server returns `409`, and the player remains selectable.
-- [ ] Automated tests cover rename, a successful delete, and a refused delete.
+- [x] Renaming a player updates the directory and every evening that already references that player.
+- [x] A renamed player's transactions keep their ids, types, and amounts.
+- [x] A player with no transactions can be deleted and disappears from the directory.
+- [x] A player with any transaction cannot be deleted, the server returns `409`, and the player remains selectable.
+- [x] Automated tests cover rename, a successful delete, and a refused delete.

@@ -214,6 +214,7 @@ export function TransactionSheet({
             selectedId={isCreateDraft(draft) ? null : draft.playerId}
             selectedIds={isCreateDraft(draft) ? draft.playerIds : undefined}
             multiple={isCreateDraft(draft) && draft.action === "add"}
+            manage={false}
             eveningTransactions={editing === null ? transactions : undefined}
             onSelect={(player) => {
               setDraft((current) => (isCreateDraft(current) ? selectCreatePlayer(current, player.id) : { ...current, playerId: player.id }));

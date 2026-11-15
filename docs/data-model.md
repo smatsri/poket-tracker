@@ -110,7 +110,9 @@ CREATE INDEX idx_transactions_player_id ON transactions(player_id);
 
 PostgreSQL enforces the foreign keys. Zod validates calendar dates, RFC 3339 timestamps, identifier syntax, and unknown player references before SQL runs. The SQL checks are a second barrier, not the only validation.
 
-Deleting or updating a stored session is outside version 1, so foreign keys do not need `ON DELETE` behavior.
+Deleting or updating a stored session is outside version 1, so the session foreign key does not need `ON DELETE` behavior.
+
+A player rename updates `players.name` and leaves every transaction's `player_id`, type, and amount unchanged. History, the summary, the current evening, and statistics read that name, so they follow the rename. A player delete succeeds only when no transaction references `player_id`. Otherwise the server returns `409` and the player stays. `transactions.player_id` references `players.id` and does not cascade.
 
 ## Derived values
 

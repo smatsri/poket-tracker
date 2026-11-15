@@ -66,7 +66,10 @@ describe("player endpoints", { concurrency: false }, () => {
   });
 
   beforeEach(async () => {
-    await getDatabase().exec("DELETE FROM players");
+    const database = getDatabase();
+    await database.exec("DELETE FROM transactions");
+    await database.exec("DELETE FROM sessions");
+    await database.exec("DELETE FROM players");
   });
 
   test("a valid name returns 201 with id, normalized name, and createdAt", async () => {
@@ -155,5 +158,86 @@ describe("player endpoints", { concurrency: false }, () => {
         { id: "player-b", name: "Bea", createdAt: "2026-11-12T19:00:00.000Z" },
       ],
     );
+  });
+
+  test("rename keeps the id and a delete is refused once a transaction exists", async () => {
+    const created = await fetch(`${url}/api/players`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ name: "  Dana   Levi  " }),
+    });
+    assert.equal(created.status, 201);
+    const player = (await created.json()) as { id: string; name: string; createdAt: string };
+    assertPlayerDocument(player);
+
+    const renamed = await fetch(`${url}/api/players/${player.id}`, {
+      method: "PATCH",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ name: "  Dana   Cohen " }),
+    });
+    assert.equal(renamed.status, 200);
+    const renamedPlayer = (await renamed.json()) as { id: string; name: string; createdAt: string };
+    assertPlayerDocument(renamedPlayer);
+    assert.equal(renamedPlayer.id, player.id);
+    assert.equal(renamedPlayer.name, "Dana Cohen");
+    assert.equal(renamedPlayer.createdAt, player.createdAt);
+
+    const submitted = await fetch(`${url}/api/sessions`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        id: "session-001",
+        date: "2026-11-12",
+        transactions: [
+          {
+            id: "tx-001",
+            playerId: player.id,
+            type: "buy-in",
+            amount: 50,
+            timestamp: "2026-11-12T18:15:00Z",
+          },
+        ],
+      }),
+    });
+    assert.equal(submitted.status, 201);
+
+    const again = await fetch(`${url}/api/players/${player.id}`, {
+      method: "PATCH",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ name: "Dana Levi" }),
+    });
+    assert.equal(again.status, 200);
+
+    const session = await fetch(`${url}/api/sessions/session-001`);
+    assert.equal(session.status, 200);
+    const stored = (await session.json()) as {
+      players: Array<{ id: string; name: string }>;
+      transactions: Array<{ id: string; playerId: string; type: string; amount: number }>;
+    };
+    assert.equal(stored.players[0]?.name, "Dana Levi");
+    assert.deepEqual(stored.transactions, [
+      { id: "tx-001", playerId: player.id, type: "buy-in", amount: 50, timestamp: "2026-11-12T18:15:00Z" },
+    ]);
+
+    const refused = await fetch(`${url}/api/players/${player.id}`, { method: "DELETE" });
+    assert.equal(refused.status, 409);
+    const refusedBody = (await refused.json()) as { error: { code: string } };
+    assert.equal(refusedBody.error.code, "CONFLICT");
+    const remaining = await fetch(`${url}/api/players`);
+    const remainingBody = (await remaining.json()) as { players: Array<{ id: string }> };
+    assert.equal(remainingBody.players.some((item) => item.id === player.id), true);
+
+    const spare = await fetch(`${url}/api/players`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ name: "Guest" }),
+    });
+    const guest = (await spare.json()) as { id: string };
+    const removed = await fetch(`${url}/api/players/${guest.id}`, { method: "DELETE" });
+    assert.equal(removed.status, 204);
+    const after = await fetch(`${url}/api/players`);
+    const afterBody = (await after.json()) as { players: Array<{ id: string }> };
+    assert.equal(afterBody.players.some((item) => item.id === guest.id), false);
+    assert.equal(afterBody.players.some((item) => item.id === player.id), true);
   });
 });

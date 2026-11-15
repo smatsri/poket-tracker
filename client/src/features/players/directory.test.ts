@@ -13,6 +13,8 @@ function player(id: string, name: string): Player {
 function api(handlers: {
   list?: () => Promise<Player[]>;
   create?: (name: string) => Promise<Player>;
+  update?: (playerId: string, name: string) => Promise<Player>;
+  remove?: (playerId: string) => Promise<void>;
 }): ApiClient & { created: string[] } {
   const created: string[] = [];
   return {
@@ -24,6 +26,18 @@ function api(handlers: {
         throw new Error("create was not expected");
       }
       return handlers.create(name);
+    },
+    updatePlayer: async (playerId, name) => {
+      if (handlers.update === undefined) {
+        throw new Error("update was not expected");
+      }
+      return handlers.update(playerId, name);
+    },
+    deletePlayer: async (playerId) => {
+      if (handlers.remove === undefined) {
+        throw new Error("delete was not expected");
+      }
+      return handlers.remove(playerId);
     },
     submitSession: async () => {
       throw new Error("unused");
@@ -150,4 +164,72 @@ test("the created player is added to the cache and can be selected", async () =>
   assert.equal(created.player.name, "רועי");
   assert.deepEqual(await repository.readPlayers(), [created.player]);
   assert.equal(created.players.find((item) => item.id === "server-id")?.name, "רועי");
+});
+
+test("renaming replaces the cached name and keeps the player id", async () => {
+  const repository = new MemoryLocalRepository();
+  await repository.replacePlayers([player("p1", "דנה"), player("p2", "נועה")]);
+  const directory = createPlayerDirectory(
+    repository,
+    api({
+      update: async (playerId, name) => player(playerId, name),
+    }),
+  );
+
+  const renamed = await directory.rename("p1", "  דנה   לוי ");
+  assert.equal(renamed.ok, true);
+  if (!renamed.ok) {
+    return;
+  }
+  assert.equal(renamed.player.id, "p1");
+  assert.equal(renamed.player.name, "דנה לוי");
+  assert.deepEqual(
+    (await repository.readPlayers()).map((item) => [item.id, item.name]),
+    [
+      ["p1", "דנה לוי"],
+      ["p2", "נועה"],
+    ],
+  );
+});
+
+test("an unused player can be deleted and a player in use stays selectable", async () => {
+  const repository = new MemoryLocalRepository();
+  await repository.replacePlayers([player("unused", "אורח"), player("used", "דנה")]);
+  const directory = createPlayerDirectory(
+    repository,
+    api({
+      remove: async (playerId) => {
+        if (playerId === "used") {
+          throw new ApiRequestError("Player has transactions", 409, "CONFLICT", "http");
+        }
+      },
+    }),
+  );
+
+  const removed = await directory.remove("unused");
+  assert.equal(removed.ok, true);
+  if (!removed.ok) {
+    return;
+  }
+  assert.deepEqual(
+    removed.players.map((item) => item.id),
+    ["used"],
+  );
+  assert.deepEqual(
+    (await repository.readPlayers()).map((item) => item.id),
+    ["used"],
+  );
+
+  const refused = await directory.remove("used");
+  assert.equal(refused.ok, false);
+  if (refused.ok) {
+    return;
+  }
+  assert.equal(refused.reason, "in-use");
+  assert.equal(refused.message, "אי אפשר למחוק שחקן שכבר השתתף בערב.");
+  assert.deepEqual(
+    refused.players.map((item) => item.id),
+    ["used"],
+  );
+  assert.equal((await repository.readPlayers()).some((item) => item.id === "used"), true);
 });

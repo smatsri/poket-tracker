@@ -31,6 +31,12 @@ function api(submit: (session: Session) => Promise<SubmittedSession> | Submitted
     createPlayer: async () => {
       throw new Error("unused");
     },
+    updatePlayer: async () => {
+      throw new Error("unused");
+    },
+    deletePlayer: async () => {
+      throw new Error("unused");
+    },
     getSession: async () => {
       throw new Error("unused");
     },

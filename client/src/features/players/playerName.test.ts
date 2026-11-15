@@ -5,6 +5,8 @@ import { ApiRequestError } from "../../data/api/errors.ts";
 import { MemoryLocalRepository } from "../../data/local/memoryRepository.ts";
 import type { ActiveSessionRecord, Player, Transaction } from "../../domain/models.ts";
 import { presentCurrentEvening } from "../sessions/currentEvening.ts";
+import { presentSessionSummary } from "../sessions/sessionSummary.ts";
+import { presentStatistics } from "../sessions/statistics.ts";
 import { presentTransactionHistory } from "../sessions/transactionHistory.ts";
 import { createPlayerDirectory } from "./directory.ts";
 import { playerDisplayName, unknownPlayerName } from "./playerName.ts";
@@ -34,6 +36,12 @@ test("a failed player reload keeps the last cached names on the evening", async 
       throw new ApiRequestError("offline", null, null, "network");
     },
     createPlayer: async () => {
+      throw new Error("unused");
+    },
+    updatePlayer: async () => {
+      throw new Error("unused");
+    },
+    deletePlayer: async () => {
       throw new Error("unused");
     },
     submitSession: async () => {
@@ -70,4 +78,39 @@ test("a failed player reload keeps the last cached names on the evening", async 
 
   assert.equal(view.players[0]?.name, "דנה");
   assert.equal(presentTransactionHistory(record.session, failed.players, "draft").transactions[0]?.playerName, "דנה");
+});
+
+test("a renamed player is shown everywhere without changing the transaction", () => {
+  const transaction: Transaction = {
+    id: "t1",
+    sessionId: "session-1",
+    playerId: "p1",
+    type: "buy-in",
+    amount: 50,
+    timestamp: "2026-11-13T18:00:00Z",
+  };
+  const renamed = player("p1", "דנה לוי");
+  const record: ActiveSessionRecord = {
+    status: "draft",
+    updatedAt: "2026-11-13T18:00:00Z",
+    session: { id: "session-1", date: "2026-11-13", createdAt: "2026-11-13T18:00:00Z", transactions: [transaction] },
+  };
+  const document = { session: { ...record.session, transactions: [transaction] }, players: [renamed] };
+
+  const evening = presentCurrentEvening(record, [renamed]);
+  const summary = presentSessionSummary(document);
+  const statistics = presentStatistics([document]);
+  assert.equal(evening.kind, "active");
+  assert.equal(statistics.status, "ready");
+  if (evening.kind !== "active" || statistics.status !== "ready") {
+    return;
+  }
+
+  assert.equal(evening.players[0]?.name, "דנה לוי");
+  assert.equal(summary.players[0]?.name, "דנה לוי");
+  assert.equal(statistics.players[0]?.name, "דנה לוי");
+  assert.equal(evening.history[0]?.id, "t1");
+  assert.equal(summary.transactions[0]?.id, "t1");
+  assert.equal(record.session.transactions[0]?.type, "buy-in");
+  assert.equal(record.session.transactions[0]?.amount, 50);
 });

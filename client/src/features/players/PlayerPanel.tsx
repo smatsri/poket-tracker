@@ -16,6 +16,8 @@ export function PlayerPanel({
   selectedId: controlledId,
   selectedIds,
   multiple = false,
+  manage = true,
+  onPlayersChange,
   eveningTransactions,
 }: {
   directory: PlayerDirectory;
@@ -23,6 +25,8 @@ export function PlayerPanel({
   selectedId?: string | null;
   selectedIds?: readonly string[];
   multiple?: boolean;
+  manage?: boolean;
+  onPlayersChange?: (players: Player[]) => void;
   eveningTransactions?: readonly Transaction[];
 }) {
   const { settings } = useOperatorSettings();
@@ -33,6 +37,9 @@ export function PlayerPanel({
   const [error, setError] = useState<string | null>(null);
   const [duplicate, setDuplicate] = useState<Player | null>(null);
   const [name, setName] = useState("");
+  const [rename, setRename] = useState("");
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const [manageError, setManageError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const flight = useRef(createSingleFlight());
 
@@ -69,6 +76,14 @@ export function PlayerPanel({
   }
 
   const chosenIds = selectedIds !== undefined ? [...selectedIds] : selectedId === null ? [] : [selectedId];
+  const managedId = manage && chosenIds.length === 1 ? chosenIds[0] : null;
+  const managed = managedId === undefined ? null : (players.find((player) => player.id === managedId) ?? null);
+
+  useEffect(() => {
+    setRename(managed?.name ?? "");
+    setConfirmDelete(false);
+    setManageError(null);
+  }, [managed?.id, managed?.name]);
 
   async function save(confirmDuplicate: boolean) {
     await flight.current(async () => {
@@ -119,9 +134,93 @@ export function PlayerPanel({
           ))}
         </ul>
       ) : null}
-      {chosenIds.length === 1 ? <p>נבחר לפעולה: {playerDisplayName(chosenIds[0] ?? "", players)}</p> : null}
+      {chosenIds.length === 1 && !manage ? <p>נבחר לפעולה: {playerDisplayName(chosenIds[0] ?? "", players)}</p> : null}
       {chosenIds.length > 1 ? (
         <p>נבחרו לפעולה: {chosenIds.map((id) => playerDisplayName(id, players)).join(", ")}</p>
+      ) : null}
+      {managed !== null ? (
+        <form
+          className="stack"
+          aria-label="ניהול שחקן"
+          onSubmit={(event) => {
+            event.preventDefault();
+            void flight.current(async () => {
+              setSaving(true);
+              setManageError(null);
+              try {
+                const result = await directory.rename(managed.id, rename);
+                setPlayers(result.players);
+                onPlayersChange?.(result.players);
+                if (!result.ok) {
+                  setManageError(result.message);
+                }
+              } finally {
+                setSaving(false);
+              }
+            });
+          }}
+        >
+          <label className="stack field-label">
+            <span>שינוי שם</span>
+            <input
+              className="field"
+              name="player-rename"
+              value={rename}
+              required
+              maxLength={80}
+              autoComplete="name"
+              onChange={(event) => {
+                setRename(event.target.value);
+                setManageError(null);
+              }}
+            />
+          </label>
+          <button type="submit" className="button button-secondary" disabled={saving}>
+            שמירת שם
+          </button>
+          {confirmDelete ? (
+            <div className="notice stack" role="status">
+              <p>למחוק את {managed.name}?</p>
+              <button
+                type="button"
+                className="button button-destructive"
+                disabled={saving}
+                onClick={() =>
+                  void flight.current(async () => {
+                    setSaving(true);
+                    setManageError(null);
+                    try {
+                      const result = await directory.remove(managed.id);
+                      setPlayers(result.players);
+                      onPlayersChange?.(result.players);
+                      if (result.ok) {
+                        if (controlledId === undefined) {
+                          setInternalId(null);
+                        }
+                        setConfirmDelete(false);
+                        return;
+                      }
+                      setManageError(result.message);
+                    } finally {
+                      setSaving(false);
+                    }
+                  })
+                }
+              >
+                מחיקה
+              </button>
+            </div>
+          ) : (
+            <button type="button" className="button button-destructive" disabled={saving} onClick={() => setConfirmDelete(true)}>
+              מחיקה
+            </button>
+          )}
+          {manageError !== null ? (
+            <p className="notice notice-alert" role="alert">
+              {manageError}
+            </p>
+          ) : null}
+        </form>
       ) : null}
       <form
         className="stack"

@@ -69,6 +69,56 @@ paths:
           $ref: "#/components/responses/ValidationError"
         "500":
           $ref: "#/components/responses/InternalError"
+  /api/players/{playerId}:
+    patch:
+      operationId: renamePlayer
+      tags: [Players]
+      summary: Rename a player
+      description: |
+        Changes the player's name and nothing else. The name uses the same trim,
+        collapse, and length rules as create. Transactions keep the player id.
+      parameters:
+        - $ref: "#/components/parameters/PlayerId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PlayerCreateRequest"
+      responses:
+        "200":
+          description: Player renamed.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Player"
+        "400":
+          $ref: "#/components/responses/ValidationError"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalError"
+    delete:
+      operationId: deletePlayer
+      tags: [Players]
+      summary: Delete an unused player
+      description: |
+        Deletes a player who has no transactions. If any transaction references
+        the player, the server returns `409` and leaves the player in place.
+        The foreign key from `transactions.player_id` does not cascade.
+      parameters:
+        - $ref: "#/components/parameters/PlayerId"
+      responses:
+        "204":
+          description: Player deleted.
+        "400":
+          $ref: "#/components/responses/ValidationError"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        "500":
+          $ref: "#/components/responses/InternalError"
   /api/sessions:
     get:
       operationId: listSessions
@@ -193,6 +243,12 @@ paths:
           $ref: "#/components/responses/InternalError"
 components:
   parameters:
+    PlayerId:
+      name: playerId
+      in: path
+      required: true
+      schema:
+        $ref: "#/components/schemas/Identifier"
     SessionId:
       name: sessionId
       in: path

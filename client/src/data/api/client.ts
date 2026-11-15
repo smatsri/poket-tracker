@@ -19,6 +19,8 @@ export interface SessionListQuery {
 export interface ApiClient {
   listPlayers(): Promise<Player[]>;
   createPlayer(name: string): Promise<Player>;
+  updatePlayer(playerId: string, name: string): Promise<Player>;
+  deletePlayer(playerId: string): Promise<void>;
   submitSession(session: Session): Promise<SubmittedSession>;
   getSession(sessionId: string): Promise<SessionDocument>;
   listSessions(query?: SessionListQuery): Promise<SessionDocument[]>;
@@ -45,6 +47,21 @@ export function createApiClient(baseUrl: string, fetchImpl: typeof fetch = fetch
         [201],
       );
       return readPlayer(body);
+    },
+
+    updatePlayer: async (playerId, name) => {
+      const body = await send(
+        origin,
+        fetchImpl,
+        `/api/players/${encodeURIComponent(playerId)}`,
+        { method: "PATCH", body: JSON.stringify({ name }) },
+        [200],
+      );
+      return readPlayer(body);
+    },
+
+    deletePlayer: async (playerId) => {
+      await send(origin, fetchImpl, `/api/players/${encodeURIComponent(playerId)}`, { method: "DELETE" }, [204]);
     },
 
     submitSession: async (session) => {

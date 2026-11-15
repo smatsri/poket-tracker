@@ -167,7 +167,7 @@ export function CurrentEveningScreen({
           </button>
           {startError !== null ? <p className="notice notice-alert">{startError}</p> : null}
         </article>
-        <PlayerPanel directory={players} onSelect={() => undefined} />
+        <PlayerPanel directory={players} onSelect={() => undefined} onPlayersChange={setDirectory} />
         <OperatorSettingsForm />
       </section>
     );
@@ -354,7 +354,7 @@ export function CurrentEveningScreen({
         </button>
       ) : null}
       {startError !== null ? <p className="notice notice-alert">{startError}</p> : null}
-      <PlayerPanel directory={players} onSelect={() => undefined} />
+      <PlayerPanel directory={players} onSelect={() => undefined} onPlayersChange={setDirectory} />
       <OperatorSettingsForm />
       {transactionSheet}
     </section>
