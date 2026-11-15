@@ -22,10 +22,10 @@ Version 1.0 is implemented. It covers the live evening, history, statistics, pla
 
 The documents above describe the shipped application and supersede the source specifications where they explicitly resolve a gap. Otherwise, the specifications remain the original product source:
 
-- [specs/UI Screens & Functionality Specification.md](specs/UI%20Screens%20%26%20Functionality%20Specification.md)
-- [specs/Visual Design Language.md](specs/Visual%20Design%20Language.md)
-- [specs/poker-tracker-client-spec.md](specs/poker-tracker-client-spec.md)
-- [specs/poker-tracker-server-spec.md](specs/poker-tracker-server-spec.md)
+- [docs/specs/UI Screens & Functionality Specification.md](docs/specs/UI%20Screens%20%26%20Functionality%20Specification.md)
+- [docs/specs/Visual Design Language.md](docs/specs/Visual%20Design%20Language.md)
+- [docs/specs/poker-tracker-client-spec.md](docs/specs/poker-tracker-client-spec.md)
+- [docs/specs/poker-tracker-server-spec.md](docs/specs/poker-tracker-server-spec.md)
 
 ## Stack
 

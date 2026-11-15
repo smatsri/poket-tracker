@@ -1,10 +1,13 @@
 import type { ActiveSessionRecord, Player } from "../../domain/models.ts";
-import type { LocalRepository } from "./repository.ts";
+import { initialOperatorSettings, parseOperatorSettings, type OperatorSettings } from "./operatorSettings.ts";
+import type { CachedSessionDocument, LocalRepository } from "./repository.ts";
 
 export const databaseName = "poker-tracker";
-export const databaseVersion = 1;
+export const databaseVersion = 3;
 export const activeSessionStore = "activeSession";
 export const playersStore = "players";
+export const operatorSettingsStore = "operatorSettings";
+export const closedSessionsStore = "closedSessions";
 export const currentSessionKey = "current";
 
 const persistenceError = "Failed to persist local data";
@@ -31,6 +34,15 @@ export function createIndexedDbRepository(factory: IDBFactory = indexedDB): Loca
       return writeActiveSession(factory, record);
     },
 
+    clearActiveSession(): Promise<void> {
+      return withDatabase(factory, async (database) => {
+        const transaction = database.transaction(activeSessionStore, "readwrite");
+        const completed = waitForTransaction(transaction);
+        transaction.objectStore(activeSessionStore).delete(currentSessionKey);
+        await completed;
+      });
+    },
+
     readPlayers(): Promise<Player[]> {
       return withDatabase(factory, async (database) => {
         const transaction = database.transaction(playersStore, "readonly");
@@ -50,6 +62,69 @@ export function createIndexedDbRepository(factory: IDBFactory = indexedDB): Loca
         for (const player of players) {
           store.put(player);
         }
+        await completed;
+      });
+    },
+
+    readOperatorSettings(): Promise<OperatorSettings> {
+      return withDatabase(factory, async (database) => {
+        const transaction = database.transaction(operatorSettingsStore, "readonly");
+        const completed = waitForTransaction(transaction);
+        const stored = await requestResult<unknown>(transaction.objectStore(operatorSettingsStore).get(currentSessionKey));
+        await completed;
+        return parseOperatorSettings(stored) ?? initialOperatorSettings;
+      });
+    },
+
+    saveOperatorSettings(settings: OperatorSettings): Promise<void> {
+      return withDatabase(factory, async (database) => {
+        const transaction = database.transaction(operatorSettingsStore, "readwrite");
+        const completed = waitForTransaction(transaction);
+        transaction.objectStore(operatorSettingsStore).put(settings, currentSessionKey);
+        await completed;
+      });
+    },
+
+    readClosedSessions(): Promise<CachedSessionDocument[]> {
+      return withDatabase(factory, async (database) => {
+        const transaction = database.transaction(closedSessionsStore, "readonly");
+        const completed = waitForTransaction(transaction);
+        const documents = await requestResult<CachedSessionDocument[]>(transaction.objectStore(closedSessionsStore).getAll());
+        await completed;
+        return documents;
+      });
+    },
+
+    readClosedSession(sessionId: string): Promise<CachedSessionDocument | null> {
+      return withDatabase(factory, async (database) => {
+        const transaction = database.transaction(closedSessionsStore, "readonly");
+        const completed = waitForTransaction(transaction);
+        const stored = await requestResult<CachedSessionDocument | undefined>(
+          transaction.objectStore(closedSessionsStore).get(sessionId),
+        );
+        await completed;
+        return stored ?? null;
+      });
+    },
+
+    replaceClosedSessions(documents: readonly CachedSessionDocument[]): Promise<void> {
+      return withDatabase(factory, async (database) => {
+        const transaction = database.transaction(closedSessionsStore, "readwrite");
+        const completed = waitForTransaction(transaction);
+        const store = transaction.objectStore(closedSessionsStore);
+        store.clear();
+        for (const document of documents) {
+          store.put(document, document.session.id);
+        }
+        await completed;
+      });
+    },
+
+    saveClosedSession(document: CachedSessionDocument): Promise<void> {
+      return withDatabase(factory, async (database) => {
+        const transaction = database.transaction(closedSessionsStore, "readwrite");
+        const completed = waitForTransaction(transaction);
+        transaction.objectStore(closedSessionsStore).put(document, document.session.id);
         await completed;
       });
     },
@@ -84,6 +159,12 @@ function openDatabase(factory: IDBFactory): Promise<IDBDatabase> {
       }
       if (!database.objectStoreNames.contains(playersStore)) {
         database.createObjectStore(playersStore, { keyPath: "id" });
+      }
+      if (!database.objectStoreNames.contains(operatorSettingsStore)) {
+        database.createObjectStore(operatorSettingsStore);
+      }
+      if (!database.objectStoreNames.contains(closedSessionsStore)) {
+        database.createObjectStore(closedSessionsStore);
       }
     };
     request.onsuccess = () => resolve(request.result);

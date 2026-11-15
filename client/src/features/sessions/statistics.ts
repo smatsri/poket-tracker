@@ -2,6 +2,7 @@ import type { ApiClient, SessionDocument } from "../../data/api/client.ts";
 import { ApiRequestError } from "../../data/api/errors.ts";
 import { calculatePlayerResults, calculateSessionResult, rankOverallResults } from "../../domain/calculations.ts";
 import type { Player, Session } from "../../domain/models.ts";
+import { unknownPlayerName } from "../players/playerName.ts";
 import { presentResult, type PresentedResult } from "./currentEvening.ts";
 import { sessionSummaryPath } from "./sessionHistory.ts";
 import { formatSessionDate } from "./transactionHistory.ts";
@@ -201,7 +202,7 @@ export function presentStatistics(documents: readonly SessionDocument[]): Statis
     sessions: sessionBalanceSeries(documents),
     players: rankOverallResults(sessionsOf(documents), playersOf(documents)).map((player) => ({
       playerId: player.playerId,
-      name: player.name.length > 0 ? player.name : player.playerId,
+      name: player.name.length > 0 ? player.name : unknownPlayerName,
       href: statsPlayerPath(player.playerId),
       eveningsPlayed: playerCumulativeSeries(documents, player.playerId).length,
       result: presentResult(player.netResult),
@@ -369,7 +370,7 @@ export function presentPlayerStatistics(documents: readonly SessionDocument[], p
   const finalCumulative = series[series.length - 1]?.cumulative ?? 0;
   return {
     playerId,
-    name: name !== undefined && name.length > 0 ? name : playerId,
+    name: name !== undefined && name.length > 0 ? name : unknownPlayerName,
     eveningsPlayed: series.length,
     overall: presentResult(finalCumulative),
     progression: series.map((point) => ({

@@ -1,4 +1,5 @@
 import type { ApiClient } from "../data/api/client.ts";
+import type { LocalRepository } from "../data/local/repository.ts";
 import { CurrentEveningIcon, HistoryIcon, StatsIcon } from "./icons.tsx";
 import { onNavigate, useAppLocation } from "./navigation.ts";
 import { navigation, type RouteId } from "./routes.ts";
@@ -18,10 +19,12 @@ export function App({
   evening,
   players,
   api,
+  repository,
 }: {
   evening: EveningService;
   players: PlayerDirectory;
   api: ApiClient;
+  repository: LocalRepository;
 }) {
   const { route } = useAppLocation();
 
@@ -29,7 +32,7 @@ export function App({
     <div className="shell">
       <main className="shell-main">
         {route.id === "current" ? <CurrentEveningScreen evening={evening} players={players} /> : null}
-        {route.id === "history" ? <HistoryScreen api={api} /> : null}
+        {route.id === "history" ? <HistoryScreen api={api} repository={repository} /> : null}
         {route.id === "stats" ? <StatisticsScreen api={api} /> : null}
         {route.id === "unknown" ? <Placeholder title="העמוד לא נמצא" body="בחרו יעד מהניווט למטה." /> : null}
       </main>

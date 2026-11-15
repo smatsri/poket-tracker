@@ -1,9 +1,11 @@
+import { useOperatorSettings } from "../settings/OperatorSettings.tsx";
 import { mapCumulativeChart, statsCopy, type PlayerProgressPoint } from "./statistics.ts";
 
 const chartWidth = 320;
 const chartHeight = 160;
 
 export function CumulativeChart({ progression }: { progression: readonly PlayerProgressPoint[] }) {
+  const { settings } = useOperatorSettings();
   const chart = mapCumulativeChart(
     progression.map((point) => ({
       sessionId: point.sessionId,
@@ -18,7 +20,7 @@ export function CumulativeChart({ progression }: { progression: readonly PlayerP
   }
 
   const last = progression[progression.length - 1];
-  const label = last === undefined ? statsCopy.progression : `${statsCopy.progression}: ${last.cumulative.text}`;
+  const label = last === undefined ? statsCopy.progression : `${statsCopy.progression}: ${last.cumulative.text} ${settings.currencyLabel}`;
 
   return (
     <svg className="cumulative-chart" viewBox={`0 0 ${chart.width} ${chart.height}`} role="img" aria-label={label}>
@@ -32,7 +34,7 @@ export function CumulativeChart({ progression }: { progression: readonly PlayerP
       {chart.points.map((point) => (
         <circle key={point.sessionId} cx={point.x} cy={point.y} r="4">
           <title>
-            {point.date} {point.value}
+            {point.date} {point.value} {settings.currencyLabel}
           </title>
         </circle>
       ))}

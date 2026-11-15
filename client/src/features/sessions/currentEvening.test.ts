@@ -62,6 +62,19 @@ test("a missing active evening still shows the empty state and its start action"
   const emptyBranch = source.slice(source.indexOf('if (view.kind === "empty")'), source.indexOf("if (transactionId"));
   assert.match(emptyBranch, /התחלת ערב חדש/);
   assert.match(emptyBranch, /startEvening/);
+  assert.ok(emptyBranch.indexOf("התחלת ערב חדש") < emptyBranch.indexOf("<PlayerPanel"));
+});
+
+test("a confirmed close opens the summary and a failed close stays on the evening", () => {
+  const source = readFileSync(new URL("./CurrentEveningScreen.tsx", import.meta.url), "utf8");
+  const finish = source.slice(source.indexOf("async function finishEvening"), source.indexOf("async function startEvening"));
+  const success = finish.slice(0, finish.indexOf("} catch"));
+  const failure = finish.slice(finish.indexOf("} catch"));
+
+  assert.match(success, /setRecord\(null\)/);
+  assert.match(success, /navigate\(sessionSummaryPath\(submitted\.session\.id\)\)/);
+  assert.match(failure, /classifySubmissionFailure/);
+  assert.doesNotMatch(failure, /navigate\(/);
 });
 
 test("the empty state can start an evening and a draft or pending evening cannot", () => {
@@ -122,7 +135,7 @@ test("recent activity shows at most five transactions, newest first", () => {
   assert.equal(view.recent[0]?.typeLabel, "כניסה נוספת");
 });
 
-test("the full history keeps every transaction and shows a missing name as the player id", () => {
+test("the full history keeps every transaction and shows an unknown player", () => {
   const withUnknown = [...transactions, transaction("t8", "gone", "buy-in", 15, "2026-11-13T17:00:00Z")];
   const view = presentCurrentEvening(record("draft", withUnknown), players);
   assert.equal(view.kind, "active");
@@ -130,7 +143,7 @@ test("the full history keeps every transaction and shows a missing name as the p
     return;
   }
 
-  assert.equal(view.history.at(-1)?.playerName, "gone");
+  assert.equal(view.history.at(-1)?.playerName, "שחקן לא ידוע");
   assert.equal(view.history.length, withUnknown.length);
 });
 

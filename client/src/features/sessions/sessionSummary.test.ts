@@ -3,12 +3,14 @@ import { readFileSync } from "node:fs";
 import test from "node:test";
 import type { SessionDocument } from "../../data/api/client.ts";
 import { ApiRequestError, networkError } from "../../data/api/errors.ts";
+import { MemoryLocalRepository } from "../../data/local/memoryRepository.ts";
 import { calculatePlayerResults, calculateSessionResult } from "../../domain/calculations.ts";
 import { formatResult } from "../../domain/format.ts";
 import type { Player, Transaction, TransactionType } from "../../domain/models.ts";
 import { parseHistoryLocation, sessionPlayerPath, sessionTransactionsPath } from "./sessionHistory.ts";
 import {
   loadSessionSummary,
+  openSessionSummary,
   presentSessionPlayer,
   presentSessionSummary,
   presentSummaryFailure,
@@ -41,6 +43,16 @@ test("summary totals and player results come from the client formulas", () => {
   const view = presentSessionSummary(document);
   const result = calculateSessionResult(document.session);
   assert.equal(view.canChange, false);
+  assert.equal(view.heading, view.date);
+  assert.equal(view.location, undefined);
+  const named = presentSessionSummary({
+    ...document,
+    session: { ...document.session, name: "ערב חמישי", location: "אצל דנה" },
+  });
+  assert.equal(named.heading, "ערב חמישי");
+  assert.equal(named.location, "אצל דנה");
+  assert.equal(named.canChange, false);
+  assert.notEqual(named.heading, named.date);
   assert.equal(view.totalBuyIns, new Intl.NumberFormat("he-IL", { maximumFractionDigits: 0 }).format(result.sessionBuyIns));
   assert.equal(view.totalCashOuts, new Intl.NumberFormat("he-IL", { maximumFractionDigits: 0 }).format(result.sessionCashOuts));
   assert.equal(view.balance.value, result.sessionBalance);
@@ -128,7 +140,117 @@ test("loading a summary reads that session and the screen does not offer changes
   assert.equal(loaded.session.id, "session-1");
 
   const screen = readFileSync(new URL("./HistoryScreen.tsx", import.meta.url), "utf8");
-  assert.doesNotMatch(screen, /עריכה|מחיקה|שליח|submitEvening|deleteTransaction|updateTransaction|addTransaction|startEvening/);
-  assert.match(screen, /loadSessionSummary/);
+  assert.doesNotMatch(screen, /עריכה|מחיקה|שליח|submitEvening|deleteTransaction|updateTransaction|addTransaction|startEvening|session-name|session-location/);
+  assert.match(screen, /openSessionSummary/);
   assert.match(screen, /כל הפעולות|summaryCopy.transactions/);
+});
+
+test("a warm summary cache renders before the network returns and a successful load replaces that evening", async () => {
+  const repository = new MemoryLocalRepository();
+  const cached: SessionDocument = {
+    ...document,
+    session: { ...document.session, name: "ישן", location: "בית" },
+  };
+  const other: SessionDocument = {
+    session: { id: "session-2", date: "2026-11-12", createdAt: "2026-11-12T22:00:00Z", transactions: [] },
+    players: [dana],
+  };
+  await repository.replaceClosedSessions([cached, other]);
+  const fresh: SessionDocument = {
+    ...document,
+    session: { ...document.session, name: "ערב חדש", location: "אצל נועה" },
+  };
+  const shown: Array<{ heading?: string; location?: string; notice: string | null }> = [];
+  let release: (value: SessionDocument) => void = () => undefined;
+  const gate = new Promise<SessionDocument>((resolve) => {
+    release = resolve;
+  });
+  let started = false;
+  const pending = openSessionSummary(
+    repository,
+    {
+      getSession: () => {
+        started = true;
+        return gate;
+      },
+    },
+    "session-1",
+    (view) => {
+      if (view.status !== "ready") {
+        return;
+      }
+      const summary = presentSessionSummary(view.document);
+      shown.push({ heading: summary.heading, location: summary.location, notice: view.notice });
+    },
+  );
+
+  await new Promise((resolve) => {
+    setImmediate(resolve);
+  });
+  assert.equal(started, true);
+  assert.deepEqual(shown, [{ heading: "ישן", location: "בית", notice: null }]);
+
+  release(fresh);
+  await pending;
+  assert.deepEqual(shown.at(-1), { heading: "ערב חדש", location: "אצל נועה", notice: null });
+  assert.equal((await repository.readClosedSession("session-1"))?.session.name, "ערב חדש");
+  assert.equal((await repository.readClosedSession("session-1"))?.session.location, "אצל נועה");
+  assert.equal((await repository.readClosedSession("session-2"))?.session.id, "session-2");
+  assert.equal(await repository.readActiveSession(), null);
+});
+
+test("a failed summary load keeps the cached evening and explains that the server could not be reached", async () => {
+  const repository = new MemoryLocalRepository();
+  const cached: SessionDocument = {
+    ...document,
+    session: { ...document.session, name: "ישן", location: "בית" },
+  };
+  await repository.saveClosedSession(cached);
+  const shown: string[] = [];
+  await openSessionSummary(
+    repository,
+    {
+      getSession: async () => {
+        throw networkError("offline");
+      },
+    },
+    "session-1",
+    (view) => {
+      if (view.status === "ready") {
+        shown.push(`${presentSessionSummary(view.document).heading}|${view.notice ?? ""}`);
+      }
+    },
+  );
+
+  assert.deepEqual(shown, ["ישן|", `ישן|${summaryCopy.cachedNotice}`]);
+  assert.match(summaryCopy.cachedNotice, /אין חיבור/);
+  assert.equal((await repository.readClosedSession("session-1"))?.session.location, "בית");
+});
+
+test("a failed summary load with an empty cache keeps the existing retryable error", async () => {
+  const repository = new MemoryLocalRepository();
+  const shown: Array<{ status: string; message?: string; canRetry?: boolean }> = [];
+  await openSessionSummary(
+    repository,
+    {
+      getSession: async () => {
+        throw networkError("offline");
+      },
+    },
+    "session-1",
+    (view) => {
+      if (view.status === "error") {
+        shown.push({ status: view.status, message: view.message, canRetry: view.canRetry });
+      } else {
+        shown.push({ status: view.status });
+      }
+    },
+  );
+
+  assert.deepEqual(shown.at(-1), {
+    status: "error",
+    message: summaryCopy.networkError,
+    canRetry: true,
+  });
+  assert.equal(await repository.readClosedSession("session-1"), null);
 });

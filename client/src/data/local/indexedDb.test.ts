@@ -4,7 +4,8 @@ import { dirname, join } from "node:path";
 import test from "node:test";
 import { fileURLToPath } from "node:url";
 import type { ActiveSessionRecord, Player } from "../../domain/models.ts";
-import { activeSessionStore, createIndexedDbRepository, currentSessionKey, playersStore } from "./indexedDb.ts";
+import { activeSessionStore, closedSessionsStore, createIndexedDbRepository, currentSessionKey, operatorSettingsStore, playersStore } from "./indexedDb.ts";
+import { initialOperatorSettings } from "./operatorSettings.ts";
 
 const createdAt = "2026-11-12T21:00:00Z";
 
@@ -42,6 +43,15 @@ test("saving and reopening the database returns the same session, transactions, 
   assert.deepEqual(await reopened.readActiveSession(), record);
 });
 
+test("clearing the active session leaves no current evening", async () => {
+  const repository = createIndexedDbRepository(createFakeIndexedDb().factory);
+  await repository.saveActiveSession(record);
+
+  await repository.clearActiveSession();
+
+  assert.equal(await repository.readActiveSession(), null);
+});
+
 test("replacing the active session overwrites the current record", async () => {
   const repository = createIndexedDbRepository(createFakeIndexedDb().factory);
   await repository.saveActiveSession(record);
@@ -50,6 +60,19 @@ test("replacing the active session overwrites the current record", async () => {
   await repository.replaceActiveSession(replacement);
 
   assert.deepEqual(await repository.readActiveSession(), replacement);
+});
+
+test("operator settings survive reopening and stay off the session", async () => {
+  const fake = createFakeIndexedDb();
+  const repository = createIndexedDbRepository(fake.factory);
+  await repository.saveActiveSession(record);
+  assert.deepEqual(await repository.readOperatorSettings(), initialOperatorSettings);
+
+  const saved = { defaultAmount: 100, currencyLabel: "₪" };
+  await repository.saveOperatorSettings(saved);
+  assert.deepEqual(await createIndexedDbRepository(fake.factory).readOperatorSettings(), saved);
+  assert.deepEqual(await repository.readActiveSession(), record);
+  assert.equal(JSON.stringify(record).includes("currencyLabel"), false);
 });
 
 test("replacing the player cache removes players that were not in the replacement list", async () => {
@@ -73,6 +96,33 @@ test("a failed write is reported and leaves the previous record in place", async
   fake.failNextWrite();
   await assert.rejects(() => repository.replacePlayers([dana]), /Failed to persist local data/);
   assert.deepEqual(await repository.readPlayers(), [avi, dana]);
+});
+
+test("replacing closed sessions keeps the latest documents and leaves the active evening unchanged", async () => {
+  const fake = createFakeIndexedDb();
+  const repository = createIndexedDbRepository(fake.factory);
+  await repository.saveActiveSession(record);
+  const cached = {
+    session: { id: "closed-1", date: "2026-11-01", name: "ישן", location: "בית", createdAt, transactions: [] },
+    players: [avi],
+  };
+  const other = {
+    session: { id: "closed-2", date: "2026-11-02", createdAt, transactions: [] },
+    players: [dana],
+  };
+  await repository.replaceClosedSessions([cached, other]);
+  const renamed = {
+    session: { ...cached.session, name: "ערב חדש", location: "אצל דנה" },
+    players: [dana],
+  };
+  await repository.saveClosedSession(renamed);
+
+  const reopened = createIndexedDbRepository(fake.factory);
+  assert.deepEqual(await reopened.readClosedSession("closed-1"), renamed);
+  assert.equal((await reopened.readClosedSessions()).length, 2);
+  await reopened.replaceClosedSessions([renamed]);
+  assert.deepEqual(await reopened.readClosedSessions(), [renamed]);
+  assert.deepEqual(await reopened.readActiveSession(), record);
 });
 
 test("the local repository does not calculate financial results", () => {
@@ -203,7 +253,7 @@ class FakeTransaction {
   }
 
   objectStore(name: string): FakeObjectStore {
-    if (name !== activeSessionStore && name !== playersStore) {
+    if (name !== activeSessionStore && name !== playersStore && name !== operatorSettingsStore && name !== closedSessionsStore) {
       throw new Error(`Unexpected store ${name}`);
     }
     return new FakeObjectStore(this);
@@ -248,6 +298,25 @@ class FakeTransaction {
       request.onsuccess?.(new Event("success"));
     });
     return request as unknown as IDBRequest<IDBValidKey>;
+  }
+
+  delete(key: string): IDBRequest<undefined> {
+    const request = bareRequest<undefined>();
+    this.queue(() => {
+      if (this.aborted) {
+        return;
+      }
+      if (this.takeFailure()) {
+        this.abort();
+        request.error = this.error;
+        request.onerror?.(new Event("error"));
+        return;
+      }
+
+      this.store.records.delete(key);
+      request.onsuccess?.(new Event("success"));
+    });
+    return request as unknown as IDBRequest<undefined>;
   }
 
   clear(): IDBRequest<undefined> {
@@ -327,6 +396,10 @@ class FakeObjectStore {
 
   put(value: unknown, key?: string): IDBRequest<IDBValidKey> {
     return this.transaction.put(value, key);
+  }
+
+  delete(key: string): IDBRequest<undefined> {
+    return this.transaction.delete(key);
   }
 
   clear(): IDBRequest<undefined> {

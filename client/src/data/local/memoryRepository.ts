@@ -1,9 +1,12 @@
 import type { ActiveSessionRecord, Player } from "../../domain/models.ts";
-import type { LocalRepository } from "./repository.ts";
+import { initialOperatorSettings, type OperatorSettings } from "./operatorSettings.ts";
+import type { CachedSessionDocument, LocalRepository } from "./repository.ts";
 
 export class MemoryLocalRepository implements LocalRepository {
   private activeSession: ActiveSessionRecord | null = null;
   private players: Player[] = [];
+  private operatorSettings: OperatorSettings = initialOperatorSettings;
+  private closedSessions: CachedSessionDocument[] = [];
   failNextWrite = false;
 
   async readActiveSession(): Promise<ActiveSessionRecord | null> {
@@ -19,6 +22,11 @@ export class MemoryLocalRepository implements LocalRepository {
     await this.saveActiveSession(record);
   }
 
+  async clearActiveSession(): Promise<void> {
+    this.rejectIfFailing();
+    this.activeSession = null;
+  }
+
   async readPlayers(): Promise<Player[]> {
     return clone(this.players);
   }
@@ -26,6 +34,35 @@ export class MemoryLocalRepository implements LocalRepository {
   async replacePlayers(players: readonly Player[]): Promise<void> {
     this.rejectIfFailing();
     this.players = clone([...players]);
+  }
+
+  async readOperatorSettings(): Promise<OperatorSettings> {
+    return clone(this.operatorSettings);
+  }
+
+  async saveOperatorSettings(settings: OperatorSettings): Promise<void> {
+    this.rejectIfFailing();
+    this.operatorSettings = clone(settings);
+  }
+
+  async readClosedSessions(): Promise<CachedSessionDocument[]> {
+    return clone(this.closedSessions);
+  }
+
+  async readClosedSession(sessionId: string): Promise<CachedSessionDocument | null> {
+    return clone(this.closedSessions.find((document) => document.session.id === sessionId) ?? null);
+  }
+
+  async replaceClosedSessions(documents: readonly CachedSessionDocument[]): Promise<void> {
+    this.rejectIfFailing();
+    this.closedSessions = clone([...documents]);
+  }
+
+  async saveClosedSession(document: CachedSessionDocument): Promise<void> {
+    this.rejectIfFailing();
+    const next = this.closedSessions.filter((item) => item.session.id !== document.session.id);
+    next.push(clone(document));
+    this.closedSessions = next;
   }
 
   private rejectIfFailing(): void {

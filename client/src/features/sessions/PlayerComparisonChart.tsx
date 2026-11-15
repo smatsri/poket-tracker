@@ -1,10 +1,12 @@
-import { formatResult } from "../../domain/format.ts";
+import { formatSignedAmount } from "../../data/local/operatorSettings.ts";
+import { useOperatorSettings } from "../settings/OperatorSettings.tsx";
 import { mapPlayerComparisonChart, statsCopy, type RankedPlayerRow } from "./statistics.ts";
 
 const chartWidth = 320;
 const chartHeight = 160;
 
 export function PlayerComparisonChart({ players }: { players: readonly RankedPlayerRow[] }) {
+  const { settings } = useOperatorSettings();
   const chart = mapPlayerComparisonChart(
     players.map((player) => ({ playerId: player.playerId, name: player.name, net: player.result.value })),
     chartWidth,
@@ -30,7 +32,7 @@ export function PlayerComparisonChart({ players }: { players: readonly RankedPla
           height={bar.height}
         >
           <title>
-            {bar.name} {formatResult(bar.value)}
+            {bar.name} {formatSignedAmount(bar.value, settings.currencyLabel)}
           </title>
         </rect>
       ))}

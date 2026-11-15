@@ -19,6 +19,8 @@ export interface SessionListQuery {
 export interface ApiClient {
   listPlayers(): Promise<Player[]>;
   createPlayer(name: string): Promise<Player>;
+  updatePlayer(playerId: string, name: string): Promise<Player>;
+  deletePlayer(playerId: string): Promise<void>;
   submitSession(session: Session): Promise<SubmittedSession>;
   getSession(sessionId: string): Promise<SessionDocument>;
   listSessions(query?: SessionListQuery): Promise<SessionDocument[]>;
@@ -45,6 +47,21 @@ export function createApiClient(baseUrl: string, fetchImpl: typeof fetch = fetch
         [201],
       );
       return readPlayer(body);
+    },
+
+    updatePlayer: async (playerId, name) => {
+      const body = await send(
+        origin,
+        fetchImpl,
+        `/api/players/${encodeURIComponent(playerId)}`,
+        { method: "PATCH", body: JSON.stringify({ name }) },
+        [200],
+      );
+      return readPlayer(body);
+    },
+
+    deletePlayer: async (playerId) => {
+      await send(origin, fetchImpl, `/api/players/${encodeURIComponent(playerId)}`, { method: "DELETE" }, [204]);
     },
 
     submitSession: async (session) => {
@@ -77,11 +94,15 @@ export function createApiClient(baseUrl: string, fetchImpl: typeof fetch = fetch
 function sessionRequestBody(session: Session): {
   id: string;
   date: string;
+  name?: string;
+  location?: string;
   transactions: Array<Omit<Transaction, "sessionId">>;
 } {
   return {
     id: session.id,
     date: session.date,
+    ...(session.name === undefined ? {} : { name: session.name }),
+    ...(session.location === undefined ? {} : { location: session.location }),
     transactions: session.transactions.map((transaction) => ({
       id: transaction.id,
       playerId: transaction.playerId,
@@ -211,7 +232,7 @@ function parseSessionDocument(value: unknown): SessionDocument {
     throw unexpectedError("Session response did not match the contract");
   }
 
-  if (Object.keys(value).some((key) => !["id", "date", "createdAt", "transactions", "players"].includes(key))) {
+  if (Object.keys(value).some((key) => !["id", "date", "name", "location", "createdAt", "transactions", "players"].includes(key))) {
     throw unexpectedError("Session response did not match the contract");
   }
 
@@ -233,6 +254,8 @@ function parseSessionDocument(value: unknown): SessionDocument {
         date: value.date,
         createdAt: value.createdAt,
         transactions,
+        ...(Object.hasOwn(value, "name") ? { name: value.name } : {}),
+        ...(Object.hasOwn(value, "location") ? { location: value.location } : {}),
       }),
       players: value.players.map((player) => validatePlayer(player)),
     };

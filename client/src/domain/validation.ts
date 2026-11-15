@@ -167,9 +167,48 @@ export function validatePlayer(value: unknown): Player {
   };
 }
 
+export function readSessionLabel(value: string): string | undefined {
+  const normalized = value.trim().replace(/\s+/g, " ");
+  if (normalized.length === 0) {
+    return undefined;
+  }
+  if (normalized.length > 80) {
+    fail("name and location must contain at most 80 characters");
+  }
+  return normalized;
+}
+
+function optionalSessionLabel(record: Record<string, unknown>, key: "name" | "location"): string | undefined {
+  if (!Object.hasOwn(record, key) || record[key] === undefined || record[key] === null) {
+    return undefined;
+  }
+  if (typeof record[key] !== "string") {
+    fail(`${key} must be a string`);
+  }
+  return readSessionLabel(record[key]);
+}
+
+export function withSessionDetails(session: Session, details: { name: string; location: string }): Session {
+  const name = readSessionLabel(details.name);
+  const location = readSessionLabel(details.location);
+  const next: Session = {
+    id: session.id,
+    date: session.date,
+    createdAt: session.createdAt,
+    transactions: session.transactions,
+  };
+  if (name !== undefined) {
+    next.name = name;
+  }
+  if (location !== undefined) {
+    next.location = location;
+  }
+  return next;
+}
+
 export function validateSession(value: unknown): Session {
   const record = requireRecord(value, "Session");
-  rejectUnknown(record, ["id", "date", "createdAt", "transactions"], "Session");
+  rejectUnknown(record, ["id", "date", "name", "location", "createdAt", "transactions"], "Session");
 
   const id = requireIdentifier(record, "id");
   const date = requireString(record, "date");
@@ -200,7 +239,16 @@ export function validateSession(value: unknown): Session {
     ids.add(transaction.id);
   }
 
-  return { id, date, createdAt, transactions };
+  const name = optionalSessionLabel(record, "name");
+  const location = optionalSessionLabel(record, "location");
+  return {
+    id,
+    date,
+    createdAt,
+    transactions,
+    ...(name === undefined ? {} : { name }),
+    ...(location === undefined ? {} : { location }),
+  };
 }
 
 export function validateActiveSessionRecord(value: unknown): ActiveSessionRecord {

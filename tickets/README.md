@@ -4,7 +4,7 @@ A ticket starts as `todo`, moves to `in-progress` when work starts, and becomes 
 
 Each ticket is also a GitHub issue. `**Issue:**` is that issue, and the [poker tracker project](https://github.com/users/smatsri/projects/8) tracks board status. The ticket file is the spec. The GitHub issue body is only a link to that file, not a copy of the description or acceptance criteria.
 
-When a ticket becomes `done`, set that status in the ticket file, then push a commit to the default branch whose message contains `Closes #<issue>`. Use the GitHub issue number from `**Issue:**`, not the ticket id. Closing the issue moves its project card to Done. Milestones are GitHub milestones, and `Depends on` is a blocked-by link.
+When a ticket becomes `done`, set that status in the ticket file, then push a commit to `dev` or the default branch whose message contains `Closes #<issue>`. Use the GitHub issue number from `**Issue:**`, not the ticket id. A push to `dev` closes those issues from the commit message. A push to the default branch does the same through GitHub's own keyword. Closing the issue moves its project card to Done. Milestones are GitHub milestones, and `Depends on` is a blocked-by link.
 
 The authoritative contract is [docs/api/openapi.yaml](../docs/api/openapi.yaml). Product behavior is locked in [docs/architecture.md](../docs/architecture.md), [docs/data-model.md](../docs/data-model.md), and [docs/testing.md](../docs/testing.md). Production hosting is locked in [docs/deployment.md](../docs/deployment.md). Version 1.0 product direction is in [docs/roadmap-v1.0.md](../docs/roadmap-v1.0.md).
 
@@ -21,8 +21,11 @@ The authoritative contract is [docs/api/openapi.yaml](../docs/api/openapi.yaml).
 | M6 Version 1.0: Historical Insights | TKT-023–TKT-028 | Group overview, player progression, and charts | done |
 | M7 Contract hardening | TKT-029–TKT-032 | The locked contracts hold for the cases the reviews found | done |
 | M8 Production deployment | TKT-033–TKT-040 | The app is reachable on a phone through Cloud Run and Neon | done |
+| M9 Evening usability | TKT-041–TKT-048 | A live evening is faster to run, and the recap is easier to check | done |
 
-M0–M8 are done. Hosting stays locked in [docs/deployment.md](../docs/deployment.md). Later product work should reuse existing client calculations and `GET /api/sessions`. Do not add analytics endpoints unless a later ticket proves they are required.
+M0–M9 are done. Hosting stays locked in [docs/deployment.md](../docs/deployment.md). Later product work should reuse existing client calculations and `GET /api/sessions`. Do not add analytics endpoints unless a later ticket proves they are required.
+
+M9 is specified in [docs/roadmap-m9.md](../docs/roadmap-m9.md). Architecture, the data model, and OpenAPI stay the current contract until the ticket that changes them lands.
 
 These review notes stay out of the backlog:
 
@@ -74,6 +77,14 @@ These review notes stay out of the backlog:
 | [TKT-038](TKT-038-first-cloud-deploy.md) | Deploy Cloud Run and Neon | done | TKT-037 |
 | [TKT-039](TKT-039-github-actions-deploy.md) | Deploy from GitHub Actions | done | TKT-034, TKT-037, TKT-038 |
 | [TKT-040](TKT-040-backup-restore.md) | Verify a database restore | done | TKT-038 |
+| [TKT-041](TKT-041-player-names.md) | Keep player names visible | done | None |
+| [TKT-042](TKT-042-close-to-summary.md) | Open the summary after a confirmed close | done | None |
+| [TKT-043](TKT-043-add-action-sheet.md) | Shorten the add-action sheet | done | None |
+| [TKT-044](TKT-044-bulk-buy-in.md) | Add the same amount for several players | done | TKT-043 |
+| [TKT-045](TKT-045-session-name-location.md) | Name and locate an evening | done | None |
+| [TKT-046](TKT-046-history-metrics.md) | Show the history gap | done | None |
+| [TKT-047](TKT-047-player-rename-delete.md) | Rename a player and delete an unused one | done | None |
+| [TKT-048](TKT-048-session-cache.md) | Cache closed sessions for display | done | TKT-045 |
 
 ## Requirement coverage
 
@@ -95,6 +106,19 @@ These review notes stay out of the backlog:
 | Enriched group overview | TKT-024 |
 | Historical insight charts | TKT-025, TKT-026, TKT-027 |
 
+### M9 Evening usability
+
+| Outcome | Tickets |
+| --- | --- |
+| Player names stay visible | TKT-041 |
+| Confirmed close opens the summary, and the next evening is easy to start | TKT-042 |
+| Faster add-action sheet, default amount, and currency label | TKT-043 |
+| One amount for several players | TKT-044 |
+| Optional evening name and location | TKT-045 |
+| History shows money in, money out, and the gap | TKT-046 |
+| Rename a player, and delete one with no transactions | TKT-047 |
+| Closed sessions render from a local cache | TKT-048 |
+
 | UI acceptance criterion | Tickets |
 | --- | --- |
 | 1. A new evening can be started from a phone | TKT-012, TKT-014, TKT-022 |
@@ -115,7 +139,7 @@ These items stay outside Version 1.0:
 - Additional charts beyond the three Version 1.0 views, plus filters, search, and advanced analytics
 - Editing or deleting a session after server confirmation
 - Player accounts and multiple application users. Operator access for the hosted app is M8, in [docs/deployment.md](../docs/deployment.md)
-- Multi-device collaboration, real-time sync, and offline access to the full history
+- Multi-device collaboration and real-time sync. M9 may cache closed sessions for display; the server stays the source of truth. Full offline history stays deferred
 - Attendance without a transaction
 - Debt management and payments between players
 - Scheduling and attendance for future evenings

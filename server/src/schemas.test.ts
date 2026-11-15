@@ -49,6 +49,24 @@ test("checks player name length after normalization", () => {
   rejects({ name: "a".repeat(81) }, playerCreateRequest);
 });
 
+test("session name and location use player-name normalization and omit blanks", () => {
+  const session = {
+    id: "session-001",
+    date: "2026-11-12",
+    transactions: [],
+  };
+  const omitted = parse(sessionCreateRequest, { ...session, name: "   ", location: "" });
+  assert.equal(omitted.name, undefined);
+  assert.equal(omitted.location, undefined);
+  assert.deepEqual(parse(sessionCreateRequest, { ...session, name: "  ערב   חמישי ", location: " אצל דנה " }), {
+    ...session,
+    name: "ערב חמישי",
+    location: "אצל דנה",
+  });
+  rejects({ ...session, name: "a".repeat(81) }, sessionCreateRequest);
+  rejects({ ...session, location: "a".repeat(81) }, sessionCreateRequest);
+});
+
 test("rejects unknown fields", () => {
   rejects({ name: "Dana", nickname: "D" }, playerCreateRequest);
   rejects({ ...validTransaction, note: "extra" });

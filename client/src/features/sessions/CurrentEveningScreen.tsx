@@ -5,7 +5,9 @@ import type { ActiveSessionRecord, Player, Transaction } from "../../domain/mode
 import { navigate, onNavigate, useAppLocation } from "../../app/navigation.ts";
 import { PlayerPanel } from "../players/PlayerPanel.tsx";
 import { presentCurrentEvening, presentEveningLoadFailure, presentPlayerEvening, statusLabels, type ActiveEveningView, type PresentedTransaction } from "./currentEvening.ts";
-import { ResultText } from "./ResultText.tsx";
+import { OperatorSettingsForm } from "../settings/OperatorSettings.tsx";
+import { MoneyText, ResultText } from "./ResultText.tsx";
+import { sessionSummaryPath } from "./sessionHistory.ts";
 import { classifySubmissionFailure, submissionActions, submissionMessages, type SubmissionFailure } from "./submission.ts";
 import { TransactionSheet } from "./TransactionSheet.tsx";
 
@@ -88,8 +90,10 @@ export function CurrentEveningScreen({
     setSubmitting(true);
     setSubmitFailure(null);
     try {
-      setRecord(await evening.submitEvening());
+      const submitted = await evening.submitEvening();
+      setRecord(null);
       setReviewing(false);
+      navigate(sessionSummaryPath(submitted.session.id));
     } catch (error) {
       try {
         setRecord(await evening.readCurrent());
@@ -163,7 +167,8 @@ export function CurrentEveningScreen({
           </button>
           {startError !== null ? <p className="notice notice-alert">{startError}</p> : null}
         </article>
-        <PlayerPanel directory={players} onSelect={() => undefined} />
+        <PlayerPanel directory={players} onSelect={() => undefined} onPlayersChange={setDirectory} />
+        <OperatorSettingsForm />
       </section>
     );
   }
@@ -253,7 +258,7 @@ export function CurrentEveningScreen({
               <h1>{detail.name}</h1>
               <ResultText result={detail.net} prominent />
               <p className="muted">
-                כניסות {detail.buyIns} · יציאות {detail.cashOuts}
+                כניסות <MoneyText value={detail.buyIns} /> · יציאות <MoneyText value={detail.cashOuts} />
               </p>
             </header>
             <TransactionList items={detail.transactions} empty="אין פעולות לשחקן הזה." scope="evening" />
@@ -272,15 +277,34 @@ export function CurrentEveningScreen({
         <p>{view.date}</p>
         <p className="status">{statusLabel}</p>
       </header>
+      {record !== null && !locked ? (
+        <SessionDetailsForm
+          name={record.session.name ?? ""}
+          location={record.session.location ?? ""}
+          onSave={async (name, location) => {
+            setRecord(await evening.updateDetails({ name, location }));
+          }}
+        />
+      ) : null}
+      {record !== null && locked && (record.session.name !== undefined || record.session.location !== undefined) ? (
+        <p>
+          {record.session.name ?? view.date}
+          {record.session.location !== undefined ? ` · ${record.session.location}` : ""}
+        </p>
+      ) : null}
       <AddAction disabled={locked} onAdd={() => openSheet(null)} />
       <article className="card totals">
         <p>
           <span className="muted">כניסות</span>
-          <strong>{view.totalBuyIns}</strong>
+          <strong>
+            <MoneyText value={view.totalBuyIns} />
+          </strong>
         </p>
         <p>
           <span className="muted">יציאות</span>
-          <strong>{view.totalCashOuts}</strong>
+          <strong>
+            <MoneyText value={view.totalCashOuts} />
+          </strong>
         </p>
         <p>
           <span className="muted">מאזן</span>
@@ -297,7 +321,7 @@ export function CurrentEveningScreen({
                 <span className="player-row-main">
                   <span className="player-name">{player.name}</span>
                   <span className="muted">
-                    כניסות {player.totalBuyIns} · יציאות {player.totalCashOuts}
+                    כניסות <MoneyText value={player.totalBuyIns} /> · יציאות <MoneyText value={player.totalCashOuts} />
                   </span>
                 </span>
                 <ResultText result={player.net} prominent />
@@ -330,7 +354,8 @@ export function CurrentEveningScreen({
         </button>
       ) : null}
       {startError !== null ? <p className="notice notice-alert">{startError}</p> : null}
-      <PlayerPanel directory={players} onSelect={() => undefined} />
+      <PlayerPanel directory={players} onSelect={() => undefined} onPlayersChange={setDirectory} />
+      <OperatorSettingsForm />
       {transactionSheet}
     </section>
   );
@@ -363,11 +388,15 @@ function SubmissionPanel({
         <h2>סיכום לפני שליחה</h2>
         <p>
           <span className="muted">כניסות </span>
-          <strong>{view.totalBuyIns}</strong>
+          <strong>
+            <MoneyText value={view.totalBuyIns} />
+          </strong>
         </p>
         <p>
           <span className="muted">יציאות </span>
-          <strong>{view.totalCashOuts}</strong>
+          <strong>
+            <MoneyText value={view.totalCashOuts} />
+          </strong>
         </p>
         <p>
           <span className="muted">מאזן </span>
@@ -456,7 +485,7 @@ function TransactionList({
                 <span className="player-name">{item.playerName}</span>
                 <span className="muted">{item.typeLabel}</span>
               </span>
-              <span className="money">{item.amount}</span>
+              <MoneyText value={item.amount} />
               <span className="muted">{item.time}</span>
             </a>
           </li>
@@ -511,7 +540,9 @@ function TransactionDetail({
       <header className="stack">
         <h1>{presented.playerName}</h1>
         <p>{presented.typeLabel}</p>
-        <p className="money money-prominent">{presented.amount}</p>
+        <p className="money money-prominent">
+          <MoneyText value={presented.amount} />
+        </p>
         <p className="muted">{presented.time}</p>
       </header>
       {canCorrect ? (
@@ -543,5 +574,60 @@ function TransactionDetail({
         </p>
       ) : null}
     </>
+  );
+}
+
+function SessionDetailsForm({
+  name,
+  location,
+  onSave,
+}: {
+  name: string;
+  location: string;
+  onSave: (name: string, location: string) => Promise<void>;
+}) {
+  const [values, setValues] = useState({ name, location });
+  const [error, setError] = useState<string | null>(null);
+
+  async function change(next: { name: string; location: string }) {
+    setValues(next);
+    try {
+      await onSave(next.name, next.location);
+      setError(null);
+    } catch {
+      setError("לא הצלחנו לשמור את פרטי הערב.");
+    }
+  }
+
+  return (
+    <form className="card stack" aria-label="פרטי הערב">
+      <label className="stack field-label">
+        <span>שם</span>
+        <input
+          className="field"
+          name="session-name"
+          value={values.name}
+          maxLength={80}
+          autoComplete="off"
+          onChange={(event) => void change({ ...values, name: event.target.value })}
+        />
+      </label>
+      <label className="stack field-label">
+        <span>מיקום</span>
+        <input
+          className="field"
+          name="session-location"
+          value={values.location}
+          maxLength={80}
+          autoComplete="off"
+          onChange={(event) => void change({ ...values, location: event.target.value })}
+        />
+      </label>
+      {error !== null ? (
+        <p className="notice notice-alert" role="alert">
+          {error}
+        </p>
+      ) : null}
+    </form>
   );
 }

@@ -12,6 +12,8 @@ export interface StoredTransaction {
 export interface StoredSession {
   id: string;
   date: string;
+  name?: string;
+  location?: string;
   createdAt: string;
   transactions: StoredTransaction[];
   players: StoredPlayer[];
@@ -29,8 +31,8 @@ export async function missingPlayerIds(database: Sql, playerIds: string[]): Prom
 }
 
 export async function selectSession(database: Sql, id: string): Promise<StoredSession | undefined> {
-  const sessions = await database.query<{ id: string; date: string; createdAt: string }>(
-    `SELECT id, "date", created_at AS "createdAt" FROM sessions WHERE id = $1`,
+  const sessions = await database.query<{ id: string; date: string; name: string | null; location: string | null; createdAt: string }>(
+    `SELECT id, "date", name, location, created_at AS "createdAt" FROM sessions WHERE id = $1`,
     [id],
   );
   const session = sessions.rows[0];
@@ -55,7 +57,23 @@ export async function selectSession(database: Sql, id: string): Promise<StoredSe
     [id],
   );
 
-  return { ...session, transactions: transactions.rows, players: players.rows };
+  return storedSession(session, transactions.rows, players.rows);
+}
+
+function storedSession(
+  session: { id: string; date: string; name: string | null; location: string | null; createdAt: string },
+  transactions: StoredTransaction[],
+  players: StoredPlayer[],
+): StoredSession {
+  return {
+    id: session.id,
+    date: session.date,
+    createdAt: session.createdAt,
+    transactions,
+    players,
+    ...(session.name === null ? {} : { name: session.name }),
+    ...(session.location === null ? {} : { location: session.location }),
+  };
 }
 
 export async function selectSessions(
@@ -84,12 +102,14 @@ export async function selectSessions(
 
 export async function insertSession(
   database: Sql,
-  session: { id: string; date: string; createdAt: string },
+  session: { id: string; date: string; createdAt: string; name?: string; location?: string },
 ): Promise<void> {
-  await database.query(`INSERT INTO sessions (id, "date", created_at) VALUES ($1, $2, $3)`, [
+  await database.query(`INSERT INTO sessions (id, "date", created_at, name, location) VALUES ($1, $2, $3, $4, $5)`, [
     session.id,
     session.date,
     session.createdAt,
+    session.name ?? null,
+    session.location ?? null,
   ]);
 }
 

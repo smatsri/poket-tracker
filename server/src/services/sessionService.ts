@@ -20,6 +20,10 @@ export interface SubmitResult {
   session: StoredSession;
 }
 
+function sameLabel(left: string | undefined, right: string | undefined): boolean {
+  return (left ?? undefined) === (right ?? undefined);
+}
+
 function sameInstant(left: string, right: string): boolean {
   return Date.parse(left) === Date.parse(right);
 }
@@ -82,7 +86,12 @@ async function runSubmit(database: Database, submission: SessionSubmission): Pro
   return database.transaction(async (sql) => {
     const existing = await selectSession(sql, submission.id);
     if (existing) {
-      if (existing.date === submission.date && sameTransactionSet(existing.transactions, submission.transactions)) {
+      if (
+        existing.date === submission.date &&
+        sameLabel(existing.name, submission.name) &&
+        sameLabel(existing.location, submission.location) &&
+        sameTransactionSet(existing.transactions, submission.transactions)
+      ) {
         return { status: 200, session: existing };
       }
       throw conflict("Session already exists with different content");
@@ -94,7 +103,13 @@ async function runSubmit(database: Database, submission: SessionSubmission): Pro
     }
 
     const createdAt = new Date().toISOString();
-    await insertSession(sql, { id: submission.id, date: submission.date, createdAt });
+    await insertSession(sql, {
+      id: submission.id,
+      date: submission.date,
+      createdAt,
+      ...(submission.name === undefined ? {} : { name: submission.name }),
+      ...(submission.location === undefined ? {} : { location: submission.location }),
+    });
     for (const transaction of submission.transactions) {
       await insertTransaction(sql, submission.id, transaction);
     }

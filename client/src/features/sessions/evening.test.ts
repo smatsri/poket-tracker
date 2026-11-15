@@ -31,6 +31,12 @@ function api(submit: (session: Session) => Promise<SubmittedSession> | Submitted
     createPlayer: async () => {
       throw new Error("unused");
     },
+    updatePlayer: async () => {
+      throw new Error("unused");
+    },
+    deletePlayer: async () => {
+      throw new Error("unused");
+    },
     getSession: async () => {
       throw new Error("unused");
     },
@@ -100,8 +106,23 @@ test("201 and identical 200 move pending to submitted", async () => {
     const submitted = await service.submitEvening();
     assert.equal(submitted.status, "submitted");
     assert.equal(submitted.session.createdAt, "2026-11-13T20:00:00Z");
-    assert.equal((await repository.readActiveSession())?.status, "submitted");
+    assert.equal(await repository.readActiveSession(), null);
   }
+});
+
+test("a failed clear after confirmation leaves the pending evening in place", async () => {
+  const repository = new MemoryLocalRepository();
+  const client = api(async (session) => {
+    repository.failNextWrite = true;
+    return confirmed(session, 201);
+  });
+  const service = createEveningService(repository, client, clock());
+  await service.startEvening();
+  await service.addTransaction({ playerId: "player-001", type: "buy-in", amount: 50 });
+
+  await assert.rejects(() => service.submitEvening(), /Failed to persist local data/);
+  assert.equal((await repository.readActiveSession())?.status, "pending");
+  assert.equal((await repository.readActiveSession())?.session.id, "session-001");
 });
 
 test("a network failure, 500, or 409 stays pending and retains the original session", async () => {
@@ -184,16 +205,17 @@ test("retry uses the original session id", async () => {
   assert.equal(submitted.status, "submitted");
 });
 
-test("submitting a submitted evening does not send it again", async () => {
+test("a confirmed evening is cleared, so submitting again does not send it", async () => {
   const repository = new MemoryLocalRepository();
   const client = api((session) => confirmed(session, 201));
   const service = createEveningService(repository, client, clock());
   await service.startEvening();
   await service.addTransaction({ playerId: "player-001", type: "buy-in", amount: 50 });
   await service.submitEvening();
-  await service.submitEvening();
+  await assert.rejects(() => service.submitEvening(), EveningError);
 
   assert.equal(client.calls.length, 1);
+  assert.equal(await repository.readActiveSession(), null);
 });
 
 test("editing changes player, type, and amount without a new id or timestamp", async () => {
@@ -238,6 +260,110 @@ test("edit and delete replace the saved transaction only after the repository co
 
   await service.deleteTransaction(transaction.id);
   assert.deepEqual((await repository.readActiveSession())?.session.transactions, []);
+});
+
+test("several players share one amount in a single save", async () => {
+  const repository = new MemoryLocalRepository();
+  const ids = ["session-001", "tx-001", "tx-002", "tx-003", "tx-004", "tx-005", "tx-006", "tx-007"];
+  let writes = 0;
+  const saveActiveSession = repository.saveActiveSession.bind(repository);
+  repository.saveActiveSession = async (record) => {
+    writes += 1;
+    await saveActiveSession(record);
+  };
+  const service = createEveningService(
+    repository,
+    api(() => {
+      throw new Error("unused");
+    }),
+    {
+      now: () => now,
+      newId: () => {
+        const next = ids.shift();
+        if (next === undefined) {
+          throw new Error("Test ran out of ids");
+        }
+        return next;
+      },
+    },
+  );
+  await service.startEvening();
+  const existing = await service.addTransaction({ playerId: "p1", type: "buy-in", amount: 20 });
+  const before = writes;
+
+  const saved = await service.addTransactions([
+    { playerId: "p1", type: "rebuy", amount: 50 },
+    { playerId: "p2", type: "rebuy", amount: 50 },
+    { playerId: "p3", type: "buy-in", amount: 50 },
+  ]);
+
+  assert.equal(writes, before + 1);
+  assert.deepEqual(
+    saved.map((transaction) => [transaction.id, transaction.playerId, transaction.type, transaction.amount]),
+    [
+      ["tx-002", "p1", "rebuy", 50],
+      ["tx-003", "p2", "rebuy", 50],
+      ["tx-004", "p3", "buy-in", 50],
+    ],
+  );
+  assert.deepEqual(
+    (await repository.readActiveSession())?.session.transactions.map((transaction) => transaction.id),
+    [existing.id, "tx-002", "tx-003", "tx-004"],
+  );
+
+  repository.failNextWrite = true;
+  await assert.rejects(
+    () =>
+      service.addTransactions([
+        { playerId: "p1", type: "rebuy", amount: 10 },
+        { playerId: "p2", type: "rebuy", amount: 10 },
+      ]),
+    /Failed to persist local data/,
+  );
+  assert.equal((await repository.readActiveSession())?.session.transactions.length, 4);
+
+  await assert.rejects(
+    () => service.addTransactions([{ playerId: "p1", type: "buy-in", amount: 0 }]),
+    /amount must be a positive integer/,
+  );
+  assert.equal((await repository.readActiveSession())?.session.transactions.length, 4);
+});
+
+test("a draft keeps an optional name and location through submit", async () => {
+  const repository = new MemoryLocalRepository();
+  const client = api((session) => confirmed(session, 201));
+  const service = createEveningService(repository, client, clock());
+  await service.startEvening();
+  const named = await service.updateDetails({ name: "  ערב   חמישי ", location: "  אצל דנה " });
+  assert.equal(named.session.name, "ערב חמישי");
+  assert.equal(named.session.location, "אצל דנה");
+  assert.equal(Object.hasOwn(await service.updateDetails({ name: "   ", location: "" }).then((record) => record.session), "name"), false);
+
+  await service.updateDetails({ name: "ערב חמישי", location: "אצל דנה" });
+  await service.addTransaction({ playerId: "player-001", type: "buy-in", amount: 50 });
+  await service.submitEvening();
+  assert.equal(client.calls[0]?.name, "ערב חמישי");
+  assert.equal(client.calls[0]?.location, "אצל דנה");
+
+  const pending = await repository.readActiveSession();
+  assert.equal(pending, null);
+});
+
+test("a pending evening cannot change its name or location", async () => {
+  const repository = new MemoryLocalRepository();
+  const client = api(async () => {
+    throw new Error("offline");
+  });
+  const service = createEveningService(repository, client, clock());
+  await service.startEvening();
+  await service.updateDetails({ name: "ערב חמישי", location: "אצל דנה" });
+  await service.addTransaction({ playerId: "player-001", type: "buy-in", amount: 50 });
+  await assert.rejects(() => service.submitEvening());
+  await assert.rejects(() => service.updateDetails({ name: "אחר", location: "אחר" }), EveningError);
+  const stored = await repository.readActiveSession();
+  assert.equal(stored?.status, "pending");
+  assert.equal(stored?.session.name, "ערב חמישי");
+  assert.equal(stored?.session.location, "אצל דנה");
 });
 
 test("an evening without transactions cannot be submitted", async () => {

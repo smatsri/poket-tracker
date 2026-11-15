@@ -5,6 +5,7 @@ import { createBrowserApiClient } from "./data/api/browserClient.ts";
 import { createIndexedDbRepository } from "./data/local/indexedDb.ts";
 import { createPlayerDirectory } from "./features/players/directory.ts";
 import { createEveningService } from "./features/sessions/evening.ts";
+import { OperatorSettingsProvider } from "./features/settings/OperatorSettings.tsx";
 import "./styles/global.css";
 
 const repository = createIndexedDbRepository();
@@ -19,6 +20,8 @@ if (root === null) {
 
 createRoot(root).render(
   <StrictMode>
-    <App evening={evening} players={players} api={api} />
+    <OperatorSettingsProvider repository={repository}>
+      <App evening={evening} players={players} api={api} repository={repository} />
+    </OperatorSettingsProvider>
   </StrictMode>,
 );

@@ -1,5 +1,6 @@
 import type { ApiClient, SessionDocument } from "../../data/api/client.ts";
 import { ApiRequestError } from "../../data/api/errors.ts";
+import type { LocalRepository } from "../../data/local/repository.ts";
 import { calculateSessionResult } from "../../domain/calculations.ts";
 import type { PlayerSessionResult } from "../../domain/models.ts";
 import { presentPlayerResult, presentResult, type PresentedPlayerRow, type PresentedResult } from "./currentEvening.ts";
@@ -22,6 +23,7 @@ export const summaryCopy = {
   notFound: "הערב לא נמצא.",
   missingPlayer: "לשחקן הזה אין פעולות בערב הזה.",
   networkError: "אין חיבור לשרת, ולכן אי אפשר להציג את סיכום הערב.",
+  cachedNotice: "אין חיבור לשרת. מוצג הסיכום שנשמר במכשיר.",
   loadError: "השרת לא הצליח להחזיר את סיכום הערב.",
   retry: "נסו שוב",
   emptyTransactions: "אין פעולות בערב הזה.",
@@ -34,7 +36,9 @@ export interface SummaryPlayerRow extends PresentedPlayerRow {
 export interface SessionSummaryView {
   canChange: false;
   sessionId: string;
+  heading: string;
   date: string;
+  location?: string;
   totalBuyIns: string;
   totalCashOuts: string;
   balance: PresentedResult;
@@ -62,16 +66,22 @@ export type SummaryFailureView =
   | { status: "not-found"; message: string; backLabel: string; backHref: "/history" }
   | { status: "error"; message: string; canRetry: true; retryLabel: string; backLabel: string; backHref: "/history" };
 
+export type SummaryScreenView =
+  | { status: "loading" }
+  | { status: "ready"; document: SessionDocument; notice: string | null }
+  | SummaryFailureView;
+
 export function presentSessionSummary(document: SessionDocument): SessionSummaryView {
   const result = calculateSessionResult(document.session);
-  const names = new Map(document.players.map((player) => [player.id, player.name]));
   const history = presentTransactionHistory(document.session, document.players, "readonly");
   const playerCount = new Set(document.players.map((player) => player.id)).size;
 
   return {
     canChange: false,
     sessionId: document.session.id,
+    heading: document.session.name ?? history.date,
     date: history.date,
+    ...(document.session.location === undefined ? {} : { location: document.session.location }),
     totalBuyIns: amountFormat.format(result.sessionBuyIns),
     totalCashOuts: amountFormat.format(result.sessionCashOuts),
     balance: presentResult(result.sessionBalance),
@@ -79,7 +89,7 @@ export function presentSessionSummary(document: SessionDocument): SessionSummary
     transactionCount: document.session.transactions.length,
     playersLabel: `${summaryCopy.players}: ${playerCount}`,
     transactionsLabel: `${summaryCopy.transactionCount}: ${document.session.transactions.length}`,
-    players: result.players.map((player) => presentSummaryPlayer(document.session.id, player, names)),
+    players: result.players.map((player) => presentSummaryPlayer(document.session.id, player, document.players)),
     transactions: history.transactions,
     transactionsHref: sessionTransactionsPath(document.session.id),
     summaryHref: `/history/${encodeURIComponent(document.session.id)}`,
@@ -124,9 +134,39 @@ export function loadSessionSummary(api: Pick<ApiClient, "getSession">, sessionId
   return api.getSession(sessionId);
 }
 
-function presentSummaryPlayer(sessionId: string, player: PlayerSessionResult, names: ReadonlyMap<string, string>): SummaryPlayerRow {
+export async function openSessionSummary(
+  repository: Pick<LocalRepository, "readClosedSession" | "saveClosedSession">,
+  api: Pick<ApiClient, "getSession">,
+  sessionId: string,
+  show: (view: SummaryScreenView) => void,
+): Promise<void> {
+  const cached = await repository.readClosedSession(sessionId);
+  if (cached !== null) {
+    show({ status: "ready", document: cached, notice: null });
+  } else {
+    show({ status: "loading" });
+  }
+
+  try {
+    const document = await loadSessionSummary(api, sessionId);
+    await repository.saveClosedSession(document);
+    show({ status: "ready", document, notice: null });
+  } catch (error) {
+    if (error instanceof ApiRequestError && (error.status === 404 || error.code === "NOT_FOUND")) {
+      show(presentSummaryFailure(error));
+      return;
+    }
+    if (cached !== null) {
+      show({ status: "ready", document: cached, notice: summaryCopy.cachedNotice });
+      return;
+    }
+    show(presentSummaryFailure(error));
+  }
+}
+
+function presentSummaryPlayer(sessionId: string, player: PlayerSessionResult, players: SessionDocument["players"]): SummaryPlayerRow {
   return {
-    ...presentPlayerResult(player, names),
+    ...presentPlayerResult(player, players),
     href: sessionPlayerPath(sessionId, player.playerId),
   };
 }

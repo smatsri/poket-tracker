@@ -66,9 +66,8 @@ stateDiagram-v2
   Empty --> Draft: Start evening
   Draft --> Draft: Add, edit, or delete
   Draft --> Pending: Request submission
-  Pending --> Submitted: HTTP 201 or identical HTTP 200
+  Pending --> Empty: HTTP 201 or identical HTTP 200
   Pending --> Pending: Network failure, HTTP 500, or HTTP 409
-  Submitted --> Empty: Start another evening
 ```
 
 Rules:
@@ -76,7 +75,7 @@ Rules:
 - Persist the active session before the interface treats a transaction change as complete.
 - Keep the same session ID from the first local save through every submission retry.
 - Do not start another evening while the status is `draft` or `pending`.
-- After `submitted`, retain the local copy until the user explicitly starts another evening.
+- After `201` or an identical `200`, clear the local active session and open that evening's summary.
 - A failed or uncertain submission leaves the status `pending` and leaves every transaction in IndexedDB.
 
 ```mermaid
@@ -90,10 +89,12 @@ sequenceDiagram
   Client->>API: POST /api/sessions
   alt First successful save
     API-->>Client: 201 Session
-    Client->>IDB: Mark submitted
+    Client->>IDB: Clear the active session
+    Client->>User: Open the evening summary
   else Identical retry
     API-->>Client: 200 Session
-    Client->>IDB: Mark submitted
+    Client->>IDB: Clear the active session
+    Client->>User: Open the evening summary
   else Different content for the same ID
     API-->>Client: 409 Conflict
     Client->>IDB: Remain pending
@@ -135,9 +136,9 @@ These decisions close gaps in the source specifications.
 6. Creating a player requires the server. The client caches the last successful player list for selection during a connectivity gap. Version 1 does not create local-only players, because submission would fail for an unknown player ID.
 7. Completed sessions are read-only. Version 1 has no session update or delete API.
 8. The default session date is the device-local calendar date in `YYYY-MM-DD`.
-9. Amounts are positive whole currency units. Version 1 stores no currency code. The interface formats them with Hebrew grouping and an explicit `+` or `−` sign, without a currency symbol.
+9. Amounts are positive whole currency units. Version 1 stores no currency code on transactions or sessions. The interface formats them with Hebrew grouping, an explicit `+` or `−` sign on results, and the operator's display label. That label and the default amount are local settings. They start at `₪` and 50.
 10. The current evening shows the five newest transactions and links to the complete history.
-11. A player row opens that player's transactions for the current evening. Recording uses a bottom sheet. The main add action starts with no player selected; add from a player's details preselects that player. After a successful save, the sheet stays open, the amount clears, and the selected player and type remain selected. A second save, for a transaction or a new player, is ignored until the in-progress save settles.
+11. A player row opens that player's transactions for the current evening. Recording uses a bottom sheet. The main add action starts with no player selected; add from a player's details preselects that player. Creating an action offers `הוספת כסף` and `יציאה`. The first `הוספת כסף` for a player in that evening is stored as `buy-in`, and each later one as `rebuy`. `הוספת כסף` can select several players and one shared amount, and writes one transaction per player in a single local save. Cash-out stays one player. The edit sheet shows the stored type and can change it. After a successful save of one player, the sheet stays open, the amount returns to the operator's default, and the selected player and action remain selected. A successful save of several players closes the sheet. A failed save leaves the evening unchanged. The amount, the action, and save stay visible while the player list scrolls. A second save, for a transaction or a new player, is ignored until the in-progress save settles.
 12. An immediate undo removes the transaction just saved. Edit and delete remain available for every draft transaction.
 13. Finishing an evening requires at least one transaction. The server still accepts an empty transaction list.
 14. A `409` response preserves the local session and its ID. The interface explains that the server already holds different content for that evening. The evening stays pending: it cannot be edited, and another evening cannot be started.
@@ -163,4 +164,4 @@ Local status labels are `פתוח` for draft, `ממתין לשליחה` for pend
 
 ## Visual baseline
 
-The visual source is [specs/Visual Design Language.md](../specs/Visual%20Design%20Language.md). The interface is light, rounded, and mobile-first, with Heebo, generous spacing, and green as the action accent. Positive amounts use `#249B45`, negative amounts use `#D94B4B`, and the sign is always visible as well. Layout uses CSS logical properties and supports a 360px-wide viewport and mobile safe areas.
+The visual source is [specs/Visual Design Language.md](specs/Visual%20Design%20Language.md). The interface is light, rounded, and mobile-first, with Heebo, generous spacing, and green as the action accent. Positive amounts use `#249B45`, negative amounts use `#D94B4B`, and the sign is always visible as well. Layout uses CSS logical properties and supports a 360px-wide viewport and mobile safe areas.

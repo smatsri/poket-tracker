@@ -1,15 +1,19 @@
 import type { ApiClient, SessionDocument } from "../../data/api/client.ts";
 import { ApiRequestError } from "../../data/api/errors.ts";
+import type { LocalRepository } from "../../data/local/repository.ts";
 import { calculateSessionResult } from "../../domain/calculations.ts";
 import type { Player } from "../../domain/models.ts";
 import { presentResult, type PresentedResult } from "./currentEvening.ts";
 import { formatSessionDate } from "./transactionHistory.ts";
+
+const amountFormat = new Intl.NumberFormat("he-IL", { maximumFractionDigits: 0 });
 
 export const historyCopy = {
   title: "היסטוריה",
   empty: "אין עדיין ערבים שהסתיימו.",
   loading: "טוען את ההיסטוריה…",
   networkError: "אין חיבור לשרת, ולכן אי אפשר להציג ערבים קודמים.",
+  cachedNotice: "אין חיבור לשרת. מוצגים הערבים שנשמרו במכשיר.",
   loadError: "השרת לא הצליח להחזיר את הערבים הקודמים.",
   retry: "נסו שוב",
   summaryTitle: "סיכום",
@@ -18,11 +22,22 @@ export const historyCopy = {
 export interface HistoryEntry {
   id: string;
   href: string;
+  heading: string;
   date: string;
+  location?: string;
   playerCount: number;
   transactionCount: number;
   playersLabel: string;
   transactionsLabel: string;
+  moneyIn: string;
+  moneyOut: string;
+  moneyInCount: number;
+  cashOutCount: number;
+  moneyInLabel: "סך שנכנס";
+  moneyOutLabel: "סך שיצא";
+  gapLabel: "פער";
+  moneyInCountLabel: string;
+  cashOutCountLabel: string;
   result: PresentedResult;
 }
 
@@ -30,8 +45,11 @@ export interface HistoryListView {
   title: typeof historyCopy.title;
   status: "empty" | "ready";
   message: string | null;
+  notice: string | null;
   entries: HistoryEntry[];
 }
+
+export type HistoryScreenView = HistoryListView | HistoryFailureView | { status: "loading" };
 
 export interface HistoryFailureView {
   status: "error";
@@ -105,13 +123,14 @@ export function parseHistoryLocation(pathname: string): HistoryLocation {
 
 export function presentSessionHistory(documents: readonly SessionDocument[]): HistoryListView {
   if (documents.length === 0) {
-    return { title: historyCopy.title, status: "empty", message: historyCopy.empty, entries: [] };
+    return { title: historyCopy.title, status: "empty", message: historyCopy.empty, notice: null, entries: [] };
   }
 
   return {
     title: historyCopy.title,
     status: "ready",
     message: null,
+    notice: null,
     entries: [...documents].sort(newestFirst).map(presentEntry),
   };
 }
@@ -130,18 +149,57 @@ export function loadSessionHistory(api: Pick<ApiClient, "listSessions">): Promis
   return api.listSessions();
 }
 
+export async function openSessionHistory(
+  repository: Pick<LocalRepository, "readClosedSessions" | "replaceClosedSessions">,
+  api: Pick<ApiClient, "listSessions">,
+  show: (view: HistoryScreenView) => void,
+): Promise<void> {
+  const cached = await repository.readClosedSessions();
+  if (cached.length > 0) {
+    show(presentSessionHistory(cached));
+  } else {
+    show({ status: "loading" });
+  }
+
+  try {
+    const documents = await loadSessionHistory(api);
+    await repository.replaceClosedSessions(documents);
+    show(presentSessionHistory(documents));
+  } catch (error) {
+    if (cached.length > 0) {
+      show({ ...presentSessionHistory(cached), notice: historyCopy.cachedNotice });
+      return;
+    }
+    show(presentHistoryFailure(error));
+  }
+}
+
 function presentEntry(document: SessionDocument): HistoryEntry {
   const result = calculateSessionResult(document.session);
   const playerCount = distinctPlayerCount(document.players);
   const transactionCount = document.session.transactions.length;
+  const date = formatSessionDate(document.session.date);
+  const moneyInCount = document.session.transactions.filter((transaction) => transaction.type === "buy-in" || transaction.type === "rebuy").length;
+  const cashOutCount = document.session.transactions.filter((transaction) => transaction.type === "cash-out").length;
   return {
     id: document.session.id,
     href: sessionSummaryPath(document.session.id),
-    date: formatSessionDate(document.session.date),
+    heading: document.session.name ?? date,
+    date,
+    ...(document.session.location === undefined ? {} : { location: document.session.location }),
     playerCount,
     transactionCount,
     playersLabel: `שחקנים: ${playerCount}`,
     transactionsLabel: `פעולות: ${transactionCount}`,
+    moneyIn: amountFormat.format(result.sessionBuyIns),
+    moneyOut: amountFormat.format(result.sessionCashOuts),
+    moneyInCount,
+    cashOutCount,
+    moneyInLabel: "סך שנכנס",
+    moneyOutLabel: "סך שיצא",
+    gapLabel: "פער",
+    moneyInCountLabel: `מספר כניסות: ${moneyInCount}`,
+    cashOutCountLabel: `מספר יציאות: ${cashOutCount}`,
     result: presentResult(result.sessionBalance),
   };
 }

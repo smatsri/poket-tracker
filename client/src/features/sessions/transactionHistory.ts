@@ -1,4 +1,5 @@
 import type { Player, Session, SubmissionStatus, Transaction } from "../../domain/models.ts";
+import { playerDisplayName } from "../players/playerName.ts";
 
 const amountFormat = new Intl.NumberFormat("he-IL", { maximumFractionDigits: 0 });
 const dateFormat = new Intl.DateTimeFormat("he-IL", { day: "numeric", month: "long", year: "numeric" });
@@ -34,10 +35,9 @@ export function presentTransactionHistory(
   players: readonly Player[],
   access: "draft" | "readonly",
 ): TransactionHistoryView {
-  const names = new Map(players.map((player) => [player.id, player.name]));
   return {
     date: formatSessionDate(session.date),
-    transactions: newestFirst(session.transactions).map((transaction) => presentTransaction(transaction, names)),
+    transactions: newestFirst(session.transactions).map((transaction) => presentTransaction(transaction, players)),
     canCorrect: access === "draft",
   };
 }
@@ -51,11 +51,11 @@ export function formatSessionDate(isoDate: string): string {
   return dateFormat.format(new Date(year, month - 1, day));
 }
 
-export function presentTransaction(transaction: Transaction, names: ReadonlyMap<string, string>): PresentedTransaction {
+export function presentTransaction(transaction: Transaction, players: readonly Player[]): PresentedTransaction {
   return {
     id: transaction.id,
     playerId: transaction.playerId,
-    playerName: names.get(transaction.playerId) ?? transaction.playerId,
+    playerName: playerDisplayName(transaction.playerId, players),
     typeLabel: transactionTypeLabels[transaction.type],
     amount: amountFormat.format(transaction.amount),
     time: timeFormat.format(new Date(transaction.timestamp)),
