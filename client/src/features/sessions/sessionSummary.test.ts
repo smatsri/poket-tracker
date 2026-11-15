@@ -41,6 +41,16 @@ test("summary totals and player results come from the client formulas", () => {
   const view = presentSessionSummary(document);
   const result = calculateSessionResult(document.session);
   assert.equal(view.canChange, false);
+  assert.equal(view.heading, view.date);
+  assert.equal(view.location, undefined);
+  const named = presentSessionSummary({
+    ...document,
+    session: { ...document.session, name: "ערב חמישי", location: "אצל דנה" },
+  });
+  assert.equal(named.heading, "ערב חמישי");
+  assert.equal(named.location, "אצל דנה");
+  assert.equal(named.canChange, false);
+  assert.notEqual(named.heading, named.date);
   assert.equal(view.totalBuyIns, new Intl.NumberFormat("he-IL", { maximumFractionDigits: 0 }).format(result.sessionBuyIns));
   assert.equal(view.totalCashOuts, new Intl.NumberFormat("he-IL", { maximumFractionDigits: 0 }).format(result.sessionCashOuts));
   assert.equal(view.balance.value, result.sessionBalance);
@@ -128,7 +138,7 @@ test("loading a summary reads that session and the screen does not offer changes
   assert.equal(loaded.session.id, "session-1");
 
   const screen = readFileSync(new URL("./HistoryScreen.tsx", import.meta.url), "utf8");
-  assert.doesNotMatch(screen, /עריכה|מחיקה|שליח|submitEvening|deleteTransaction|updateTransaction|addTransaction|startEvening/);
+  assert.doesNotMatch(screen, /עריכה|מחיקה|שליח|submitEvening|deleteTransaction|updateTransaction|addTransaction|startEvening|session-name|session-location/);
   assert.match(screen, /loadSessionSummary/);
   assert.match(screen, /כל הפעולות|summaryCopy.transactions/);
 });

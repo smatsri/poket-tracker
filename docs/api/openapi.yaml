@@ -344,6 +344,16 @@ components:
           $ref: "#/components/schemas/Identifier"
         date:
           $ref: "#/components/schemas/CalendarDate"
+        name:
+          type: string
+          minLength: 1
+          maxLength: 80
+          description: Optional. Trimmed and collapsed like a player name. Omitted when empty.
+        location:
+          type: string
+          minLength: 1
+          maxLength: 80
+          description: Optional. Trimmed and collapsed like a player name. Omitted when empty.
         transactions:
           type: array
           items:
@@ -357,6 +367,16 @@ components:
           $ref: "#/components/schemas/Identifier"
         date:
           $ref: "#/components/schemas/CalendarDate"
+        name:
+          type: string
+          minLength: 1
+          maxLength: 80
+          description: Optional. Omitted when the session has no name.
+        location:
+          type: string
+          minLength: 1
+          maxLength: 80
+          description: Optional. Omitted when the session has no location.
         createdAt:
           $ref: "#/components/schemas/Timestamp"
         transactions:

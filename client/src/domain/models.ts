@@ -24,6 +24,8 @@ export interface Transaction {
 export interface Session {
   id: string;
   date: string;
+  name?: string;
+  location?: string;
   createdAt: string;
   transactions: Transaction[];
 }

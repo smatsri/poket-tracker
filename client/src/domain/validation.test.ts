@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { DomainValidationError } from "./errors.ts";
-import { validateSession, validateTransaction } from "./validation.ts";
+import { readSessionLabel, validateSession, validateTransaction, withSessionDetails } from "./validation.ts";
 
 const validTransaction = {
   id: "tx-001",
@@ -29,6 +29,16 @@ function rejects(value: unknown, validate: (input: unknown) => unknown = validat
 test("accepts a transaction and a session whose ids match", () => {
   assert.deepEqual(validateTransaction(validTransaction), validTransaction);
   assert.deepEqual(validateSession(validSession), validSession);
+  assert.equal(Object.hasOwn(validateSession({ ...validSession, name: "   ", location: "" }), "name"), false);
+  assert.equal(Object.hasOwn(validateSession({ ...validSession, name: "   ", location: "" }), "location"), false);
+
+  const named = validateSession({ ...validSession, name: "  ערב   חמישי  ", location: "  אצל דנה " });
+  assert.equal(named.name, "ערב חמישי");
+  assert.equal(named.location, "אצל דנה");
+  assert.equal(readSessionLabel("   "), undefined);
+  assert.throws(() => readSessionLabel("a".repeat(81)));
+  const accepted = validateSession(validSession);
+  assert.deepEqual(withSessionDetails(accepted, { name: "ערב", location: "  " }), { ...accepted, name: "ערב" });
 });
 
 test("rejects missing fields", () => {

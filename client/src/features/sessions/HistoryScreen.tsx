@@ -128,7 +128,8 @@ export function HistoryScreen({ api }: { api: ApiClient }) {
             <li key={entry.id}>
               <a className="player-row" href={entry.href} onClick={(event) => onNavigate(event, entry.href)}>
                 <span className="player-row-main">
-                  <span className="player-name">{entry.date}</span>
+                  <span className="player-name">{entry.heading}</span>
+                  {entry.location !== undefined ? <span className="muted">{entry.location}</span> : null}
                   <span className="muted">
                     {entry.playersLabel} · {entry.transactionsLabel}
                   </span>
@@ -194,7 +195,8 @@ function SummaryBody({ view }: { view: SessionSummaryView }) {
       <BackLink href="/history" label={summaryCopy.back} />
       <header className="stack">
         <h1>{summaryCopy.title}</h1>
-        <p>{view.date}</p>
+        <p>{view.heading}</p>
+        {view.location !== undefined ? <p>{view.location}</p> : null}
         <p className="muted">
           {view.playersLabel} · {view.transactionsLabel}
         </p>

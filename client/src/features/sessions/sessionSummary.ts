@@ -34,7 +34,9 @@ export interface SummaryPlayerRow extends PresentedPlayerRow {
 export interface SessionSummaryView {
   canChange: false;
   sessionId: string;
+  heading: string;
   date: string;
+  location?: string;
   totalBuyIns: string;
   totalCashOuts: string;
   balance: PresentedResult;
@@ -70,7 +72,9 @@ export function presentSessionSummary(document: SessionDocument): SessionSummary
   return {
     canChange: false,
     sessionId: document.session.id,
+    heading: document.session.name ?? history.date,
     date: history.date,
+    ...(document.session.location === undefined ? {} : { location: document.session.location }),
     totalBuyIns: amountFormat.format(result.sessionBuyIns),
     totalCashOuts: amountFormat.format(result.sessionCashOuts),
     balance: presentResult(result.sessionBalance),

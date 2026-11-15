@@ -32,4 +32,12 @@ CREATE INDEX idx_transactions_session_id ON transactions(session_id);
 CREATE INDEX idx_transactions_player_id ON transactions(player_id);
 `,
   },
+  {
+    id: "002",
+    sql: `
+ALTER TABLE sessions
+  ADD COLUMN name TEXT CHECK (name IS NULL OR length(name) BETWEEN 1 AND 80),
+  ADD COLUMN location TEXT CHECK (location IS NULL OR length(location) BETWEEN 1 AND 80);
+`,
+  },
 ];

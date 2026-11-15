@@ -70,6 +70,8 @@ test("completed sessions are newest first and show date, players, transactions, 
   assert.equal(newest.result.text, formatResult(balance));
   assert.equal(newest.result.tone, "positive");
   assert.equal(newest.href, sessionSummaryPath("session-d"));
+  assert.equal(newest.heading, newest.date);
+  assert.equal(newest.location, undefined);
 
   const balanced = view.entries[2];
   assert.ok(balanced !== undefined);
@@ -86,6 +88,23 @@ test("completed sessions are newest first and show date, players, transactions, 
 
 test("no sessions produces the Hebrew empty state", () => {
   const view = presentSessionHistory([]);
+  const named = presentSessionHistory([
+    {
+      session: {
+        id: "session-named",
+        date: "2026-11-13",
+        name: "ערב חמישי",
+        location: "אצל דנה",
+        createdAt: "2026-11-13T23:00:00Z",
+        transactions: [transaction("session-named", "n1", "p1", "buy-in", 10)],
+      },
+      players: [dana],
+    },
+  ]);
+  assert.equal(named.entries[0]?.heading, "ערב חמישי");
+  assert.equal(named.entries[0]?.location, "אצל דנה");
+  assert.notEqual(named.entries[0]?.heading, named.entries[0]?.date);
+
   assert.equal(view.status, "empty");
   assert.equal(view.message, historyCopy.empty);
   assert.deepEqual(view.entries, []);

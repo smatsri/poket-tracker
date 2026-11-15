@@ -1,7 +1,7 @@
 import type { ApiClient } from "../../data/api/client.ts";
 import type { LocalRepository } from "../../data/local/repository.ts";
 import type { ActiveSessionRecord, Transaction, TransactionType } from "../../domain/models.ts";
-import { validateTransaction } from "../../domain/validation.ts";
+import { validateTransaction, withSessionDetails } from "../../domain/validation.ts";
 
 export class EveningError extends Error {
   constructor(message: string) {
@@ -22,6 +22,7 @@ export interface EveningService {
   startEvening(): Promise<ActiveSessionRecord>;
   addTransaction(input: NewTransaction): Promise<Transaction>;
   addTransactions(inputs: readonly NewTransaction[]): Promise<Transaction[]>;
+  updateDetails(details: { name: string; location: string }): Promise<ActiveSessionRecord>;
   updateTransaction(transaction: Transaction): Promise<Transaction>;
   deleteTransaction(transactionId: string): Promise<void>;
   submitEvening(): Promise<ActiveSessionRecord>;
@@ -74,6 +75,18 @@ export function createEveningService(
 
     addTransactions(inputs) {
       return appendTransactions(repository, clock, inputs);
+    },
+
+    async updateDetails(details) {
+      const current = await requireDraft(repository);
+      const session = withSessionDetails(current.session, details);
+      const record: ActiveSessionRecord = {
+        ...current,
+        updatedAt: clock.now().toISOString(),
+        session,
+      };
+      await repository.saveActiveSession(record);
+      return record;
     },
 
     async updateTransaction(transaction) {

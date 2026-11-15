@@ -71,6 +71,8 @@ async function counts(): Promise<{ sessions: number; transactions: number }> {
 function assertSessionDocument(value: unknown): asserts value is {
   id: string;
   date: string;
+  name?: string;
+  location?: string;
   createdAt: string;
   transactions: Array<{ id: string; playerId: string; type: string; amount: number; timestamp: string }>;
   players: Array<{ id: string; name: string; createdAt: string }>;
@@ -78,7 +80,10 @@ function assertSessionDocument(value: unknown): asserts value is {
   assert.equal(typeof value, "object");
   assert.ok(value);
   const body = value as Record<string, unknown>;
-  assert.deepEqual(Object.keys(body).sort(), sessionDocumentKeys);
+  const keys = Object.keys(body).sort();
+  const allowed = new Set([...sessionDocumentKeys, "location", "name"]);
+  assert.deepEqual(keys.filter((key) => !allowed.has(key)), []);
+  assert.deepEqual(sessionDocumentKeys.filter((key) => !keys.includes(key)), []);
   for (const field of forbiddenTotals) {
     assert.equal(Object.hasOwn(body, field), false);
   }
@@ -219,6 +224,64 @@ describe("session submission", { concurrency: false }, () => {
     assert.equal(session.rows[0]?.date, "2026-11-12");
     assert.equal(session.rows[0]?.createdAt, first.body.createdAt);
     assert.deepEqual(await counts(), { sessions: 1, transactions: 2 });
+  });
+
+  test("a name and location round-trip, and a different label conflicts", async () => {
+    const omitted = await postSession(url, sessionBody());
+    assert.equal(omitted.status, 201);
+    assertSessionDocument(omitted.body);
+    assert.equal(Object.hasOwn(omitted.body, "name"), false);
+    assert.equal(Object.hasOwn(omitted.body, "location"), false);
+    const sameOmitted = await postSession(url, sessionBody({ name: "   ", location: "" }));
+    assert.equal(sameOmitted.status, 200);
+
+    const namedTransactions = [
+      { ...buyIn, id: "tx-101" },
+      { ...cashOut, id: "tx-102" },
+    ];
+    const named = await postSession(url, sessionBody({
+      id: "session-named",
+      name: "  ערב   חמישי ",
+      location: "  אצל דנה ",
+      transactions: namedTransactions,
+    }));
+    assert.equal(named.status, 201);
+    assertSessionDocument(named.body);
+    assert.equal(named.body.name, "ערב חמישי");
+    assert.equal(named.body.location, "אצל דנה");
+
+    const retry = await postSession(url, sessionBody({
+      id: "session-named",
+      name: "ערב חמישי",
+      location: "אצל דנה",
+      transactions: namedTransactions,
+    }));
+    assert.equal(retry.status, 200);
+    assertSessionDocument(retry.body);
+    assert.equal(retry.body.name, "ערב חמישי");
+    assert.equal(retry.body.location, "אצל דנה");
+
+    const renamed = await postSession(url, sessionBody({
+      id: "session-named",
+      name: "ערב אחר",
+      location: "אצל דנה",
+      transactions: namedTransactions,
+    }));
+    const relocated = await postSession(url, sessionBody({
+      id: "session-named",
+      name: "ערב חמישי",
+      location: "אצל נועה",
+      transactions: namedTransactions,
+    }));
+    assert.equal(renamed.status, 409);
+    assert.equal(relocated.status, 409);
+
+    const stored = await getDatabase().query<{ name: string | null; location: string | null }>(
+      "SELECT name, location FROM sessions WHERE id = $1",
+      ["session-named"],
+    );
+    assert.equal(stored.rows[0]?.name, "ערב חמישי");
+    assert.equal(stored.rows[0]?.location, "אצל דנה");
   });
 
   test("an existing session id with a different transaction set returns 409", async () => {

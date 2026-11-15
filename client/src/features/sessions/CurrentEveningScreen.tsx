@@ -277,6 +277,21 @@ export function CurrentEveningScreen({
         <p>{view.date}</p>
         <p className="status">{statusLabel}</p>
       </header>
+      {record !== null && !locked ? (
+        <SessionDetailsForm
+          name={record.session.name ?? ""}
+          location={record.session.location ?? ""}
+          onSave={async (name, location) => {
+            setRecord(await evening.updateDetails({ name, location }));
+          }}
+        />
+      ) : null}
+      {record !== null && locked && (record.session.name !== undefined || record.session.location !== undefined) ? (
+        <p>
+          {record.session.name ?? view.date}
+          {record.session.location !== undefined ? ` · ${record.session.location}` : ""}
+        </p>
+      ) : null}
       <AddAction disabled={locked} onAdd={() => openSheet(null)} />
       <article className="card totals">
         <p>
@@ -559,5 +574,60 @@ function TransactionDetail({
         </p>
       ) : null}
     </>
+  );
+}
+
+function SessionDetailsForm({
+  name,
+  location,
+  onSave,
+}: {
+  name: string;
+  location: string;
+  onSave: (name: string, location: string) => Promise<void>;
+}) {
+  const [values, setValues] = useState({ name, location });
+  const [error, setError] = useState<string | null>(null);
+
+  async function change(next: { name: string; location: string }) {
+    setValues(next);
+    try {
+      await onSave(next.name, next.location);
+      setError(null);
+    } catch {
+      setError("לא הצלחנו לשמור את פרטי הערב.");
+    }
+  }
+
+  return (
+    <form className="card stack" aria-label="פרטי הערב">
+      <label className="stack field-label">
+        <span>שם</span>
+        <input
+          className="field"
+          name="session-name"
+          value={values.name}
+          maxLength={80}
+          autoComplete="off"
+          onChange={(event) => void change({ ...values, name: event.target.value })}
+        />
+      </label>
+      <label className="stack field-label">
+        <span>מיקום</span>
+        <input
+          className="field"
+          name="session-location"
+          value={values.location}
+          maxLength={80}
+          autoComplete="off"
+          onChange={(event) => void change({ ...values, location: event.target.value })}
+        />
+      </label>
+      {error !== null ? (
+        <p className="notice notice-alert" role="alert">
+          {error}
+        </p>
+      ) : null}
+    </form>
   );
 }

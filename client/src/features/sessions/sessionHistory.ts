@@ -18,7 +18,9 @@ export const historyCopy = {
 export interface HistoryEntry {
   id: string;
   href: string;
+  heading: string;
   date: string;
+  location?: string;
   playerCount: number;
   transactionCount: number;
   playersLabel: string;
@@ -134,10 +136,13 @@ function presentEntry(document: SessionDocument): HistoryEntry {
   const result = calculateSessionResult(document.session);
   const playerCount = distinctPlayerCount(document.players);
   const transactionCount = document.session.transactions.length;
+  const date = formatSessionDate(document.session.date);
   return {
     id: document.session.id,
     href: sessionSummaryPath(document.session.id),
-    date: formatSessionDate(document.session.date),
+    heading: document.session.name ?? date,
+    date,
+    ...(document.session.location === undefined ? {} : { location: document.session.location }),
     playerCount,
     transactionCount,
     playersLabel: `שחקנים: ${playerCount}`,

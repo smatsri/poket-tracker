@@ -77,11 +77,15 @@ export function createApiClient(baseUrl: string, fetchImpl: typeof fetch = fetch
 function sessionRequestBody(session: Session): {
   id: string;
   date: string;
+  name?: string;
+  location?: string;
   transactions: Array<Omit<Transaction, "sessionId">>;
 } {
   return {
     id: session.id,
     date: session.date,
+    ...(session.name === undefined ? {} : { name: session.name }),
+    ...(session.location === undefined ? {} : { location: session.location }),
     transactions: session.transactions.map((transaction) => ({
       id: transaction.id,
       playerId: transaction.playerId,
@@ -211,7 +215,7 @@ function parseSessionDocument(value: unknown): SessionDocument {
     throw unexpectedError("Session response did not match the contract");
   }
 
-  if (Object.keys(value).some((key) => !["id", "date", "createdAt", "transactions", "players"].includes(key))) {
+  if (Object.keys(value).some((key) => !["id", "date", "name", "location", "createdAt", "transactions", "players"].includes(key))) {
     throw unexpectedError("Session response did not match the contract");
   }
 
@@ -233,6 +237,8 @@ function parseSessionDocument(value: unknown): SessionDocument {
         date: value.date,
         createdAt: value.createdAt,
         transactions,
+        ...(Object.hasOwn(value, "name") ? { name: value.name } : {}),
+        ...(Object.hasOwn(value, "location") ? { location: value.location } : {}),
       }),
       players: value.players.map((player) => validatePlayer(player)),
     };

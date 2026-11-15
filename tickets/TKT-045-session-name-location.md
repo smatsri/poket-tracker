@@ -1,6 +1,6 @@
 # TKT-045 — Name and locate an evening
 
-**Status:** todo  
+**Status:** done  
 **Issue:** #46  
 **Milestone:** M9 Evening usability  
 **Depends on:** None
@@ -34,9 +34,9 @@ Let an evening carry an optional name and location from the draft through histor
 
 ## Acceptance criteria
 
-- [ ] A draft can save a name, a location, both, or neither, and a confirmed session returns the same values.
-- [ ] History and the summary show the name, or the date when the name is absent, and the location when it is set.
-- [ ] Existing sessions without the new fields still load and show the date.
-- [ ] A closed session has no control that changes its name, location, date, or transactions.
-- [ ] A retry with a different name or location for the same session id returns `409`.
-- [ ] Automated tests cover the omitted, named, and conflict cases.
+- [x] A draft can save a name, a location, both, or neither, and a confirmed session returns the same values.
+- [x] History and the summary show the name, or the date when the name is absent, and the location when it is set.
+- [x] Existing sessions without the new fields still load and show the date.
+- [x] A closed session has no control that changes its name, location, date, or transactions.
+- [x] A retry with a different name or location for the same session id returns `409`.
+- [x] Automated tests cover the omitted, named, and conflict cases.
