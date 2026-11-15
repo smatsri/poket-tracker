@@ -11,7 +11,7 @@ When a ticket's acceptance criteria pass:
 
 1. Set `**Status:** done` in the ticket file.
 2. Put `Closes #<issue>` in the commit message, using the number from `**Issue:**` (not the `TKT-` id).
-3. Pushing that commit to the default branch closes the issue. Project automation moves the card to Done.
+3. Pushing that commit to `dev` or the default branch closes the issue. Project automation moves the card to Done.
 
 ```text
 feat: initialize the SQLite schema

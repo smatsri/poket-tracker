@@ -36,7 +36,7 @@ feat: calculate session results in a React-free domain layer
 Closes #8
 ```
 
-On PowerShell, pass that message with a here-string. Do not commit a failing ticket. Do not push unless the user asks. Pushing the commit to the default branch closes the GitHub issue.
+On PowerShell, pass that message with a here-string. Do not commit a failing ticket. Do not push unless the user asks. Pushing the commit to `dev` or the default branch closes the GitHub issue.
 
 ## After each commit
 

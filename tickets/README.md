@@ -4,7 +4,7 @@ A ticket starts as `todo`, moves to `in-progress` when work starts, and becomes 
 
 Each ticket is also a GitHub issue. `**Issue:**` is that issue, and the [poker tracker project](https://github.com/users/smatsri/projects/8) tracks board status. The ticket file is the spec. The GitHub issue body is only a link to that file, not a copy of the description or acceptance criteria.
 
-When a ticket becomes `done`, set that status in the ticket file, then push a commit to the default branch whose message contains `Closes #<issue>`. Use the GitHub issue number from `**Issue:**`, not the ticket id. Closing the issue moves its project card to Done. Milestones are GitHub milestones, and `Depends on` is a blocked-by link.
+When a ticket becomes `done`, set that status in the ticket file, then push a commit to `dev` or the default branch whose message contains `Closes #<issue>`. Use the GitHub issue number from `**Issue:**`, not the ticket id. A push to `dev` closes those issues from the commit message. A push to the default branch does the same through GitHub's own keyword. Closing the issue moves its project card to Done. Milestones are GitHub milestones, and `Depends on` is a blocked-by link.
 
 The authoritative contract is [docs/api/openapi.yaml](../docs/api/openapi.yaml). Product behavior is locked in [docs/architecture.md](../docs/architecture.md), [docs/data-model.md](../docs/data-model.md), and [docs/testing.md](../docs/testing.md). Production hosting is locked in [docs/deployment.md](../docs/deployment.md). Version 1.0 product direction is in [docs/roadmap-v1.0.md](../docs/roadmap-v1.0.md).
 

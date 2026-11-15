@@ -110,7 +110,7 @@ Each file in [tickets/](../tickets/) is an issue on `smatsri/poket-tracker`, and
 | `in-progress` | open | In Progress |
 | `done` | closed | Done |
 
-When a ticket becomes `done`, update `**Status:**` in the ticket file and push a commit whose message contains `Closes #<issue>` using the number from `**Issue:**`. Closing the issue moves its project card to Done, and moving a card to Done closes the issue.
+When a ticket becomes `done`, update `**Status:**` in the ticket file and push a commit whose message contains `Closes #<issue>` using the number from `**Issue:**`. A push to `dev` closes those issues. A push to the default branch does the same. Closing the issue moves its project card to Done, and moving a card to Done closes the issue.
 
 ## Local API check
 
