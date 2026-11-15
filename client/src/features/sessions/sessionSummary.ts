@@ -1,5 +1,6 @@
 import type { ApiClient, SessionDocument } from "../../data/api/client.ts";
 import { ApiRequestError } from "../../data/api/errors.ts";
+import type { LocalRepository } from "../../data/local/repository.ts";
 import { calculateSessionResult } from "../../domain/calculations.ts";
 import type { PlayerSessionResult } from "../../domain/models.ts";
 import { presentPlayerResult, presentResult, type PresentedPlayerRow, type PresentedResult } from "./currentEvening.ts";
@@ -22,6 +23,7 @@ export const summaryCopy = {
   notFound: "הערב לא נמצא.",
   missingPlayer: "לשחקן הזה אין פעולות בערב הזה.",
   networkError: "אין חיבור לשרת, ולכן אי אפשר להציג את סיכום הערב.",
+  cachedNotice: "אין חיבור לשרת. מוצג הסיכום שנשמר במכשיר.",
   loadError: "השרת לא הצליח להחזיר את סיכום הערב.",
   retry: "נסו שוב",
   emptyTransactions: "אין פעולות בערב הזה.",
@@ -63,6 +65,11 @@ export interface SessionPlayerView {
 export type SummaryFailureView =
   | { status: "not-found"; message: string; backLabel: string; backHref: "/history" }
   | { status: "error"; message: string; canRetry: true; retryLabel: string; backLabel: string; backHref: "/history" };
+
+export type SummaryScreenView =
+  | { status: "loading" }
+  | { status: "ready"; document: SessionDocument; notice: string | null }
+  | SummaryFailureView;
 
 export function presentSessionSummary(document: SessionDocument): SessionSummaryView {
   const result = calculateSessionResult(document.session);
@@ -125,6 +132,36 @@ export function presentSummaryFailure(error: unknown): SummaryFailureView {
 
 export function loadSessionSummary(api: Pick<ApiClient, "getSession">, sessionId: string): Promise<SessionDocument> {
   return api.getSession(sessionId);
+}
+
+export async function openSessionSummary(
+  repository: Pick<LocalRepository, "readClosedSession" | "saveClosedSession">,
+  api: Pick<ApiClient, "getSession">,
+  sessionId: string,
+  show: (view: SummaryScreenView) => void,
+): Promise<void> {
+  const cached = await repository.readClosedSession(sessionId);
+  if (cached !== null) {
+    show({ status: "ready", document: cached, notice: null });
+  } else {
+    show({ status: "loading" });
+  }
+
+  try {
+    const document = await loadSessionSummary(api, sessionId);
+    await repository.saveClosedSession(document);
+    show({ status: "ready", document, notice: null });
+  } catch (error) {
+    if (error instanceof ApiRequestError && (error.status === 404 || error.code === "NOT_FOUND")) {
+      show(presentSummaryFailure(error));
+      return;
+    }
+    if (cached !== null) {
+      show({ status: "ready", document: cached, notice: summaryCopy.cachedNotice });
+      return;
+    }
+    show(presentSummaryFailure(error));
+  }
 }
 
 function presentSummaryPlayer(sessionId: string, player: PlayerSessionResult, players: SessionDocument["players"]): SummaryPlayerRow {

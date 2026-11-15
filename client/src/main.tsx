@@ -21,7 +21,7 @@ if (root === null) {
 createRoot(root).render(
   <StrictMode>
     <OperatorSettingsProvider repository={repository}>
-      <App evening={evening} players={players} api={api} />
+      <App evening={evening} players={players} api={api} repository={repository} />
     </OperatorSettingsProvider>
   </StrictMode>,
 );

@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import test from "node:test";
 import { networkError } from "../../data/api/errors.ts";
+import { MemoryLocalRepository } from "../../data/local/memoryRepository.ts";
 import type { SessionDocument } from "../../data/api/client.ts";
 import { calculateSessionResult } from "../../domain/calculations.ts";
 import { formatResult } from "../../domain/format.ts";
@@ -10,6 +11,7 @@ import { matchRoute } from "../../app/routes.ts";
 import {
   historyCopy,
   loadSessionHistory,
+  openSessionHistory,
   parseHistoryLocation,
   presentHistoryFailure,
   presentSessionHistory,
@@ -167,7 +169,125 @@ test("loading history reads the server list and does not write the active evenin
   assert.equal(calls, 1);
   assert.deepEqual(loaded, [stored]);
   const source = readFileSync(new URL("./HistoryScreen.tsx", import.meta.url), "utf8");
+  const evening = readFileSync(new URL("./evening.ts", import.meta.url), "utf8");
   assert.doesNotMatch(source, /saveActiveSession|startEvening|submitEvening|addTransaction|updateTransaction|deleteTransaction/);
-  assert.match(source, /loadSessionHistory/);
+  assert.match(source, /openSessionHistory/);
   assert.doesNotMatch(source, /listSessions\(\{[^}]*from/);
+  assert.doesNotMatch(evening, /readClosedSession|replaceClosedSessions|saveClosedSession|closedSessions/);
 });
+
+test("a warm history cache renders before the network returns and a successful load replaces it", async () => {
+  const repository = new MemoryLocalRepository();
+  const cached = namedDocument("session-a", "ישן", "בית");
+  await repository.replaceClosedSessions([cached]);
+  const fresh = namedDocument("session-a", "ערב חדש", "אצל נועה");
+  const shown: Array<{ heading?: string; location?: string; notice: string | null } | { status: "error" }> = [];
+  let release: (documents: SessionDocument[]) => void = () => undefined;
+  const gate = new Promise<SessionDocument[]>((resolve) => {
+    release = resolve;
+  });
+  let started = false;
+  const pending = openSessionHistory(
+    repository,
+    {
+      listSessions: () => {
+        started = true;
+        return gate;
+      },
+    },
+    (view) => {
+      if (view.status === "error" || view.status === "loading") {
+        shown.push({ status: "error" });
+        return;
+      }
+      shown.push({
+        heading: view.entries[0]?.heading,
+        location: view.entries[0]?.location,
+        notice: view.notice,
+      });
+    },
+  );
+
+  await flush();
+  assert.equal(started, true);
+  assert.deepEqual(shown, [{ heading: "ישן", location: "בית", notice: null }]);
+
+  release([fresh]);
+  await pending;
+  assert.deepEqual(shown.at(-1), { heading: "ערב חדש", location: "אצל נועה", notice: null });
+  assert.equal((await repository.readClosedSessions())[0]?.session.name, "ערב חדש");
+  assert.equal((await repository.readClosedSessions())[0]?.session.location, "אצל נועה");
+  assert.equal(await repository.readActiveSession(), null);
+});
+
+test("a failed history load keeps a warm cache and explains that the server could not be reached", async () => {
+  const repository = new MemoryLocalRepository();
+  const cached = namedDocument("session-a", "ישן", "בית");
+  await repository.replaceClosedSessions([cached]);
+  const shown: string[] = [];
+  await openSessionHistory(
+    repository,
+    {
+      listSessions: async () => {
+        throw networkError("offline");
+      },
+    },
+    (view) => {
+      if (view.status === "ready") {
+        shown.push(`${view.entries[0]?.heading ?? ""}|${view.notice ?? ""}`);
+      }
+    },
+  );
+
+  assert.deepEqual(shown, ["ישן|", `ישן|${historyCopy.cachedNotice}`]);
+  assert.match(historyCopy.cachedNotice, /אין חיבור/);
+  assert.equal((await repository.readClosedSessions())[0]?.session.name, "ישן");
+  assert.equal(await repository.readActiveSession(), null);
+});
+
+test("a failed history load with an empty cache keeps the existing retryable error", async () => {
+  const repository = new MemoryLocalRepository();
+  const shown: Array<{ status: string; message?: string; canRetry?: boolean }> = [];
+  await openSessionHistory(
+    repository,
+    {
+      listSessions: async () => {
+        throw networkError("offline");
+      },
+    },
+    (view) => {
+      if (view.status === "error") {
+        shown.push({ status: view.status, message: view.message, canRetry: view.canRetry });
+      } else {
+        shown.push({ status: view.status });
+      }
+    },
+  );
+
+  assert.deepEqual(shown.at(-1), {
+    status: "error",
+    message: historyCopy.networkError,
+    canRetry: true,
+  });
+  assert.deepEqual(await repository.readClosedSessions(), []);
+});
+
+function namedDocument(id: string, name: string, location: string): SessionDocument {
+  return {
+    session: {
+      id,
+      date: "2026-11-13",
+      name,
+      location,
+      createdAt: "2026-11-13T22:00:00Z",
+      transactions: [],
+    },
+    players: [dana],
+  };
+}
+
+function flush(): Promise<void> {
+  return new Promise((resolve) => {
+    setImmediate(resolve);
+  });
+}

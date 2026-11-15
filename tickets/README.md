@@ -21,9 +21,9 @@ The authoritative contract is [docs/api/openapi.yaml](../docs/api/openapi.yaml).
 | M6 Version 1.0: Historical Insights | TKT-023–TKT-028 | Group overview, player progression, and charts | done |
 | M7 Contract hardening | TKT-029–TKT-032 | The locked contracts hold for the cases the reviews found | done |
 | M8 Production deployment | TKT-033–TKT-040 | The app is reachable on a phone through Cloud Run and Neon | done |
-| M9 Evening usability | TKT-041–TKT-048 | A live evening is faster to run, and the recap is easier to check | todo |
+| M9 Evening usability | TKT-041–TKT-048 | A live evening is faster to run, and the recap is easier to check | done |
 
-M0–M8 are done. Hosting stays locked in [docs/deployment.md](../docs/deployment.md). Later product work should reuse existing client calculations and `GET /api/sessions`. Do not add analytics endpoints unless a later ticket proves they are required.
+M0–M9 are done. Hosting stays locked in [docs/deployment.md](../docs/deployment.md). Later product work should reuse existing client calculations and `GET /api/sessions`. Do not add analytics endpoints unless a later ticket proves they are required.
 
 M9 is specified in [docs/roadmap-m9.md](../docs/roadmap-m9.md). Architecture, the data model, and OpenAPI stay the current contract until the ticket that changes them lands.
 
@@ -84,7 +84,7 @@ These review notes stay out of the backlog:
 | [TKT-045](TKT-045-session-name-location.md) | Name and locate an evening | done | None |
 | [TKT-046](TKT-046-history-metrics.md) | Show the history gap | done | None |
 | [TKT-047](TKT-047-player-rename-delete.md) | Rename a player and delete an unused one | done | None |
-| [TKT-048](TKT-048-session-cache.md) | Cache closed sessions for display | todo | TKT-045 |
+| [TKT-048](TKT-048-session-cache.md) | Cache closed sessions for display | done | TKT-045 |
 
 ## Requirement coverage
 

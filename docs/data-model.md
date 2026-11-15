@@ -76,6 +76,19 @@ interface OperatorSettings {
 
 The currency label and default amount are local display settings. They are not sent to the server and are not copied onto transactions or sessions. Changing them does not change a transaction that was already saved.
 
+```ts
+interface ClosedSessionDocument {
+  session: Session;
+  players: Player[];
+}
+```
+
+| Store | Key | Value |
+| --- | --- | --- |
+| `closedSessions` | session `id` | `ClosedSessionDocument` |
+
+The closed-session store is a display cache of the last successful history or summary response. A successful history response replaces every document in the store. A successful summary response replaces that one document, including its name and location. The players returned with the session are stored with it. A later successful response wins. The cache is not read when submitting or changing an evening. The active draft and a pending evening stay in `activeSession`.
+
 ## PostgreSQL schema
 
 Startup applies numbered SQL migrations and records each applied id in `schema_migrations`. Applying the same migration again is a no-op. Dates and timestamps are `TEXT`. Amounts are `INTEGER`.

@@ -1,6 +1,6 @@
 # TKT-048 — Cache closed sessions for display
 
-**Status:** todo  
+**Status:** done  
 **Issue:** #49  
 **Milestone:** M9 Evening usability  
 **Depends on:** [TKT-045](TKT-045-session-name-location.md) (#46)
@@ -32,10 +32,10 @@ Open history and a summary from the last successful server response, then refres
 
 ## Acceptance criteria
 
-- [ ] Opening history with a warm cache shows the cached evenings before the network returns, then shows the server list after a successful load.
-- [ ] Opening a cached summary does the same for that evening.
-- [ ] A successful response replaces the cached document, including name and location.
-- [ ] A failed load with a cache still shows the cached evenings and a Hebrew network notice.
-- [ ] A failed load with an empty cache shows the existing error and retry.
-- [ ] The cache is not used to submit or mutate an evening.
-- [ ] Automated tests cover the warm cache, the replacement, and both failure cases.
+- [x] Opening history with a warm cache shows the cached evenings before the network returns, then shows the server list after a successful load.
+- [x] Opening a cached summary does the same for that evening.
+- [x] A successful response replaces the cached document, including name and location.
+- [x] A failed load with a cache still shows the cached evenings and a Hebrew network notice.
+- [x] A failed load with an empty cache shows the existing error and retry.
+- [x] The cache is not used to submit or mutate an evening.
+- [x] Automated tests cover the warm cache, the replacement, and both failure cases.

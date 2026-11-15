@@ -1,6 +1,6 @@
 # M9 — Evening usability
 
-**Status:** Accepted, not built  
+**Status:** Done  
 **Tickets:** TKT-041–TKT-048
 
 M0–M8 are done. M9 comes from using the app during a real evening. It makes that evening faster to run and the recap easier to check. It does not redesign the interface.

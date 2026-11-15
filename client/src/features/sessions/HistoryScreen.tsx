@@ -1,38 +1,32 @@
 import { useEffect, useState } from "react";
 import { onNavigate, useAppLocation } from "../../app/navigation.ts";
-import type { ApiClient, SessionDocument } from "../../data/api/client.ts";
+import type { ApiClient } from "../../data/api/client.ts";
+import type { LocalRepository } from "../../data/local/repository.ts";
 import { MoneyText, ResultText } from "./ResultText.tsx";
 import {
   historyCopy,
-  loadSessionHistory,
+  openSessionHistory,
   parseHistoryLocation,
-  presentHistoryFailure,
-  presentSessionHistory,
-  type HistoryFailureView,
-  type HistoryListView,
   type HistoryLocation,
+  type HistoryScreenView,
 } from "./sessionHistory.ts";
 import {
-  loadSessionSummary,
+  openSessionSummary,
   presentSessionPlayer,
   presentSessionSummary,
-  presentSummaryFailure,
   summaryCopy,
   type SessionSummaryView,
-  type SummaryFailureView,
+  type SummaryScreenView,
 } from "./sessionSummary.ts";
 import type { PresentedTransaction } from "./transactionHistory.ts";
 
-type HistoryScreenState = { status: "loading" } | HistoryListView | HistoryFailureView;
-type SummaryScreenState = { status: "loading" } | { status: "ready"; document: SessionDocument } | SummaryFailureView;
-
-export function HistoryScreen({ api }: { api: ApiClient }) {
+export function HistoryScreen({ api, repository }: { api: ApiClient; repository: LocalRepository }) {
   const { route } = useAppLocation();
   const location = parseHistoryLocation(route.path);
   const [listAttempt, setListAttempt] = useState(0);
   const [summaryAttempt, setSummaryAttempt] = useState(0);
-  const [listState, setListState] = useState<HistoryScreenState>({ status: "loading" });
-  const [summaryState, setSummaryState] = useState<SummaryScreenState>({ status: "loading" });
+  const [listState, setListState] = useState<HistoryScreenView>({ status: "loading" });
+  const [summaryState, setSummaryState] = useState<SummaryScreenView>({ status: "loading" });
 
   useEffect(() => {
     if (location.screen !== "list") {
@@ -40,23 +34,16 @@ export function HistoryScreen({ api }: { api: ApiClient }) {
     }
 
     let active = true;
-    setListState({ status: "loading" });
-    loadSessionHistory(api)
-      .then((documents) => {
-        if (active) {
-          setListState(presentSessionHistory(documents));
-        }
-      })
-      .catch((error: unknown) => {
-        if (active) {
-          setListState(presentHistoryFailure(error));
-        }
-      });
+    void openSessionHistory(repository, api, (view) => {
+      if (active) {
+        setListState(view);
+      }
+    });
 
     return () => {
       active = false;
     };
-  }, [api, listAttempt, location.screen]);
+  }, [api, listAttempt, location.screen, repository]);
 
   useEffect(() => {
     if (location.sessionId === null) {
@@ -65,23 +52,16 @@ export function HistoryScreen({ api }: { api: ApiClient }) {
 
     const sessionId = location.sessionId;
     let active = true;
-    setSummaryState({ status: "loading" });
-    loadSessionSummary(api, sessionId)
-      .then((document) => {
-        if (active) {
-          setSummaryState({ status: "ready", document });
-        }
-      })
-      .catch((error: unknown) => {
-        if (active) {
-          setSummaryState(presentSummaryFailure(error));
-        }
-      });
+    void openSessionSummary(repository, api, sessionId, (view) => {
+      if (active) {
+        setSummaryState(view);
+      }
+    });
 
     return () => {
       active = false;
     };
-  }, [api, location.sessionId, summaryAttempt]);
+  }, [api, location.sessionId, repository, summaryAttempt]);
 
   if (location.screen !== "list") {
     return (
@@ -118,6 +98,11 @@ export function HistoryScreen({ api }: { api: ApiClient }) {
   return (
     <section className="stack">
       <h1>{listState.title}</h1>
+      {listState.notice !== null ? (
+        <p className="notice" role="status">
+          {listState.notice}
+        </p>
+      ) : null}
       {listState.status === "empty" ? (
         <article className="card">
           <p>{listState.message}</p>
@@ -158,7 +143,7 @@ function SummaryRoute({
   onRetry,
 }: {
   location: HistoryLocation;
-  state: SummaryScreenState;
+  state: SummaryScreenView;
   onRetry: () => void;
 }) {
   if (state.status === "loading") {
@@ -186,20 +171,37 @@ function SummaryRoute({
 
   const view = presentSessionSummary(state.document);
   if (location.screen === "transactions") {
-    return <TransactionHistory view={view} />;
+    return <TransactionHistory view={view} notice={state.notice} />;
   }
 
   if (location.screen === "player" && location.playerId !== null) {
     const player = presentSessionPlayer(state.document, location.playerId);
-    return player === null ? <MissingPlayer summaryHref={view.summaryHref} /> : <PlayerTransactions player={player} />;
+    return player === null ? (
+      <MissingPlayer summaryHref={view.summaryHref} notice={state.notice} />
+    ) : (
+      <PlayerTransactions player={player} notice={state.notice} />
+    );
   }
 
-  return <SummaryBody view={view} />;
+  return <SummaryBody view={view} notice={state.notice} />;
 }
 
-function SummaryBody({ view }: { view: SessionSummaryView }) {
+function CacheNotice({ notice }: { notice: string | null }) {
+  if (notice === null) {
+    return null;
+  }
+
+  return (
+    <p className="notice" role="status">
+      {notice}
+    </p>
+  );
+}
+
+function SummaryBody({ view, notice }: { view: SessionSummaryView; notice: string | null }) {
   return (
     <section className="stack evening">
+      <CacheNotice notice={notice} />
       <BackLink href="/history" label={summaryCopy.back} />
       <header className="stack">
         <h1>{summaryCopy.title}</h1>
@@ -254,9 +256,10 @@ function SummaryBody({ view }: { view: SessionSummaryView }) {
   );
 }
 
-function TransactionHistory({ view }: { view: SessionSummaryView }) {
+function TransactionHistory({ view, notice }: { view: SessionSummaryView; notice: string | null }) {
   return (
     <section className="stack evening">
+      <CacheNotice notice={notice} />
       <BackLink href={view.summaryHref} label={summaryCopy.backToSummary} />
       <header className="stack">
         <h1>{summaryCopy.transactions}</h1>
@@ -275,11 +278,14 @@ function TransactionHistory({ view }: { view: SessionSummaryView }) {
 
 function PlayerTransactions({
   player,
+  notice,
 }: {
   player: { name: string; net: SessionSummaryView["balance"]; buyIns: string; cashOuts: string; transactions: PresentedTransaction[]; summaryHref: string };
+  notice: string | null;
 }) {
   return (
     <section className="stack evening">
+      <CacheNotice notice={notice} />
       <BackLink href={player.summaryHref} label={summaryCopy.backToSummary} />
       <header className="stack">
         <h1>{player.name}</h1>
@@ -293,9 +299,10 @@ function PlayerTransactions({
   );
 }
 
-function MissingPlayer({ summaryHref }: { summaryHref: string }) {
+function MissingPlayer({ summaryHref, notice }: { summaryHref: string; notice: string | null }) {
   return (
     <section className="stack">
+      <CacheNotice notice={notice} />
       <BackLink href={summaryHref} label={summaryCopy.backToSummary} />
       <article className="card">
         <p>{summaryCopy.missingPlayer}</p>

@@ -4,7 +4,7 @@ import { dirname, join } from "node:path";
 import test from "node:test";
 import { fileURLToPath } from "node:url";
 import type { ActiveSessionRecord, Player } from "../../domain/models.ts";
-import { activeSessionStore, createIndexedDbRepository, currentSessionKey, operatorSettingsStore, playersStore } from "./indexedDb.ts";
+import { activeSessionStore, closedSessionsStore, createIndexedDbRepository, currentSessionKey, operatorSettingsStore, playersStore } from "./indexedDb.ts";
 import { initialOperatorSettings } from "./operatorSettings.ts";
 
 const createdAt = "2026-11-12T21:00:00Z";
@@ -96,6 +96,33 @@ test("a failed write is reported and leaves the previous record in place", async
   fake.failNextWrite();
   await assert.rejects(() => repository.replacePlayers([dana]), /Failed to persist local data/);
   assert.deepEqual(await repository.readPlayers(), [avi, dana]);
+});
+
+test("replacing closed sessions keeps the latest documents and leaves the active evening unchanged", async () => {
+  const fake = createFakeIndexedDb();
+  const repository = createIndexedDbRepository(fake.factory);
+  await repository.saveActiveSession(record);
+  const cached = {
+    session: { id: "closed-1", date: "2026-11-01", name: "ישן", location: "בית", createdAt, transactions: [] },
+    players: [avi],
+  };
+  const other = {
+    session: { id: "closed-2", date: "2026-11-02", createdAt, transactions: [] },
+    players: [dana],
+  };
+  await repository.replaceClosedSessions([cached, other]);
+  const renamed = {
+    session: { ...cached.session, name: "ערב חדש", location: "אצל דנה" },
+    players: [dana],
+  };
+  await repository.saveClosedSession(renamed);
+
+  const reopened = createIndexedDbRepository(fake.factory);
+  assert.deepEqual(await reopened.readClosedSession("closed-1"), renamed);
+  assert.equal((await reopened.readClosedSessions()).length, 2);
+  await reopened.replaceClosedSessions([renamed]);
+  assert.deepEqual(await reopened.readClosedSessions(), [renamed]);
+  assert.deepEqual(await reopened.readActiveSession(), record);
 });
 
 test("the local repository does not calculate financial results", () => {
@@ -226,7 +253,7 @@ class FakeTransaction {
   }
 
   objectStore(name: string): FakeObjectStore {
-    if (name !== activeSessionStore && name !== playersStore && name !== operatorSettingsStore) {
+    if (name !== activeSessionStore && name !== playersStore && name !== operatorSettingsStore && name !== closedSessionsStore) {
       throw new Error(`Unexpected store ${name}`);
     }
     return new FakeObjectStore(this);

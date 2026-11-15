@@ -1,12 +1,13 @@
 import type { ActiveSessionRecord, Player } from "../../domain/models.ts";
 import { initialOperatorSettings, parseOperatorSettings, type OperatorSettings } from "./operatorSettings.ts";
-import type { LocalRepository } from "./repository.ts";
+import type { CachedSessionDocument, LocalRepository } from "./repository.ts";
 
 export const databaseName = "poker-tracker";
-export const databaseVersion = 2;
+export const databaseVersion = 3;
 export const activeSessionStore = "activeSession";
 export const playersStore = "players";
 export const operatorSettingsStore = "operatorSettings";
+export const closedSessionsStore = "closedSessions";
 export const currentSessionKey = "current";
 
 const persistenceError = "Failed to persist local data";
@@ -83,6 +84,50 @@ export function createIndexedDbRepository(factory: IDBFactory = indexedDB): Loca
         await completed;
       });
     },
+
+    readClosedSessions(): Promise<CachedSessionDocument[]> {
+      return withDatabase(factory, async (database) => {
+        const transaction = database.transaction(closedSessionsStore, "readonly");
+        const completed = waitForTransaction(transaction);
+        const documents = await requestResult<CachedSessionDocument[]>(transaction.objectStore(closedSessionsStore).getAll());
+        await completed;
+        return documents;
+      });
+    },
+
+    readClosedSession(sessionId: string): Promise<CachedSessionDocument | null> {
+      return withDatabase(factory, async (database) => {
+        const transaction = database.transaction(closedSessionsStore, "readonly");
+        const completed = waitForTransaction(transaction);
+        const stored = await requestResult<CachedSessionDocument | undefined>(
+          transaction.objectStore(closedSessionsStore).get(sessionId),
+        );
+        await completed;
+        return stored ?? null;
+      });
+    },
+
+    replaceClosedSessions(documents: readonly CachedSessionDocument[]): Promise<void> {
+      return withDatabase(factory, async (database) => {
+        const transaction = database.transaction(closedSessionsStore, "readwrite");
+        const completed = waitForTransaction(transaction);
+        const store = transaction.objectStore(closedSessionsStore);
+        store.clear();
+        for (const document of documents) {
+          store.put(document, document.session.id);
+        }
+        await completed;
+      });
+    },
+
+    saveClosedSession(document: CachedSessionDocument): Promise<void> {
+      return withDatabase(factory, async (database) => {
+        const transaction = database.transaction(closedSessionsStore, "readwrite");
+        const completed = waitForTransaction(transaction);
+        transaction.objectStore(closedSessionsStore).put(document, document.session.id);
+        await completed;
+      });
+    },
   };
 }
 
@@ -117,6 +162,9 @@ function openDatabase(factory: IDBFactory): Promise<IDBDatabase> {
       }
       if (!database.objectStoreNames.contains(operatorSettingsStore)) {
         database.createObjectStore(operatorSettingsStore);
+      }
+      if (!database.objectStoreNames.contains(closedSessionsStore)) {
+        database.createObjectStore(closedSessionsStore);
       }
     };
     request.onsuccess = () => resolve(request.result);
