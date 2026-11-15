@@ -14,6 +14,7 @@ import {
   editedTransaction,
   emptyCreateDraft,
   selectCreatePlayer,
+  stepAmount,
   transactionTypeChoices,
   validateCreateDraft,
   validateTransactionDraft,
@@ -78,6 +79,13 @@ export function TransactionSheet({
     const amount = String(settings.defaultAmount);
     setDraft((current) => (isCreateDraft(current) && current.amount !== amount ? { ...current, amount } : current));
   }, [editing, settings.defaultAmount]);
+
+  function applyStep(direction: 1 | -1) {
+    amountTouched.current = true;
+    setDraft((current) => ({ ...current, amount: stepAmount(current.amount, settings.defaultAmount, direction) }));
+    setErrors((current) => ({ ...current, amount: undefined }));
+    setSaveError(null);
+  }
 
   async function save() {
     if (isCreateDraft(draft)) {
@@ -270,24 +278,44 @@ export function TransactionSheet({
               </p>
             ) : null}
           </fieldset>
-          <label className="stack field-label">
-            <span>סכום ({settings.currencyLabel})</span>
-            <input
-              ref={amountRef}
-              className="field amount-field"
-              name="amount"
-              dir="ltr"
-              value={draft.amount}
-              aria-invalid={errors.amount !== undefined}
-              {...amountFieldProps}
-              onChange={(event) => {
-                amountTouched.current = true;
-                setDraft((current) => ({ ...current, amount: event.target.value }));
-                setErrors((current) => ({ ...current, amount: undefined }));
-                setSaveError(null);
-              }}
-            />
-          </label>
+          <div className="stack field-label">
+            <label htmlFor="transaction-amount">סכום ({settings.currencyLabel})</label>
+            <div className="amount-stepper" dir="ltr">
+              <button
+                type="button"
+                className="button button-secondary amount-step"
+                aria-label={`הפחתה ב־${settings.defaultAmount}`}
+                disabled={stepAmount(draft.amount, settings.defaultAmount, -1) === draft.amount}
+                onClick={() => applyStep(-1)}
+              >
+                −
+              </button>
+              <input
+                ref={amountRef}
+                id="transaction-amount"
+                className="field amount-field"
+                name="amount"
+                dir="ltr"
+                value={draft.amount}
+                aria-invalid={errors.amount !== undefined}
+                {...amountFieldProps}
+                onChange={(event) => {
+                  amountTouched.current = true;
+                  setDraft((current) => ({ ...current, amount: event.target.value }));
+                  setErrors((current) => ({ ...current, amount: undefined }));
+                  setSaveError(null);
+                }}
+              />
+              <button
+                type="button"
+                className="button button-secondary amount-step"
+                aria-label={`הוספה ב־${settings.defaultAmount}`}
+                onClick={() => applyStep(1)}
+              >
+                +
+              </button>
+            </div>
+          </div>
           {errors.amount !== undefined ? (
             <p className="notice notice-alert" role="alert">
               {errors.amount}

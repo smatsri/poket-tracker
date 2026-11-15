@@ -13,6 +13,7 @@ import {
   emptyCreateDraft,
   emptyTransactionDraft,
   parsePositiveInteger,
+  stepAmount,
   selectCreatePlayer,
   storedTypeForAction,
   validateCreateDraft,
@@ -40,6 +41,16 @@ test("a transaction is ready only with a player, a type, and a positive integer"
     return;
   }
   assert.deepEqual(ready.value, { playerId: "player-001", type: "buy-in", amount: 50 });
+});
+
+test("the amount steps by the default value and stays a positive integer", () => {
+  assert.equal(stepAmount("50", 50, 1), "100");
+  assert.equal(stepAmount("100", 50, -1), "50");
+  assert.equal(stepAmount("50", 50, -1), "50");
+  assert.equal(stepAmount("", 50, 1), "50");
+  assert.equal(stepAmount("", 50, -1), "");
+  assert.equal(stepAmount("40", 100, 1), "140");
+  assert.equal(stepAmount("40", 100, -1), "40");
 });
 
 test("decimals and other non-integers are rejected instead of rounded", () => {

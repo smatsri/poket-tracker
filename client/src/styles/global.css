@@ -444,7 +444,23 @@ a.activity-row {
   flex: 1 1 30%;
 }
 
+.amount-stepper {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.amount-step {
+  flex: none;
+  inline-size: 72px;
+  block-size: 72px;
+  padding: 0;
+  font-size: 2rem;
+  line-height: 1;
+}
+
 .amount-field {
+  min-inline-size: 0;
   min-block-size: 72px;
   font-size: 2rem;
   font-weight: 700;

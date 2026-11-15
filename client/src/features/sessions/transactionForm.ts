@@ -111,6 +111,20 @@ export function editedTransaction(existing: Transaction, value: ReadyTransaction
   };
 }
 
+export function stepAmount(current: string, step: number, direction: 1 | -1): string {
+  if (!Number.isSafeInteger(step) || step < 1) {
+    return current;
+  }
+
+  const parsed = parsePositiveInteger(current);
+  const next = (parsed ?? 0) + direction * step;
+  if (!Number.isSafeInteger(next) || next < 1) {
+    return current;
+  }
+
+  return String(next);
+}
+
 export function parsePositiveInteger(value: string): number | null {
   const trimmed = value.trim();
   if (!/^[1-9]\d*$/.test(trimmed)) {
