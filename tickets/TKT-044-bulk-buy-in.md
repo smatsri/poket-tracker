@@ -1,6 +1,6 @@
 # TKT-044 — Add the same amount for several players
 
-**Status:** todo  
+**Status:** done  
 **Issue:** #45  
 **Milestone:** M9 Evening usability  
 **Depends on:** [TKT-043](TKT-043-add-action-sheet.md) (#44)
@@ -33,8 +33,8 @@ Record the opening buy-in for several players in one action.
 
 ## Acceptance criteria
 
-- [ ] One amount and three selected players create three transactions in one save.
-- [ ] A selected player with no money in yet is stored as `buy-in`, and a selected player who already has money in is stored as `rebuy`.
-- [ ] Cash-out cannot be saved for more than one player.
-- [ ] An invalid amount or a failed save adds no transactions.
-- [ ] Automated tests cover the mixed types, the single-player cash-out, and the unchanged evening after failure.
+- [x] One amount and three selected players create three transactions in one save.
+- [x] A selected player with no money in yet is stored as `buy-in`, and a selected player who already has money in is stored as `rebuy`.
+- [x] Cash-out cannot be saved for more than one player.
+- [x] An invalid amount or a failed save adds no transactions.
+- [x] Automated tests cover the mixed types, the single-player cash-out, and the unchanged evening after failure.

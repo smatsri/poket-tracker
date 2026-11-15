@@ -14,11 +14,15 @@ export function PlayerPanel({
   directory,
   onSelect,
   selectedId: controlledId,
+  selectedIds,
+  multiple = false,
   eveningTransactions,
 }: {
   directory: PlayerDirectory;
   onSelect: (player: Player) => void;
   selectedId?: string | null;
+  selectedIds?: readonly string[];
+  multiple?: boolean;
   eveningTransactions?: readonly Transaction[];
 }) {
   const { settings } = useOperatorSettings();
@@ -58,11 +62,13 @@ export function PlayerPanel({
   }, [directory]);
 
   function select(player: Player) {
-    if (controlledId === undefined) {
+    if (!multiple && controlledId === undefined) {
       setInternalId(player.id);
     }
     onSelect(player);
   }
+
+  const chosenIds = selectedIds !== undefined ? [...selectedIds] : selectedId === null ? [] : [selectedId];
 
   async function save(confirmDuplicate: boolean) {
     await flight.current(async () => {
@@ -101,7 +107,7 @@ export function PlayerPanel({
               <button
                 type="button"
                 className="choice"
-                aria-pressed={player.id === selectedId}
+                aria-pressed={chosenIds.includes(player.id)}
                 onClick={() => select(player)}
               >
                 <span>{playerDisplayName(player.id, players)}</span>
@@ -113,7 +119,10 @@ export function PlayerPanel({
           ))}
         </ul>
       ) : null}
-      {selectedId !== null ? <p>נבחר לפעולה: {playerDisplayName(selectedId, players)}</p> : null}
+      {chosenIds.length === 1 ? <p>נבחר לפעולה: {playerDisplayName(chosenIds[0] ?? "", players)}</p> : null}
+      {chosenIds.length > 1 ? (
+        <p>נבחרו לפעולה: {chosenIds.map((id) => playerDisplayName(id, players)).join(", ")}</p>
+      ) : null}
       <form
         className="stack"
         onSubmit={(event) => {

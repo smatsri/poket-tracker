@@ -4,6 +4,7 @@ import test from "node:test";
 import type { Transaction } from "../../domain/models.ts";
 import {
   amountFieldProps,
+  closesSheetAfterCreate,
   createActionChoices,
   createDraftAfterSave,
   createPlayerNet,
@@ -12,6 +13,7 @@ import {
   emptyCreateDraft,
   emptyTransactionDraft,
   parsePositiveInteger,
+  selectCreatePlayer,
   storedTypeForAction,
   validateCreateDraft,
   validateTransactionDraft,
@@ -64,18 +66,64 @@ test("create offers add and cash-out, and the first add is a buy-in", () => {
   assert.equal(storedTypeForAction("add", "p1", [{ playerId: "p1", type: "rebuy" }]), "rebuy");
   assert.equal(storedTypeForAction("cash-out", "p1", []), "cash-out");
 
-  const created = validateCreateDraft({ playerId: "p1", action: "add", amount: "50" }, []);
+  const created = validateCreateDraft({ playerIds: ["p1"], action: "add", amount: "50" }, []);
   assert.equal(created.ok, true);
   if (created.ok) {
-    assert.equal(created.value.type, "buy-in");
-    assert.equal("currency" in created.value, false);
+    assert.equal(created.values[0]?.type, "buy-in");
+    assert.equal(created.values[0] !== undefined && "currency" in created.values[0], false);
   }
 });
 
+test("one amount for several players writes one typed transaction each", () => {
+  const draft = ["p1", "p2", "p3"].reduce(
+    (current, playerId) => selectCreatePlayer({ ...current, action: "add" }, playerId),
+    emptyCreateDraft(null, 50),
+  );
+  assert.deepEqual(draft.playerIds, ["p1", "p2", "p3"]);
+  assert.equal(draft.amount, "50");
+
+  const mixed = validateCreateDraft(draft, [
+    { playerId: "p1", type: "buy-in" },
+    { playerId: "p2", type: "rebuy" },
+  ]);
+  assert.equal(mixed.ok, true);
+  if (!mixed.ok) {
+    return;
+  }
+  assert.deepEqual(
+    mixed.values.map((value) => [value.playerId, value.type, value.amount]),
+    [
+      ["p1", "rebuy", 50],
+      ["p2", "rebuy", 50],
+      ["p3", "buy-in", 50],
+    ],
+  );
+
+  const invalid = validateCreateDraft({ ...draft, amount: "0" }, []);
+  assert.equal(invalid.ok, false);
+  if (!invalid.ok) {
+    assert.equal(invalid.errors.amount, "הסכום צריך להיות מספר שלם וחיובי.");
+  }
+
+  const cashOut = validateCreateDraft({ ...draft, action: "cash-out" }, []);
+  assert.equal(cashOut.ok, false);
+  if (!cashOut.ok) {
+    assert.equal(cashOut.errors.player, "יציאה אפשרית לשחקן אחד.");
+  }
+
+  const singleCashOut = validateCreateDraft({ playerIds: ["p1"], action: "cash-out", amount: "80" }, []);
+  assert.equal(singleCashOut.ok, true);
+  if (singleCashOut.ok) {
+    assert.deepEqual(singleCashOut.values, [{ playerId: "p1", type: "cash-out", amount: 80 }]);
+  }
+  assert.equal(closesSheetAfterCreate(3), true);
+  assert.equal(closesSheetAfterCreate(1), false);
+});
+
 test("a new amount starts at the default and a save restores it without changing the saved amount", () => {
-  assert.deepEqual(emptyCreateDraft("player-001", 50), { playerId: "player-001", action: null, amount: "50" });
-  const next = createDraftAfterSave({ playerId: "player-001", action: "add", amount: "80" }, 50);
-  assert.deepEqual(next, { playerId: "player-001", action: "add", amount: "50" });
+  assert.deepEqual(emptyCreateDraft("player-001", 50), { playerIds: ["player-001"], action: null, amount: "50" });
+  const next = createDraftAfterSave({ playerIds: ["player-001"], action: "add", amount: "80" }, 50);
+  assert.deepEqual(next, { playerIds: ["player-001"], action: "add", amount: "50" });
   const saved: Transaction = {
     id: "tx-001",
     sessionId: "session-001",

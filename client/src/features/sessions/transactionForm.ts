@@ -22,7 +22,7 @@ export const createActionChoices = [
 export type CreateAction = (typeof createActionChoices)[number]["action"];
 
 export interface CreateDraft {
-  playerId: string | null;
+  playerIds: string[];
   action: CreateAction | null;
   amount: string;
 }
@@ -50,11 +50,27 @@ export function emptyTransactionDraft(playerId: string | null = null): Transacti
 }
 
 export function emptyCreateDraft(playerId: string | null, defaultAmount: number): CreateDraft {
-  return { playerId, action: null, amount: String(defaultAmount) };
+  return { playerIds: playerId === null ? [] : [playerId], action: null, amount: String(defaultAmount) };
 }
 
 export function createDraftAfterSave(draft: CreateDraft, defaultAmount: number): CreateDraft {
-  return { playerId: draft.playerId, action: draft.action, amount: String(defaultAmount) };
+  return { playerIds: draft.playerIds, action: draft.action, amount: String(defaultAmount) };
+}
+
+export function selectCreatePlayer(draft: CreateDraft, playerId: string): CreateDraft {
+  if (draft.action !== "add") {
+    return { ...draft, playerIds: [playerId] };
+  }
+
+  const selected = draft.playerIds.includes(playerId);
+  return {
+    ...draft,
+    playerIds: selected ? draft.playerIds.filter((id) => id !== playerId) : [...draft.playerIds, playerId],
+  };
+}
+
+export function closesSheetAfterCreate(transactionCount: number): boolean {
+  return transactionCount > 1;
 }
 
 export function storedTypeForAction(
@@ -112,10 +128,12 @@ export function parsePositiveInteger(value: string): number | null {
 export function validateCreateDraft(
   draft: CreateDraft,
   transactions: readonly Pick<Transaction, "playerId" | "type">[],
-): { ok: true; value: ReadyTransaction } | { ok: false; errors: TransactionFieldErrors } {
+): { ok: true; values: ReadyTransaction[] } | { ok: false; errors: TransactionFieldErrors } {
   const errors: TransactionFieldErrors = {};
-  if (draft.playerId === null || draft.playerId.length === 0) {
+  if (draft.playerIds.length === 0) {
     errors.player = "צריך לבחור שחקן.";
+  } else if (draft.action === "cash-out" && draft.playerIds.length > 1) {
+    errors.player = "יציאה אפשרית לשחקן אחד.";
   }
   if (draft.action === null) {
     errors.type = "צריך לבחור פעולה.";
@@ -126,7 +144,7 @@ export function validateCreateDraft(
     errors.amount = amountError;
   }
 
-  if (errors.player !== undefined || errors.type !== undefined || errors.amount !== undefined || draft.playerId === null || draft.action === null) {
+  if (errors.player !== undefined || errors.type !== undefined || errors.amount !== undefined || draft.action === null) {
     return { ok: false, errors };
   }
 
@@ -135,13 +153,14 @@ export function validateCreateDraft(
     return { ok: false, errors: { ...errors, amount: "הסכום צריך להיות מספר שלם וחיובי." } };
   }
 
+  const action = draft.action;
   return {
     ok: true,
-    value: {
-      playerId: draft.playerId,
-      type: storedTypeForAction(draft.action, draft.playerId, transactions),
+    values: draft.playerIds.map((playerId) => ({
+      playerId,
+      type: storedTypeForAction(action, playerId, transactions),
       amount,
-    },
+    })),
   };
 }
 

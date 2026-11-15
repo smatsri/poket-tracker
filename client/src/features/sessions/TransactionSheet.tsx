@@ -8,10 +8,12 @@ import type { EveningService } from "./evening.ts";
 import {
   amountFieldProps,
   createActionChoices,
+  closesSheetAfterCreate,
   createDraftAfterSave,
   draftFromTransaction,
   editedTransaction,
   emptyCreateDraft,
+  selectCreatePlayer,
   transactionTypeChoices,
   validateCreateDraft,
   validateTransactionDraft,
@@ -78,7 +80,55 @@ export function TransactionSheet({
   }, [editing, settings.defaultAmount]);
 
   async function save() {
-    const result = isCreateDraft(draft) ? validateCreateDraft(draft, transactions) : validateTransactionDraft(draft);
+    if (isCreateDraft(draft)) {
+      const result = validateCreateDraft(draft, transactions);
+      if (!result.ok) {
+        setErrors(result.errors);
+        setSaveError(null);
+        return;
+      }
+
+      const creating = draft;
+      const values = result.values;
+      await flight.current(async () => {
+        setSaving(true);
+        setErrors({});
+        setSaveError(null);
+        let saved: Transaction[] = [];
+        try {
+          saved = await evening.addTransactions(values);
+        } catch {
+          setSaveError("לא הצלחנו לשמור את הפעולה.");
+          return;
+        } finally {
+          setSaving(false);
+        }
+
+        let refreshed = false;
+        try {
+          await onPersisted();
+          refreshed = true;
+        } catch {
+          setSaveError("הפעולה נשמרה, אבל הערב לא התרענן.");
+        }
+
+        if (closesSheetAfterCreate(saved.length) && refreshed) {
+          onClose();
+          return;
+        }
+
+        amountTouched.current = false;
+        setDraft(createDraftAfterSave(creating, settings.defaultAmount));
+        const current = await evening.readCurrent();
+        setTransactions(current?.session.transactions ?? []);
+        setUndoId(saved.length === 1 ? (saved[0]?.id ?? null) : null);
+        setUndoError(null);
+        setAmountFocus((focus) => focus + 1);
+      });
+      return;
+    }
+
+    const result = validateTransactionDraft(draft);
     if (!result.ok) {
       setErrors(result.errors);
       setSaveError(null);
@@ -89,44 +139,22 @@ export function TransactionSheet({
       setSaving(true);
       setErrors({});
       setSaveError(null);
-      if (editing !== null) {
-        try {
-          await evening.updateTransaction(editedTransaction(editing, result.value));
-          await onPersisted();
-        } catch {
-          setSaveError("לא הצלחנו לשמור את הפעולה.");
-          return;
-        } finally {
-          setSaving(false);
-        }
-        onClose();
+      if (editing === null) {
+        setSaveError("לא הצלחנו לשמור את הפעולה.");
+        setSaving(false);
         return;
       }
 
-      let savedId: string | null = null;
       try {
-        savedId = (await evening.addTransaction(result.value)).id;
+        await evening.updateTransaction(editedTransaction(editing, result.value));
+        await onPersisted();
       } catch {
         setSaveError("לא הצלחנו לשמור את הפעולה.");
         return;
       } finally {
         setSaving(false);
       }
-
-      if (isCreateDraft(draft)) {
-        amountTouched.current = false;
-        setDraft(createDraftAfterSave(draft, settings.defaultAmount));
-      }
-      const current = await evening.readCurrent();
-      setTransactions(current?.session.transactions ?? []);
-      setUndoId(savedId);
-      setUndoError(null);
-      setAmountFocus((current) => current + 1);
-      try {
-        await onPersisted();
-      } catch {
-        setSaveError("הפעולה נשמרה, אבל הערב לא התרענן.");
-      }
+      onClose();
     });
   }
 
@@ -183,10 +211,12 @@ export function TransactionSheet({
         <div className="sheet-scroll stack">
           <PlayerPanel
             directory={directory}
-            selectedId={draft.playerId}
+            selectedId={isCreateDraft(draft) ? null : draft.playerId}
+            selectedIds={isCreateDraft(draft) ? draft.playerIds : undefined}
+            multiple={isCreateDraft(draft) && draft.action === "add"}
             eveningTransactions={editing === null ? transactions : undefined}
             onSelect={(player) => {
-              setDraft((current) => ({ ...current, playerId: player.id }));
+              setDraft((current) => (isCreateDraft(current) ? selectCreatePlayer(current, player.id) : { ...current, playerId: player.id }));
               setErrors((current) => ({ ...current, player: undefined }));
               setSaveError(null);
             }}

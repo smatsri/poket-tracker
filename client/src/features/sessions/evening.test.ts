@@ -256,6 +256,73 @@ test("edit and delete replace the saved transaction only after the repository co
   assert.deepEqual((await repository.readActiveSession())?.session.transactions, []);
 });
 
+test("several players share one amount in a single save", async () => {
+  const repository = new MemoryLocalRepository();
+  const ids = ["session-001", "tx-001", "tx-002", "tx-003", "tx-004", "tx-005", "tx-006", "tx-007"];
+  let writes = 0;
+  const saveActiveSession = repository.saveActiveSession.bind(repository);
+  repository.saveActiveSession = async (record) => {
+    writes += 1;
+    await saveActiveSession(record);
+  };
+  const service = createEveningService(
+    repository,
+    api(() => {
+      throw new Error("unused");
+    }),
+    {
+      now: () => now,
+      newId: () => {
+        const next = ids.shift();
+        if (next === undefined) {
+          throw new Error("Test ran out of ids");
+        }
+        return next;
+      },
+    },
+  );
+  await service.startEvening();
+  const existing = await service.addTransaction({ playerId: "p1", type: "buy-in", amount: 20 });
+  const before = writes;
+
+  const saved = await service.addTransactions([
+    { playerId: "p1", type: "rebuy", amount: 50 },
+    { playerId: "p2", type: "rebuy", amount: 50 },
+    { playerId: "p3", type: "buy-in", amount: 50 },
+  ]);
+
+  assert.equal(writes, before + 1);
+  assert.deepEqual(
+    saved.map((transaction) => [transaction.id, transaction.playerId, transaction.type, transaction.amount]),
+    [
+      ["tx-002", "p1", "rebuy", 50],
+      ["tx-003", "p2", "rebuy", 50],
+      ["tx-004", "p3", "buy-in", 50],
+    ],
+  );
+  assert.deepEqual(
+    (await repository.readActiveSession())?.session.transactions.map((transaction) => transaction.id),
+    [existing.id, "tx-002", "tx-003", "tx-004"],
+  );
+
+  repository.failNextWrite = true;
+  await assert.rejects(
+    () =>
+      service.addTransactions([
+        { playerId: "p1", type: "rebuy", amount: 10 },
+        { playerId: "p2", type: "rebuy", amount: 10 },
+      ]),
+    /Failed to persist local data/,
+  );
+  assert.equal((await repository.readActiveSession())?.session.transactions.length, 4);
+
+  await assert.rejects(
+    () => service.addTransactions([{ playerId: "p1", type: "buy-in", amount: 0 }]),
+    /amount must be a positive integer/,
+  );
+  assert.equal((await repository.readActiveSession())?.session.transactions.length, 4);
+});
+
 test("an evening without transactions cannot be submitted", async () => {
   const repository = new MemoryLocalRepository();
   const client = api(() => { throw new Error("unused"); });
