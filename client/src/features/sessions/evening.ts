@@ -134,7 +134,7 @@ export function createEveningService(
       }
 
       const submitted = withStatus({ ...pending, session: result.session }, "submitted", clock);
-      await repository.saveActiveSession(submitted);
+      await repository.clearActiveSession();
       return submitted;
     },
   };

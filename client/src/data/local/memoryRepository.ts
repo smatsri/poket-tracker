@@ -19,6 +19,11 @@ export class MemoryLocalRepository implements LocalRepository {
     await this.saveActiveSession(record);
   }
 
+  async clearActiveSession(): Promise<void> {
+    this.rejectIfFailing();
+    this.activeSession = null;
+  }
+
   async readPlayers(): Promise<Player[]> {
     return clone(this.players);
   }

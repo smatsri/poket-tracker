@@ -1,6 +1,6 @@
 # TKT-042 — Open the summary after a confirmed close
 
-**Status:** todo  
+**Status:** done  
 **Issue:** #43  
 **Milestone:** M9 Evening usability  
 **Depends on:** None
@@ -31,8 +31,8 @@ Land on the evening's summary after a confirmed close, and make starting the nex
 
 ## Acceptance criteria
 
-- [ ] A confirmed submit opens that evening's read-only summary.
-- [ ] Returning to the current evening after that confirmation shows the empty state, and `התחלת ערב חדש` is visible at 360px without scrolling past the player directory.
-- [ ] A pending submit stays on the current evening with its transactions, and offers retry.
-- [ ] A `409` still keeps the local id and transactions and does not open the summary.
-- [ ] A second evening still cannot be started while the current one is draft or pending.
+- [x] A confirmed submit opens that evening's read-only summary.
+- [x] Returning to the current evening after that confirmation shows the empty state, and `התחלת ערב חדש` is visible at 360px without scrolling past the player directory.
+- [x] A pending submit stays on the current evening with its transactions, and offers retry.
+- [x] A `409` still keeps the local id and transactions and does not open the summary.
+- [x] A second evening still cannot be started while the current one is draft or pending.

@@ -6,6 +6,7 @@ import { navigate, onNavigate, useAppLocation } from "../../app/navigation.ts";
 import { PlayerPanel } from "../players/PlayerPanel.tsx";
 import { presentCurrentEvening, presentEveningLoadFailure, presentPlayerEvening, statusLabels, type ActiveEveningView, type PresentedTransaction } from "./currentEvening.ts";
 import { ResultText } from "./ResultText.tsx";
+import { sessionSummaryPath } from "./sessionHistory.ts";
 import { classifySubmissionFailure, submissionActions, submissionMessages, type SubmissionFailure } from "./submission.ts";
 import { TransactionSheet } from "./TransactionSheet.tsx";
 
@@ -88,8 +89,10 @@ export function CurrentEveningScreen({
     setSubmitting(true);
     setSubmitFailure(null);
     try {
-      setRecord(await evening.submitEvening());
+      const submitted = await evening.submitEvening();
+      setRecord(null);
       setReviewing(false);
+      navigate(sessionSummaryPath(submitted.session.id));
     } catch (error) {
       try {
         setRecord(await evening.readCurrent());

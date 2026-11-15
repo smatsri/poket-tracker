@@ -31,6 +31,15 @@ export function createIndexedDbRepository(factory: IDBFactory = indexedDB): Loca
       return writeActiveSession(factory, record);
     },
 
+    clearActiveSession(): Promise<void> {
+      return withDatabase(factory, async (database) => {
+        const transaction = database.transaction(activeSessionStore, "readwrite");
+        const completed = waitForTransaction(transaction);
+        transaction.objectStore(activeSessionStore).delete(currentSessionKey);
+        await completed;
+      });
+    },
+
     readPlayers(): Promise<Player[]> {
       return withDatabase(factory, async (database) => {
         const transaction = database.transaction(playersStore, "readonly");

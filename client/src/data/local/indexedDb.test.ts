@@ -42,6 +42,15 @@ test("saving and reopening the database returns the same session, transactions, 
   assert.deepEqual(await reopened.readActiveSession(), record);
 });
 
+test("clearing the active session leaves no current evening", async () => {
+  const repository = createIndexedDbRepository(createFakeIndexedDb().factory);
+  await repository.saveActiveSession(record);
+
+  await repository.clearActiveSession();
+
+  assert.equal(await repository.readActiveSession(), null);
+});
+
 test("replacing the active session overwrites the current record", async () => {
   const repository = createIndexedDbRepository(createFakeIndexedDb().factory);
   await repository.saveActiveSession(record);
@@ -250,6 +259,25 @@ class FakeTransaction {
     return request as unknown as IDBRequest<IDBValidKey>;
   }
 
+  delete(key: string): IDBRequest<undefined> {
+    const request = bareRequest<undefined>();
+    this.queue(() => {
+      if (this.aborted) {
+        return;
+      }
+      if (this.takeFailure()) {
+        this.abort();
+        request.error = this.error;
+        request.onerror?.(new Event("error"));
+        return;
+      }
+
+      this.store.records.delete(key);
+      request.onsuccess?.(new Event("success"));
+    });
+    return request as unknown as IDBRequest<undefined>;
+  }
+
   clear(): IDBRequest<undefined> {
     const request = bareRequest<undefined>();
     this.queue(() => {
@@ -327,6 +355,10 @@ class FakeObjectStore {
 
   put(value: unknown, key?: string): IDBRequest<IDBValidKey> {
     return this.transaction.put(value, key);
+  }
+
+  delete(key: string): IDBRequest<undefined> {
+    return this.transaction.delete(key);
   }
 
   clear(): IDBRequest<undefined> {

@@ -100,8 +100,23 @@ test("201 and identical 200 move pending to submitted", async () => {
     const submitted = await service.submitEvening();
     assert.equal(submitted.status, "submitted");
     assert.equal(submitted.session.createdAt, "2026-11-13T20:00:00Z");
-    assert.equal((await repository.readActiveSession())?.status, "submitted");
+    assert.equal(await repository.readActiveSession(), null);
   }
+});
+
+test("a failed clear after confirmation leaves the pending evening in place", async () => {
+  const repository = new MemoryLocalRepository();
+  const client = api(async (session) => {
+    repository.failNextWrite = true;
+    return confirmed(session, 201);
+  });
+  const service = createEveningService(repository, client, clock());
+  await service.startEvening();
+  await service.addTransaction({ playerId: "player-001", type: "buy-in", amount: 50 });
+
+  await assert.rejects(() => service.submitEvening(), /Failed to persist local data/);
+  assert.equal((await repository.readActiveSession())?.status, "pending");
+  assert.equal((await repository.readActiveSession())?.session.id, "session-001");
 });
 
 test("a network failure, 500, or 409 stays pending and retains the original session", async () => {
@@ -184,16 +199,17 @@ test("retry uses the original session id", async () => {
   assert.equal(submitted.status, "submitted");
 });
 
-test("submitting a submitted evening does not send it again", async () => {
+test("a confirmed evening is cleared, so submitting again does not send it", async () => {
   const repository = new MemoryLocalRepository();
   const client = api((session) => confirmed(session, 201));
   const service = createEveningService(repository, client, clock());
   await service.startEvening();
   await service.addTransaction({ playerId: "player-001", type: "buy-in", amount: 50 });
   await service.submitEvening();
-  await service.submitEvening();
+  await assert.rejects(() => service.submitEvening(), EveningError);
 
   assert.equal(client.calls.length, 1);
+  assert.equal(await repository.readActiveSession(), null);
 });
 
 test("editing changes player, type, and amount without a new id or timestamp", async () => {

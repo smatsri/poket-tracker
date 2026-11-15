@@ -66,9 +66,8 @@ stateDiagram-v2
   Empty --> Draft: Start evening
   Draft --> Draft: Add, edit, or delete
   Draft --> Pending: Request submission
-  Pending --> Submitted: HTTP 201 or identical HTTP 200
+  Pending --> Empty: HTTP 201 or identical HTTP 200
   Pending --> Pending: Network failure, HTTP 500, or HTTP 409
-  Submitted --> Empty: Start another evening
 ```
 
 Rules:
@@ -76,7 +75,7 @@ Rules:
 - Persist the active session before the interface treats a transaction change as complete.
 - Keep the same session ID from the first local save through every submission retry.
 - Do not start another evening while the status is `draft` or `pending`.
-- After `submitted`, retain the local copy until the user explicitly starts another evening.
+- After `201` or an identical `200`, clear the local active session and open that evening's summary.
 - A failed or uncertain submission leaves the status `pending` and leaves every transaction in IndexedDB.
 
 ```mermaid
@@ -90,10 +89,12 @@ sequenceDiagram
   Client->>API: POST /api/sessions
   alt First successful save
     API-->>Client: 201 Session
-    Client->>IDB: Mark submitted
+    Client->>IDB: Clear the active session
+    Client->>User: Open the evening summary
   else Identical retry
     API-->>Client: 200 Session
-    Client->>IDB: Mark submitted
+    Client->>IDB: Clear the active session
+    Client->>User: Open the evening summary
   else Different content for the same ID
     API-->>Client: 409 Conflict
     Client->>IDB: Remain pending

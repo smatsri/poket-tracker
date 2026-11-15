@@ -62,6 +62,19 @@ test("a missing active evening still shows the empty state and its start action"
   const emptyBranch = source.slice(source.indexOf('if (view.kind === "empty")'), source.indexOf("if (transactionId"));
   assert.match(emptyBranch, /התחלת ערב חדש/);
   assert.match(emptyBranch, /startEvening/);
+  assert.ok(emptyBranch.indexOf("התחלת ערב חדש") < emptyBranch.indexOf("<PlayerPanel"));
+});
+
+test("a confirmed close opens the summary and a failed close stays on the evening", () => {
+  const source = readFileSync(new URL("./CurrentEveningScreen.tsx", import.meta.url), "utf8");
+  const finish = source.slice(source.indexOf("async function finishEvening"), source.indexOf("async function startEvening"));
+  const success = finish.slice(0, finish.indexOf("} catch"));
+  const failure = finish.slice(finish.indexOf("} catch"));
+
+  assert.match(success, /setRecord\(null\)/);
+  assert.match(success, /navigate\(sessionSummaryPath\(submitted\.session\.id\)\)/);
+  assert.match(failure, /classifySubmissionFailure/);
+  assert.doesNotMatch(failure, /navigate\(/);
 });
 
 test("the empty state can start an evening and a draft or pending evening cannot", () => {
