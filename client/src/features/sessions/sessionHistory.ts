@@ -5,6 +5,8 @@ import type { Player } from "../../domain/models.ts";
 import { presentResult, type PresentedResult } from "./currentEvening.ts";
 import { formatSessionDate } from "./transactionHistory.ts";
 
+const amountFormat = new Intl.NumberFormat("he-IL", { maximumFractionDigits: 0 });
+
 export const historyCopy = {
   title: "היסטוריה",
   empty: "אין עדיין ערבים שהסתיימו.",
@@ -25,6 +27,15 @@ export interface HistoryEntry {
   transactionCount: number;
   playersLabel: string;
   transactionsLabel: string;
+  moneyIn: string;
+  moneyOut: string;
+  moneyInCount: number;
+  cashOutCount: number;
+  moneyInLabel: "סך שנכנס";
+  moneyOutLabel: "סך שיצא";
+  gapLabel: "פער";
+  moneyInCountLabel: string;
+  cashOutCountLabel: string;
   result: PresentedResult;
 }
 
@@ -137,6 +148,8 @@ function presentEntry(document: SessionDocument): HistoryEntry {
   const playerCount = distinctPlayerCount(document.players);
   const transactionCount = document.session.transactions.length;
   const date = formatSessionDate(document.session.date);
+  const moneyInCount = document.session.transactions.filter((transaction) => transaction.type === "buy-in" || transaction.type === "rebuy").length;
+  const cashOutCount = document.session.transactions.filter((transaction) => transaction.type === "cash-out").length;
   return {
     id: document.session.id,
     href: sessionSummaryPath(document.session.id),
@@ -147,6 +160,15 @@ function presentEntry(document: SessionDocument): HistoryEntry {
     transactionCount,
     playersLabel: `שחקנים: ${playerCount}`,
     transactionsLabel: `פעולות: ${transactionCount}`,
+    moneyIn: amountFormat.format(result.sessionBuyIns),
+    moneyOut: amountFormat.format(result.sessionCashOuts),
+    moneyInCount,
+    cashOutCount,
+    moneyInLabel: "סך שנכנס",
+    moneyOutLabel: "סך שיצא",
+    gapLabel: "פער",
+    moneyInCountLabel: `מספר כניסות: ${moneyInCount}`,
+    cashOutCountLabel: `מספר יציאות: ${cashOutCount}`,
     result: presentResult(result.sessionBalance),
   };
 }

@@ -128,13 +128,21 @@ export function HistoryScreen({ api }: { api: ApiClient }) {
             <li key={entry.id}>
               <a className="player-row" href={entry.href} onClick={(event) => onNavigate(event, entry.href)}>
                 <span className="player-row-main">
+                  <span>
+                    {entry.moneyInLabel} <MoneyText value={entry.moneyIn} />
+                  </span>
+                  <span>
+                    {entry.moneyOutLabel} <MoneyText value={entry.moneyOut} />
+                  </span>
+                  <span>
+                    {entry.gapLabel} <ResultText result={entry.result} prominent />
+                  </span>
                   <span className="player-name">{entry.heading}</span>
                   {entry.location !== undefined ? <span className="muted">{entry.location}</span> : null}
                   <span className="muted">
-                    {entry.playersLabel} · {entry.transactionsLabel}
+                    {entry.playersLabel} · {entry.moneyInCountLabel} · {entry.cashOutCountLabel}
                   </span>
                 </span>
-                <ResultText result={entry.result} prominent />
               </a>
             </li>
           ))}

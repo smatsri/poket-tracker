@@ -69,6 +69,14 @@ test("completed sessions are newest first and show date, players, transactions, 
   assert.equal(newest.result.value, balance);
   assert.equal(newest.result.text, formatResult(balance));
   assert.equal(newest.result.tone, "positive");
+  assert.equal(newest.moneyIn, "0");
+  assert.equal(newest.moneyOut, "5");
+  assert.equal(newest.moneyInCount, 0);
+  assert.equal(newest.cashOutCount, 1);
+  assert.equal(newest.moneyInLabel, "סך שנכנס");
+  assert.equal(newest.moneyOutLabel, "סך שיצא");
+  assert.equal(newest.gapLabel, "פער");
+  assert.equal(newest.result.value, calculateSessionResult(tied.session).sessionBalance);
   assert.equal(newest.href, sessionSummaryPath("session-d"));
   assert.equal(newest.heading, newest.date);
   assert.equal(newest.location, undefined);
@@ -79,11 +87,21 @@ test("completed sessions are newest first and show date, players, transactions, 
   assert.equal(balanced.transactionCount, 3);
   assert.equal(balanced.result.text, formatResult(0));
   assert.equal(balanced.result.tone, "neutral");
+  assert.equal(balanced.moneyIn, "20");
+  assert.equal(balanced.moneyOut, "20");
+  assert.equal(balanced.moneyInCount, 2);
+  assert.equal(balanced.cashOutCount, 1);
+  assert.notEqual(balanced.moneyInCount, balanced.cashOutCount);
+  assert.equal(balanced.moneyInCountLabel, "מספר כניסות: 2");
+  assert.equal(balanced.cashOutCountLabel, "מספר יציאות: 1");
 
   const loss = view.entries[3];
   assert.ok(loss !== undefined);
   assert.equal(loss.result.text, formatResult(calculateSessionResult(older.session).sessionBalance));
   assert.equal(loss.result.tone, "negative");
+  assert.equal(loss.moneyIn, "100");
+  assert.equal(loss.moneyOut, "40");
+  assert.equal(loss.result.value, calculateSessionResult(older.session).sessionCashOuts - calculateSessionResult(older.session).sessionBuyIns);
 });
 
 test("no sessions produces the Hebrew empty state", () => {

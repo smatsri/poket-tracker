@@ -76,7 +76,7 @@ Run this on a phone-sized viewport, 360px wide, in a Chromium browser. The serve
 8. Finish the evening and confirm the server has one session and the summary is read-only.
 9. Stop the server, retry from the pending state, and confirm nothing was discarded. Start the server, retry, and confirm there is still one server session.
 10. Change the local pending payload to conflict with the stored session in a test database and confirm `409` retains the local ID and local transactions.
-11. Open history, open a past evening, and compare its summary with the transaction list.
+11. Open history. Each card leads with money in (`סך שנכנס`, buy-ins plus rebuys), money out (`סך שיצא`), and the gap (`פער`, the session balance, with its sign and color). `מספר כניסות` counts buy-in and rebuy transactions, `מספר יציאות` counts cash-outs, and those counts can differ. The player count stays. Open a past evening and compare its summary with the transaction list. The results-by-session chart still uses the session balance.
 12. Confirm statistics count sessions and transactions and rank each player's overall result.
 13. Confirm the primary action, touch targets, safe area, and bottom navigation remain usable at 360px width.
 14. Confirm positive and negative values have both color and an explicit sign.

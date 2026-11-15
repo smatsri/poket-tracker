@@ -1,6 +1,6 @@
 # TKT-046 — Show the history gap
 
-**Status:** todo  
+**Status:** done  
 **Issue:** #47  
 **Milestone:** M9 Evening usability  
 **Depends on:** None
@@ -33,8 +33,8 @@ Make a history card show whether the evening's money in and money out agree.
 
 ## Acceptance criteria
 
-- [ ] Each history card shows money in, money out, and the signed gap from the session's transactions.
-- [ ] A fully balanced evening shows a zero gap, and an evening with more money in than out shows a negative gap.
-- [ ] The entry count and the exit count can differ, and both are visible.
-- [ ] The results-by-session chart still uses session balance.
-- [ ] Automated tests cover a zero gap, a non-zero gap, and unequal counts.
+- [x] Each history card shows money in, money out, and the signed gap from the session's transactions.
+- [x] A fully balanced evening shows a zero gap, and an evening with more money in than out shows a negative gap.
+- [x] The entry count and the exit count can differ, and both are visible.
+- [x] The results-by-session chart still uses session balance.
+- [x] Automated tests cover a zero gap, a non-zero gap, and unequal counts.
