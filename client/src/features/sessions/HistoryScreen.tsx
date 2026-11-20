@@ -133,7 +133,7 @@ export function HistoryScreen({ api, repository }: { api: ApiClient; repository:
   if (listState.status === "loading") {
     return (
       <section className="stack">
-        <h1>{showArchived ? historyCopy.archivedTitle : historyCopy.title}</h1>
+        <HistoryListHeading title={showArchived ? historyCopy.archivedTitle : historyCopy.title} />
         {listToggle}
         <p className="muted">{historyCopy.loading}</p>
       </section>
@@ -143,7 +143,7 @@ export function HistoryScreen({ api, repository }: { api: ApiClient; repository:
   if (listState.status === "error") {
     return (
       <section className="stack">
-        <h1>{showArchived ? historyCopy.archivedTitle : historyCopy.title}</h1>
+        <HistoryListHeading title={showArchived ? historyCopy.archivedTitle : historyCopy.title} />
         {listToggle}
         <article className="card stack">
           <p className="notice notice-alert" role="alert">
@@ -161,7 +161,7 @@ export function HistoryScreen({ api, repository }: { api: ApiClient; repository:
 
   return (
     <section className="stack">
-      <h1>{listState.title}</h1>
+      <HistoryListHeading title={listState.title} />
       {listToggle}
       {actionError !== null ? (
         <p className="notice notice-alert" role="alert">
@@ -230,6 +230,14 @@ export function HistoryScreen({ api, repository }: { api: ApiClient; repository:
       )}
     </section>
   );
+}
+
+function HistoryListHeading({ title }: { title: string }) {
+  if (title === historyCopy.title) {
+    return null;
+  }
+
+  return <h1>{title}</h1>;
 }
 
 function SummaryRoute({

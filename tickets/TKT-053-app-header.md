@@ -1,6 +1,6 @@
 # TKT-053 — Restyle the header and screen title
 
-**Status:** todo  
+**Status:** done  
 **Issue:** #55  
 **Milestone:** M10 Follow-ups  
 **Depends on:** None
@@ -32,8 +32,8 @@ Give every screen one title, in a header that stays put.
 
 ## Acceptance criteria
 
-- [ ] The top bar shows `מעקב פוקר` and the section title, and it stays visible while the page scrolls.
-- [ ] The current evening, the history list, and statistics do not repeat that title in a second heading.
-- [ ] A summary, the full transaction list, and a player page keep their own subject heading.
-- [ ] The bar respects the top safe area, and the bottom navigation is unchanged.
-- [ ] The title fits at 360px width in RTL, using the existing tokens.
+- [x] The top bar shows `מעקב פוקר` and the section title, and it stays visible while the page scrolls.
+- [x] The current evening, the history list, and statistics do not repeat that title in a second heading.
+- [x] A summary, the full transaction list, and a player page keep their own subject heading.
+- [x] The bar respects the top safe area, and the bottom navigation is unchanged.
+- [x] The title fits at 360px width in RTL, using the existing tokens.

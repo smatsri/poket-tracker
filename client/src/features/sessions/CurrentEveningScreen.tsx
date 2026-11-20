@@ -146,7 +146,6 @@ export function CurrentEveningScreen({
     const failure = presentEveningLoadFailure();
     return (
       <section className="stack">
-        <h1>ערב נוכחי</h1>
         <article className="card">
           <p className="notice notice-alert" role="alert">
             {failure.message}
@@ -159,7 +158,6 @@ export function CurrentEveningScreen({
   if (view.kind === "empty") {
     return (
       <section className="stack">
-        <h1>ערב נוכחי</h1>
         <article className="card stack">
           <p>אין ערב פעיל.</p>
           <button type="button" className="button button-primary" disabled={starting} onClick={() => void startEvening()}>
@@ -273,7 +271,6 @@ export function CurrentEveningScreen({
   return (
     <section className="stack evening">
       <header className="stack">
-        <h1>{view.title}</h1>
         <p>{view.date}</p>
         <p className="status">{statusLabel}</p>
       </header>

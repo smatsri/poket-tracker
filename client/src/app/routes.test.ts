@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { globSync, readFileSync } from "node:fs";
 import test from "node:test";
-import { matchRoute, navigation } from "./routes.ts";
+import { matchRoute, navigation, sectionTitle } from "./routes.ts";
 
 test("the document is Hebrew and RTL", () => {
   const html = readFileSync("index.html", "utf8");
@@ -25,6 +25,17 @@ test("navigation labels reach the three routes", () => {
   assert.equal(matchRoute("/stats").id, "stats");
   assert.equal(matchRoute("/stats/player-1").id, "stats");
   assert.equal(matchRoute("/missing").id, "unknown");
+  assert.equal(sectionTitle(matchRoute("/")), "ערב נוכחי");
+  assert.equal(sectionTitle(matchRoute("/history/session-1")), "היסטוריה");
+  assert.equal(sectionTitle(matchRoute("/stats/player-1")), "סטטיסטיקה");
+  assert.equal(matchRoute("/stats").label, "סיכומים");
+  const app = readFileSync("src/app/App.tsx", "utf8");
+  assert.match(app, /מעקב פוקר/);
+  assert.match(app, /sectionTitle\(route\)/);
+  const css = readFileSync("src/styles/global.css", "utf8");
+  assert.match(css, /\.app-header \{[^}]*position:\s*sticky/s);
+  assert.match(css, /\.app-header \{[^}]*safe-area-inset-top/s);
+  assert.match(css, /\.bottom-nav \{[^}]*safe-area-inset-bottom/s);
 });
 
 test("design tokens, Heebo, cards, and actions match the visual language", () => {

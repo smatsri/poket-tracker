@@ -90,7 +90,7 @@ These review notes stay out of the backlog:
 | [TKT-050](TKT-050-summary-by-profit.md) | Sort the summary by profit | done | None |
 | [TKT-051](TKT-051-history-biggest-winner.md) | Show the biggest winner on a history card | done | None |
 | [TKT-052](TKT-052-history-layout.md) | Lay out the history page | done | None |
-| [TKT-053](TKT-053-app-header.md) | Restyle the header and screen title | todo | None |
+| [TKT-053](TKT-053-app-header.md) | Restyle the header and screen title | done | None |
 | [TKT-054](TKT-054-evening-note.md) | Add a note to the current evening | todo | None |
 | [TKT-055](TKT-055-archive-delete-session.md) | Archive or delete a closed evening | done | None |
 
