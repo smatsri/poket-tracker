@@ -9,12 +9,17 @@ import { formatResult } from "../../domain/format.ts";
 import type { Player, Transaction, TransactionType } from "../../domain/models.ts";
 import { matchRoute } from "../../app/routes.ts";
 import {
+  deleteConfirmation,
   historyCopy,
+  loadArchivedSessionHistory,
   loadSessionHistory,
+  openArchivedSessionHistory,
   openSessionHistory,
   parseHistoryLocation,
   presentHistoryFailure,
   presentSessionHistory,
+  rememberClosedSession,
+  removeClosedSession,
   sessionSummaryPath,
 } from "./sessionHistory.ts";
 
@@ -104,6 +109,67 @@ test("completed sessions are newest first and show date, players, transactions, 
   assert.equal(loss.moneyIn, "100");
   assert.equal(loss.moneyOut, "40");
   assert.equal(loss.result.value, calculateSessionResult(older.session).sessionCashOuts - calculateSessionResult(older.session).sessionBuyIns);
+});
+
+test("a history card names the biggest winner, including a tie, a loss, and an empty evening", () => {
+  const unique = document("unique", "2026-11-13", "2026-11-13T22:00:00Z", [dana, noa], [
+    transaction("unique", "u1", "p1", "buy-in", 50),
+    transaction("unique", "u2", "p2", "cash-out", 80),
+  ]);
+  const tied = document(
+    "tied",
+    "2026-11-13",
+    "2026-11-13T22:00:00Z",
+    [
+      { id: "same-b", name: "דנה", createdAt: "2026-11-01T18:00:00Z" },
+      { id: "same-a", name: "דנה", createdAt: "2026-11-01T18:00:00Z" },
+      { id: "later", name: "נועה", createdAt: "2026-11-01T18:00:00Z" },
+    ],
+    [
+      transaction("tied", "t1", "same-b", "cash-out", 10),
+      transaction("tied", "t2", "same-a", "cash-out", 10),
+      transaction("tied", "t3", "later", "cash-out", 10),
+    ],
+  );
+  const loss = document("loss", "2026-11-12", "2026-11-12T22:00:00Z", [], [
+    transaction("loss", "l1", "missing", "buy-in", 40),
+  ]);
+  const empty = document("empty", "2026-11-11", "2026-11-11T22:00:00Z", [dana], []);
+  const even = document("even", "2026-11-10", "2026-11-10T22:00:00Z", [dana], [
+    transaction("even", "e1", "p1", "buy-in", 10),
+    transaction("even", "e2", "p1", "cash-out", 10),
+  ]);
+
+  const view = presentSessionHistory([unique, tied, loss, empty, even]);
+  const byId = new Map(view.entries.map((entry) => [entry.id, entry]));
+
+  assert.deepEqual(
+    [byId.get("unique")?.biggestWinner?.playerId, byId.get("unique")?.biggestWinner?.name, byId.get("unique")?.biggestWinner?.result.text, byId.get("unique")?.biggestWinner?.label],
+    ["p2", "נועה", formatResult(80), "המרוויח הגדול"],
+  );
+  assert.deepEqual(
+    [byId.get("tied")?.biggestWinner?.playerId, byId.get("tied")?.biggestWinner?.name, byId.get("tied")?.biggestWinner?.result.value],
+    ["same-a", "דנה", 10],
+  );
+  assert.deepEqual(
+    [byId.get("loss")?.biggestWinner?.playerId, byId.get("loss")?.biggestWinner?.name, byId.get("loss")?.biggestWinner?.result.value, byId.get("loss")?.biggestWinner?.result.tone],
+    ["missing", "שחקן לא ידוע", -40, "negative"],
+  );
+  assert.equal(byId.get("empty")?.biggestWinner, undefined);
+  assert.equal(byId.get("even")?.biggestWinner?.result.value, 0);
+  assert.equal(byId.get("even")?.biggestWinner?.name, "דנה");
+
+  const screen = readFileSync(new URL("./HistoryScreen.tsx", import.meta.url), "utf8");
+  assert.match(screen, /biggestWinner\.label/);
+  assert.match(screen, /biggestWinner\.name/);
+  assert.match(screen, /biggestWinner\.result/);
+  assert.match(screen, /toggleDetail\(entry\.id\)/);
+  assert.match(screen, /detailedIds\.has\(entry\.id\)/);
+  assert.match(screen, /\{detailed \?/);
+  const order = ["history-heading", "entry.date", "entry.location", "entry.moneyInLabel", "biggestWinner.label", "entry.moneyOutLabel", "entry.gapLabel", "entry.moneyInCountLabel"].map(
+    (marker) => screen.indexOf(marker),
+  );
+  assert.ok(order.every((index, position) => index >= 0 && (position === 0 || index > order[position - 1]!)));
 });
 
 test("no sessions produces the Hebrew empty state", () => {
@@ -270,6 +336,56 @@ test("a failed history load with an empty cache keeps the existing retryable err
     canRetry: true,
   });
   assert.deepEqual(await repository.readClosedSessions(), []);
+});
+
+test("the archived list does not replace the default history cache", async () => {
+  const repository = new MemoryLocalRepository();
+  const cached = namedDocument("old", "ישן", "אצל נועה");
+  const archived = namedDocument("archived", "בארכיון", "אצל דנה");
+  await repository.replaceClosedSessions([cached]);
+  let query: unknown;
+  await openArchivedSessionHistory(
+    {
+      listSessions: async (next) => {
+        query = next;
+        return [archived];
+      },
+    },
+    () => undefined,
+  );
+
+  assert.deepEqual(query, { archived: true });
+  assert.deepEqual(await repository.readClosedSessions(), [cached]);
+  assert.equal((await loadArchivedSessionHistory({ listSessions: async () => [archived] })).length, 1);
+});
+
+test("archive drops a cached evening and restore puts it back without clearing the others", async () => {
+  const repository = new MemoryLocalRepository();
+  const kept = namedDocument("kept", "נשאר", "אצל נועה");
+  const gone = namedDocument("gone", "הולך", "אצל דנה");
+  await repository.replaceClosedSessions([kept, gone]);
+
+  await removeClosedSession(repository, "gone");
+  assert.deepEqual(
+    (await repository.readClosedSessions()).map((document) => document.session.id),
+    ["kept"],
+  );
+
+  await rememberClosedSession(repository, gone);
+  assert.deepEqual(
+    (await repository.readClosedSessions()).map((document) => document.session.id),
+    ["kept", "gone"],
+  );
+});
+
+test("delete asks for confirmation by name, and archive or restore do not", () => {
+  assert.equal(deleteConfirmation("ערב אצל נועה"), "למחוק את ערב אצל נועה? הערב והפעולות שלו יוסרו.");
+  const screen = readFileSync(new URL("./HistoryScreen.tsx", import.meta.url), "utf8");
+  assert.match(screen, /window\.confirm\(deleteConfirmation\(entry\.heading\)\)/);
+  assert.equal(screen.match(/window\.confirm/g)?.length, 1);
+  assert.match(screen, /historyCopy\.archive/);
+  assert.match(screen, /historyCopy\.restore/);
+  assert.doesNotMatch(screen, /session-name|session-location|<input/);
 });
 
 function namedDocument(id: string, name: string, location: string): SessionDocument {

@@ -56,16 +56,21 @@ export function rankOverallResults(sessions: readonly Session[], players: readon
       name: names.get(playerId) ?? "",
       netResult,
     }))
-    .sort((left, right) => {
-      if (left.netResult !== right.netResult) {
-        return right.netResult - left.netResult;
-      }
+    .sort(compareRankedResults);
+}
 
-      const byName = left.name.localeCompare(right.name, "he");
-      if (byName !== 0) {
-        return byName;
-      }
+export function compareRankedResults(
+  left: Pick<PlayerOverallResult, "netResult" | "name" | "playerId">,
+  right: Pick<PlayerOverallResult, "netResult" | "name" | "playerId">,
+): number {
+  if (left.netResult !== right.netResult) {
+    return right.netResult - left.netResult;
+  }
 
-      return left.playerId.localeCompare(right.playerId, "he");
-    });
+  const byName = left.name.localeCompare(right.name, "he");
+  if (byName !== 0) {
+    return byName;
+  }
+
+  return left.playerId.localeCompare(right.playerId, "he");
 }

@@ -4,9 +4,14 @@ import type { ApiClient } from "../../data/api/client.ts";
 import type { LocalRepository } from "../../data/local/repository.ts";
 import { MoneyText, ResultText } from "./ResultText.tsx";
 import {
+  deleteConfirmation,
   historyCopy,
+  openArchivedSessionHistory,
   openSessionHistory,
   parseHistoryLocation,
+  rememberClosedSession,
+  removeClosedSession,
+  type HistoryEntry,
   type HistoryLocation,
   type HistoryScreenView,
 } from "./sessionHistory.ts";
@@ -25,6 +30,10 @@ export function HistoryScreen({ api, repository }: { api: ApiClient; repository:
   const location = parseHistoryLocation(route.path);
   const [listAttempt, setListAttempt] = useState(0);
   const [summaryAttempt, setSummaryAttempt] = useState(0);
+  const [showArchived, setShowArchived] = useState(false);
+  const [detailedIds, setDetailedIds] = useState<ReadonlySet<string>>(() => new Set());
+  const [acting, setActing] = useState(false);
+  const [actionError, setActionError] = useState<string | null>(null);
   const [listState, setListState] = useState<HistoryScreenView>({ status: "loading" });
   const [summaryState, setSummaryState] = useState<SummaryScreenView>({ status: "loading" });
 
@@ -34,16 +43,17 @@ export function HistoryScreen({ api, repository }: { api: ApiClient; repository:
     }
 
     let active = true;
-    void openSessionHistory(repository, api, (view) => {
+    const show = (view: HistoryScreenView) => {
       if (active) {
         setListState(view);
       }
-    });
+    };
+    void (showArchived ? openArchivedSessionHistory(api, show) : openSessionHistory(repository, api, show));
 
     return () => {
       active = false;
     };
-  }, [api, listAttempt, location.screen, repository]);
+  }, [api, listAttempt, location.screen, repository, showArchived]);
 
   useEffect(() => {
     if (location.sessionId === null) {
@@ -73,14 +83,81 @@ export function HistoryScreen({ api, repository }: { api: ApiClient; repository:
     );
   }
 
+  async function archive(entry: HistoryEntry) {
+    await runAction(async () => {
+      await api.archiveSession(entry.id);
+      await removeClosedSession(repository, entry.id);
+    });
+  }
+
+  async function restore(entry: HistoryEntry) {
+    await runAction(async () => {
+      const document = await api.restoreSession(entry.id);
+      await rememberClosedSession(repository, document);
+    });
+  }
+
+  async function remove(entry: HistoryEntry) {
+    if (!window.confirm(deleteConfirmation(entry.heading))) {
+      return;
+    }
+
+    await runAction(async () => {
+      await api.deleteSession(entry.id);
+      await removeClosedSession(repository, entry.id);
+    });
+  }
+
+  function toggleDetail(id: string) {
+    setDetailedIds((current) => {
+      const next = new Set(current);
+      if (next.has(id)) {
+        next.delete(id);
+      } else {
+        next.add(id);
+      }
+      return next;
+    });
+  }
+
+  async function runAction(action: () => Promise<void>) {
+    if (acting) {
+      return;
+    }
+
+    setActing(true);
+    setActionError(null);
+    try {
+      await action();
+      setListAttempt((current) => current + 1);
+    } catch {
+      setActionError(historyCopy.actionError);
+    } finally {
+      setActing(false);
+    }
+  }
+
+  const listToggle = (
+    <button type="button" className="button button-secondary" onClick={() => setShowArchived((current) => !current)}>
+      {showArchived ? historyCopy.showActive : historyCopy.showArchived}
+    </button>
+  );
+
   if (listState.status === "loading") {
-    return <p className="muted">{historyCopy.loading}</p>;
+    return (
+      <section className="stack">
+        <HistoryListHeading title={showArchived ? historyCopy.archivedTitle : historyCopy.title} />
+        {listToggle}
+        <p className="muted">{historyCopy.loading}</p>
+      </section>
+    );
   }
 
   if (listState.status === "error") {
     return (
       <section className="stack">
-        <h1>{historyCopy.title}</h1>
+        <HistoryListHeading title={showArchived ? historyCopy.archivedTitle : historyCopy.title} />
+        {listToggle}
         <article className="card stack">
           <p className="notice notice-alert" role="alert">
             {listState.message}
@@ -97,7 +174,13 @@ export function HistoryScreen({ api, repository }: { api: ApiClient; repository:
 
   return (
     <section className="stack">
-      <h1>{listState.title}</h1>
+      <HistoryListHeading title={listState.title} />
+      {listToggle}
+      {actionError !== null ? (
+        <p className="notice notice-alert" role="alert">
+          {actionError}
+        </p>
+      ) : null}
       {listState.notice !== null ? (
         <p className="notice" role="status">
           {listState.notice}
@@ -108,33 +191,80 @@ export function HistoryScreen({ api, repository }: { api: ApiClient; repository:
           <p>{listState.message}</p>
         </article>
       ) : (
-        <ul className="choice-list">
-          {listState.entries.map((entry) => (
-            <li key={entry.id}>
-              <a className="player-row" href={entry.href} onClick={(event) => onNavigate(event, entry.href)}>
-                <span className="player-row-main">
-                  <span>
-                    {entry.moneyInLabel} <MoneyText value={entry.moneyIn} />
+        <ul className="history-list">
+          {listState.entries.map((entry) => {
+            const detailed = detailedIds.has(entry.id);
+            return (
+            <li key={entry.id} className="card history-card">
+              <a className="history-card-link" href={entry.href} onClick={(event) => onNavigate(event, entry.href)}>
+                <span className="history-card-top">
+                  <span className="history-card-identity">
+                    <span className="history-heading">{entry.heading}</span>
+                    {entry.heading !== entry.date || entry.location !== undefined ? (
+                      <span className="muted history-meta">
+                        {entry.heading !== entry.date ? <span>{entry.date}</span> : null}
+                        {entry.location !== undefined ? <span>{entry.location}</span> : null}
+                      </span>
+                    ) : null}
                   </span>
-                  <span>
-                    {entry.moneyOutLabel} <MoneyText value={entry.moneyOut} />
-                  </span>
-                  <span>
-                    {entry.gapLabel} <ResultText result={entry.result} prominent />
-                  </span>
-                  <span className="player-name">{entry.heading}</span>
-                  {entry.location !== undefined ? <span className="muted">{entry.location}</span> : null}
-                  <span className="muted">
-                    {entry.playersLabel} · {entry.moneyInCountLabel} · {entry.cashOutCountLabel}
+                  <span className="history-total">
+                    <span className="muted">{entry.moneyInLabel}</span>
+                    <MoneyText value={entry.moneyIn} prominent />
                   </span>
                 </span>
+                {detailed ? (
+                  <>
+                    {entry.biggestWinner !== undefined ? (
+                      <span>
+                        {entry.biggestWinner.label} {entry.biggestWinner.name} <ResultText result={entry.biggestWinner.result} />
+                      </span>
+                    ) : null}
+                    <span className="history-amounts">
+                      <span>
+                        {entry.moneyOutLabel} <MoneyText value={entry.moneyOut} />
+                      </span>
+                      <span>
+                        {entry.gapLabel} <ResultText result={entry.result} />
+                      </span>
+                    </span>
+                    <span className="muted">
+                      {entry.playersLabel} · {entry.moneyInCountLabel} · {entry.cashOutCountLabel}
+                    </span>
+                  </>
+                ) : null}
               </a>
+              <div className="action-row">
+                <button type="button" className="button button-secondary" aria-expanded={detailed} onClick={() => toggleDetail(entry.id)}>
+                  {detailed ? historyCopy.showShort : historyCopy.showDetailed}
+                </button>
+                {showArchived ? (
+                  <button type="button" className="button button-secondary" disabled={acting} onClick={() => void restore(entry)}>
+                    {historyCopy.restore}
+                  </button>
+                ) : (
+                  <button type="button" className="button button-secondary" disabled={acting} onClick={() => void archive(entry)}>
+                    {historyCopy.archive}
+                  </button>
+                )}
+                <button type="button" className="button button-destructive" disabled={acting} onClick={() => void remove(entry)}>
+                  {historyCopy.delete}
+                </button>
+              </div>
             </li>
-          ))}
+            );
+          })}
         </ul>
       )}
     </section>
   );
+}
+
+function HistoryListHeading({ title }: { title: string }) {
+  if (title === historyCopy.title) {
+    return null;
+  }
+
+  return <h1>{title}</h1>;
 }
 
 function SummaryRoute({
@@ -207,6 +337,7 @@ function SummaryBody({ view, notice }: { view: SessionSummaryView; notice: strin
         <h1>{summaryCopy.title}</h1>
         <p>{view.heading}</p>
         {view.location !== undefined ? <p>{view.location}</p> : null}
+        {view.note !== undefined ? <p>{view.note}</p> : null}
         <p className="muted">
           {view.playersLabel} · {view.transactionsLabel}
         </p>

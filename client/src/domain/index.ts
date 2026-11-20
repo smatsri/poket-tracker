@@ -1,4 +1,4 @@
-export { calculatePlayerResults, calculateSessionResult, rankOverallResults } from "./calculations.ts";
+export { calculatePlayerResults, calculateSessionResult, compareRankedResults, rankOverallResults } from "./calculations.ts";
 export { DomainValidationError } from "./errors.ts";
 export { formatResult } from "./format.ts";
 export type {

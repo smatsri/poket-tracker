@@ -103,6 +103,61 @@ test("each contract operation calls fetch with only the write-schema fields", as
   assert.equal(header(calls[2]?.init, "accept"), "application/json");
 });
 
+test("a session note is submitted and returned, and a blank note is left off the request", async () => {
+  const noted = { ...wireSession, note: "שולחן קטן" };
+  const calls: unknown[] = [];
+  const client = createApiClient(baseUrl, async (_url, init) => {
+    calls.push(JSON.parse(String(init?.body)));
+    return json(201, noted);
+  });
+
+  const saved = await client.submitSession({ ...session, note: "שולחן קטן" });
+  assert.equal(saved.session.note, "שולחן קטן");
+  const blank = createApiClient(baseUrl, async (_url, init) => {
+    calls.push(JSON.parse(String(init?.body)));
+    return json(201, wireSession);
+  });
+  const omitted = await blank.submitSession(session);
+  assert.equal(Object.hasOwn(omitted.session, "note"), false);
+  assert.equal(Object.hasOwn(calls[0] as object, "note"), true);
+  assert.equal((calls[0] as { note?: string }).note, "שולחן קטן");
+  assert.equal(Object.hasOwn(calls[1] as object, "note"), false);
+});
+
+test("archive, restore, and delete call the session routes and omit archivedAt on submit", async () => {
+  const calls: string[] = [];
+  const archived = { ...wireSession, archivedAt: "2026-11-13T10:00:00Z" };
+  const client = createApiClient(baseUrl, async (url, init) => {
+    calls.push(`${init?.method ?? "GET"} ${url}`);
+    const path = String(url);
+    if (path.endsWith("/archive") || path.endsWith("/restore")) {
+      return json(200, path.endsWith("/archive") ? archived : wireSession);
+    }
+    if (init?.method === "DELETE") {
+      return new Response(null, { status: 204 });
+    }
+    if (init?.method === "POST") {
+      assert.equal(JSON.parse(String(init.body)).archivedAt, undefined);
+      return json(201, wireSession);
+    }
+    return json(200, { sessions: [archived] });
+  });
+
+  const archivedDocument = await client.archiveSession("session-001");
+  assert.equal(archivedDocument.session.archivedAt, "2026-11-13T10:00:00Z");
+  assert.equal((await client.restoreSession("session-001")).session.archivedAt, undefined);
+  await client.deleteSession("session-001");
+  await client.listSessions({ archived: true });
+  await client.submitSession({ ...session, archivedAt: "2026-11-13T10:00:00Z" });
+  assert.deepEqual(calls, [
+    `POST ${baseUrl}/api/sessions/session-001/archive`,
+    `POST ${baseUrl}/api/sessions/session-001/restore`,
+    `DELETE ${baseUrl}/api/sessions/session-001`,
+    `GET ${baseUrl}/api/sessions?archived=true`,
+    `POST ${baseUrl}/api/sessions`,
+  ]);
+});
+
 test("network failure and abort are distinguishable from HTTP statuses", async () => {
   const offline = createApiClient(baseUrl, async () => {
     throw new TypeError("Failed to fetch");

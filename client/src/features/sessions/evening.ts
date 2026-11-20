@@ -22,7 +22,7 @@ export interface EveningService {
   startEvening(): Promise<ActiveSessionRecord>;
   addTransaction(input: NewTransaction): Promise<Transaction>;
   addTransactions(inputs: readonly NewTransaction[]): Promise<Transaction[]>;
-  updateDetails(details: { name: string; location: string }): Promise<ActiveSessionRecord>;
+  updateDetails(details: { name: string; location: string; note: string }): Promise<ActiveSessionRecord>;
   updateTransaction(transaction: Transaction): Promise<Transaction>;
   deleteTransaction(transactionId: string): Promise<void>;
   submitEvening(): Promise<ActiveSessionRecord>;

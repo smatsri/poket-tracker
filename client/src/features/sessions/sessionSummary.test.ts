@@ -4,7 +4,7 @@ import test from "node:test";
 import type { SessionDocument } from "../../data/api/client.ts";
 import { ApiRequestError, networkError } from "../../data/api/errors.ts";
 import { MemoryLocalRepository } from "../../data/local/memoryRepository.ts";
-import { calculatePlayerResults, calculateSessionResult } from "../../domain/calculations.ts";
+import { calculatePlayerResults, calculateSessionResult, compareRankedResults } from "../../domain/calculations.ts";
 import { formatResult } from "../../domain/format.ts";
 import type { Player, Transaction, TransactionType } from "../../domain/models.ts";
 import { parseHistoryLocation, sessionPlayerPath, sessionTransactionsPath } from "./sessionHistory.ts";
@@ -45,12 +45,14 @@ test("summary totals and player results come from the client formulas", () => {
   assert.equal(view.canChange, false);
   assert.equal(view.heading, view.date);
   assert.equal(view.location, undefined);
+  assert.equal(view.note, undefined);
   const named = presentSessionSummary({
     ...document,
-    session: { ...document.session, name: "ערב חמישי", location: "אצל דנה" },
+    session: { ...document.session, name: "ערב חמישי", location: "אצל דנה", note: "שולחן קטן" },
   });
   assert.equal(named.heading, "ערב חמישי");
   assert.equal(named.location, "אצל דנה");
+  assert.equal(named.note, "שולחן קטן");
   assert.equal(named.canChange, false);
   assert.notEqual(named.heading, named.date);
   assert.equal(view.totalBuyIns, new Intl.NumberFormat("he-IL", { maximumFractionDigits: 0 }).format(result.sessionBuyIns));
@@ -66,7 +68,16 @@ test("summary totals and player results come from the client formulas", () => {
     ["t6", "t5", "t4", "t3", "t2", "t1"],
   );
 
-  const expected = calculatePlayerResults(transactions);
+  const expected = [...calculatePlayerResults(transactions)].sort((left, right) =>
+    compareRankedResults(
+      { netResult: left.netResult, name: [dana, noa, roi].find((item) => item.id === left.playerId)?.name ?? "", playerId: left.playerId },
+      { netResult: right.netResult, name: [dana, noa, roi].find((item) => item.id === right.playerId)?.name ?? "", playerId: right.playerId },
+    ),
+  );
+  assert.deepEqual(
+    view.players.map((player) => player.playerId),
+    ["p2", "p3", "p1"],
+  );
   assert.deepEqual(
     view.players.map((player) => [player.playerId, player.name, player.net.value, player.net.text, player.net.tone, player.href]),
     expected.map((player) => {
@@ -81,6 +92,44 @@ test("summary totals and player results come from the client formulas", () => {
   assert.match(view.players.find((player) => player.playerId === "p2")?.net.text ?? "", /^\+/);
   assert.match(view.players.find((player) => player.playerId === "p1")?.net.text ?? "", /^−/);
   assert.equal(view.players.find((player) => player.playerId === "p3")?.net.text, "0");
+});
+
+test("summary players with the same net are ordered by Hebrew name, then player id", () => {
+  const tied: SessionDocument = {
+    session: {
+      id: "session-tie",
+      date: "2026-11-13",
+      createdAt: "2026-11-13T22:00:00Z",
+      transactions: [
+        { ...transaction("a", "missing", "cash-out", 10, "2026-11-13T18:00:00Z"), sessionId: "session-tie" },
+        { ...transaction("b", "early", "cash-out", 10, "2026-11-13T18:01:00Z"), sessionId: "session-tie" },
+        { ...transaction("c", "same-b", "cash-out", 10, "2026-11-13T18:02:00Z"), sessionId: "session-tie" },
+        { ...transaction("d", "same-a", "cash-out", 10, "2026-11-13T18:03:00Z"), sessionId: "session-tie" },
+        { ...transaction("e", "late", "cash-out", 10, "2026-11-13T18:04:00Z"), sessionId: "session-tie" },
+        { ...transaction("f", "loss", "buy-in", 5, "2026-11-13T18:05:00Z"), sessionId: "session-tie" },
+      ],
+    },
+    players: [
+      { id: "late", name: "נועה", createdAt: "2026-11-13T18:00:00Z" },
+      { id: "early", name: "דנה", createdAt: "2026-11-13T18:00:00Z" },
+      { id: "same-b", name: "דנה", createdAt: "2026-11-13T18:00:00Z" },
+      { id: "same-a", name: "דנה", createdAt: "2026-11-13T18:00:00Z" },
+      { id: "loss", name: "רועי", createdAt: "2026-11-13T18:00:00Z" },
+    ],
+  };
+
+  const view = presentSessionSummary(tied);
+  assert.deepEqual(
+    view.players.map((player) => [player.playerId, player.name, player.net.value]),
+    [
+      ["missing", "שחקן לא ידוע", 10],
+      ["early", "דנה", 10],
+      ["same-a", "דנה", 10],
+      ["same-b", "דנה", 10],
+      ["late", "נועה", 10],
+      ["loss", "רועי", -5],
+    ],
+  );
 });
 
 test("a player page lists only that player's transactions and stays read-only", () => {
@@ -140,7 +189,8 @@ test("loading a summary reads that session and the screen does not offer changes
   assert.equal(loaded.session.id, "session-1");
 
   const screen = readFileSync(new URL("./HistoryScreen.tsx", import.meta.url), "utf8");
-  assert.doesNotMatch(screen, /עריכה|מחיקה|שליח|submitEvening|deleteTransaction|updateTransaction|addTransaction|startEvening|session-name|session-location/);
+  assert.doesNotMatch(screen, /עריכה|מחיקה|שליח|submitEvening|deleteTransaction|updateTransaction|addTransaction|startEvening|session-name|session-location|session-note|<textarea/);
+  assert.match(screen, /view\.note/);
   assert.match(screen, /openSessionSummary/);
   assert.match(screen, /כל הפעולות|summaryCopy.transactions/);
 });

@@ -54,7 +54,6 @@ export function StatisticsScreen({ api }: { api: ApiClient }) {
   if (state.status === "error") {
     return (
       <section className="stack">
-        <h1>{statsCopy.title}</h1>
         <article className="card stack">
           <p className="notice notice-alert" role="alert">
             {state.message}
@@ -78,7 +77,6 @@ export function StatisticsScreen({ api }: { api: ApiClient }) {
 function StatisticsBody({ view }: { view: StatisticsView }) {
   return (
     <section className="stack">
-      <h1>{view.title}</h1>
       {view.status === "empty" ? (
         <article className="card">
           <p>{view.message}</p>

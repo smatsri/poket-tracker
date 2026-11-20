@@ -27,7 +27,9 @@ interface Session {
   date: string;      // YYYY-MM-DD
   name?: string;     // optional, omitted when empty, at most 80 characters
   location?: string; // optional, omitted when empty, at most 80 characters
+  note?: string;     // optional, omitted when empty, at most 500 characters
   createdAt: string; // RFC 3339 timestamp assigned by the server
+  archivedAt?: string; // RFC 3339 timestamp assigned by the server, omitted when the session is active
   transactions: Transaction[];
 }
 ```
@@ -38,7 +40,9 @@ Identifiers are 1–64 characters and match `^[A-Za-z0-9_-]+$`. UUID strings are
 
 `createdAt` is not accepted in client requests. A player name is required after trimming, contains at most 80 characters, and has internal whitespace collapsed to one space.
 
-A session name and location use that same trim and collapse. Each is optional. An empty value is omitted, and a present value contains 1–80 characters. A draft can change both. A closed session keeps the stored name, location, date, and transactions. Sessions stored before these fields existed have neither, and they remain valid.
+A session name and location use that same trim and collapse. Each is optional. An empty value is omitted, and a present value contains 1–80 characters. A note uses the same trim and collapse, is optional, and contains 1–500 characters when present. An empty note is omitted. A draft can change the name, location, and note. A closed session keeps the stored name, location, note, date, and transactions. Sessions stored before these fields existed omit them, and they remain valid.
+
+`archivedAt` is server-owned. The client does not send it. It is omitted while the session is active. Archive sets it, and restore clears it. An identical retry leaves it unchanged. The default session list omits archived sessions. `GET /api/sessions?archived=true` returns only those sessions. Reading one session still returns it while it is archived.
 
 ## Local-only state
 
@@ -87,7 +91,7 @@ interface ClosedSessionDocument {
 | --- | --- | --- |
 | `closedSessions` | session `id` | `ClosedSessionDocument` |
 
-The closed-session store is a display cache of the last successful history or summary response. A successful history response replaces every document in the store. A successful summary response replaces that one document, including its name and location. The players returned with the session are stored with it. A later successful response wins. The cache is not read when submitting or changing an evening. The active draft and a pending evening stay in `activeSession`.
+The closed-session store is a display cache of the last successful non-archived history response or summary response. A successful default history response replaces every document in the store. The archived list does not replace that cache. Archiving or deleting an evening removes that document. Restoring an evening saves that document back. A successful summary response replaces that one document, including its name, location, and note. The players returned with the session are stored with it. A later successful response wins. The cache is not read when submitting or changing an evening. The active draft and a pending evening stay in `activeSession`.
 
 ## PostgreSQL schema
 
@@ -105,7 +109,9 @@ CREATE TABLE sessions (
   "date" TEXT NOT NULL CHECK ("date" ~ '^[0-9]{4}-[0-9]{2}-[0-9]{2}$'),
   name TEXT CHECK (name IS NULL OR length(name) BETWEEN 1 AND 80),
   location TEXT CHECK (location IS NULL OR length(location) BETWEEN 1 AND 80),
-  created_at TEXT NOT NULL
+  note TEXT CHECK (note IS NULL OR length(note) BETWEEN 1 AND 500),
+  created_at TEXT NOT NULL,
+  archived_at TEXT
 );
 
 CREATE TABLE transactions (
@@ -123,7 +129,7 @@ CREATE INDEX idx_transactions_player_id ON transactions(player_id);
 
 PostgreSQL enforces the foreign keys. Zod validates calendar dates, RFC 3339 timestamps, identifier syntax, and unknown player references before SQL runs. The SQL checks are a second barrier, not the only validation.
 
-Deleting or updating a stored session is outside version 1, so the session foreign key does not need `ON DELETE` behavior.
+Deleting a session deletes its transactions first, then the session row. The session foreign key does not cascade. Archive and restore update only `archived_at`. Name, location, note, date, and transactions of a closed session stay unchanged.
 
 A player rename updates `players.name` and leaves every transaction's `player_id`, type, and amount unchanged. History, the summary, the current evening, and statistics read that name, so they follow the rename. A player delete succeeds only when no transaction references `player_id`. Otherwise the server returns `409` and the player stays. `transactions.player_id` references `players.id` and does not cascade.
 
@@ -159,7 +165,7 @@ Player history walks completed sessions from oldest to newest (`date`, then `cre
 - Amounts are positive integers. The type gives the amount its meaning.
 - Transaction IDs are unique across the whole database.
 - A session ID never changes during retry.
-- Reusing a session ID with a different date, name, location, or transaction set is a conflict. An identical retry includes the same name and location, including when both are omitted.
+- Reusing a session ID with a different date, name, location, note, or transaction set is a conflict. An identical retry includes the same name, location, and note, including when each is omitted, and does not change `archivedAt`.
 - Reusing a transaction ID in another session is a conflict.
 - Two transactions in one request cannot share an ID.
 - Every client-side transaction in a session carries that session's ID.

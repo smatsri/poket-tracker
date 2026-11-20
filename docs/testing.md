@@ -68,15 +68,15 @@ Run this on a phone-sized viewport, 360px wide, in a Chromium browser. The serve
 
 1. Start an evening from the empty state and confirm the Hebrew empty and active screens read naturally from right to left.
 2. Create a player, create a second player with the same name, and confirm a duplicate warning appears without blocking the distinct saved player.
-3. Record a buy-in, rebuy, and cash-out in a few taps. Confirm the numeric keyboard, the retained player and type, and the cleared amount. A second tap during the save does not record a duplicate.
+3. Record a buy-in, rebuy, and cash-out in a few taps. Confirm the numeric keyboard opens only when the amount is tapped, the retained player and type, and the amount returning to the default without focusing that field. A second tap during the save does not record a duplicate.
 4. Confirm player totals, the session balance, and the five-item recent activity update immediately.
 5. Refresh and restart the browser. Confirm the same evening and transactions return.
 6. Edit and delete a draft transaction. Confirm every derived balance changes.
 7. Use undo immediately after saving a transaction.
-8. Finish the evening and confirm the server has one session and the summary is read-only.
+8. Finish the evening and confirm the server has one session and the summary is read-only. A note saved on the draft appears on the summary, and the summary has no control that changes it. An empty note is absent.
 9. Stop the server, retry from the pending state, and confirm nothing was discarded. Start the server, retry, and confirm there is still one server session.
 10. Change the local pending payload to conflict with the stored session in a test database and confirm `409` retains the local ID and local transactions.
-11. Open history. Each card leads with money in (`סך שנכנס`, buy-ins plus rebuys), money out (`סך שיצא`), and the gap (`פער`, the session balance, with its sign and color). `מספר כניסות` counts buy-in and rebuy transactions, `מספר יציאות` counts cash-outs, and those counts can differ. The player count stays. Open a past evening and compare its summary with the transaction list. The results-by-session chart still uses the session balance.
+11. Open history. Each evening is one card, and the list opens in the short view. The heading is the evening name, or the date when the name is absent. When a name is present, the date follows as secondary text, and so does the location when one is set. The total that entered (`סך שנכנס`, buy-ins plus rebuys) is the prominent amount beside the heading. Each card's `פרטים` reveals that evening only, and `פחות` hides it again. In the detailed view, the biggest-winner line (`המרוויח הגדול` and that signed result, including zero or a loss) is shown when the evening has player results. A tie shows one player, by Hebrew name and then player id. An unknown player is `שחקן לא ידוע`. An evening with no player results omits that line. Money out (`סך שיצא`) and the gap (`פער`, the session balance, with its sign and color) follow. `מספר כניסות` counts buy-in and rebuy transactions, `מספר יציאות` counts cash-outs, those counts can differ, and both stay muted with the player count. The card opens that evening's summary. Compare the summary with the transaction list. The results-by-session chart still uses the session balance.
 12. Confirm statistics count sessions and transactions and rank each player's overall result.
 13. Confirm the primary action, touch targets, safe area, and bottom navigation remain usable at 360px width.
 14. Confirm positive and negative values have both color and an explicit sign.

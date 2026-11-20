@@ -38,7 +38,6 @@ export function TransactionSheet({
   onClose: () => void;
   onPersisted: () => Promise<void>;
 }) {
-  const amountRef = useRef<HTMLInputElement>(null);
   const amountTouched = useRef(false);
   const flight = useRef(createSingleFlight());
   const { settings } = useOperatorSettings();
@@ -49,16 +48,9 @@ export function TransactionSheet({
   const [errors, setErrors] = useState<TransactionFieldErrors>({});
   const [saveError, setSaveError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
-  const [amountFocus, setAmountFocus] = useState(0);
   const [undoId, setUndoId] = useState<string | null>(null);
   const [undoError, setUndoError] = useState<string | null>(null);
   const [undoing, setUndoing] = useState(false);
-
-  useEffect(() => {
-    if (amountFocus > 0) {
-      amountRef.current?.focus();
-    }
-  }, [amountFocus]);
 
   useEffect(() => {
     let active = true;
@@ -132,7 +124,6 @@ export function TransactionSheet({
         setTransactions(current?.session.transactions ?? []);
         setUndoId(saved.length === 1 ? (saved[0]?.id ?? null) : null);
         setUndoError(null);
-        setAmountFocus((focus) => focus + 1);
       });
       return;
     }
@@ -217,6 +208,47 @@ export function TransactionSheet({
             </div>
           </header>
         </div>
+        <fieldset className="type-field">
+          <legend>{editing === null ? "פעולה" : "סוג פעולה"}</legend>
+          <div className="type-choices">
+            {isCreateDraft(draft)
+              ? createActionChoices.map((choice) => (
+                  <button
+                    key={choice.action}
+                    type="button"
+                    className="choice"
+                    aria-pressed={draft.action === choice.action}
+                    onClick={() => {
+                      setDraft((current) => (isCreateDraft(current) ? { ...current, action: choice.action } : current));
+                      setErrors((current) => ({ ...current, type: undefined }));
+                      setSaveError(null);
+                    }}
+                  >
+                    {choice.label}
+                  </button>
+                ))
+              : transactionTypeChoices.map((choice) => (
+                  <button
+                    key={choice.type}
+                    type="button"
+                    className="choice"
+                    aria-pressed={draft.type === choice.type}
+                    onClick={() => {
+                      setDraft((current) => (isCreateDraft(current) ? current : { ...current, type: choice.type }));
+                      setErrors((current) => ({ ...current, type: undefined }));
+                      setSaveError(null);
+                    }}
+                  >
+                    {choice.label}
+                  </button>
+                ))}
+          </div>
+          {errors.type !== undefined ? (
+            <p className="notice notice-alert" role="alert">
+              {errors.type}
+            </p>
+          ) : null}
+        </fieldset>
         <div className="sheet-scroll stack">
           <PlayerPanel
             directory={directory}
@@ -238,47 +270,6 @@ export function TransactionSheet({
           ) : null}
         </div>
         <div className="sheet-actions stack">
-          <fieldset className="stack type-field">
-            <legend>{editing === null ? "פעולה" : "סוג פעולה"}</legend>
-            <div className="type-choices">
-              {isCreateDraft(draft)
-                ? createActionChoices.map((choice) => (
-                    <button
-                      key={choice.action}
-                      type="button"
-                      className="choice"
-                      aria-pressed={draft.action === choice.action}
-                      onClick={() => {
-                        setDraft((current) => (isCreateDraft(current) ? { ...current, action: choice.action } : current));
-                        setErrors((current) => ({ ...current, type: undefined }));
-                        setSaveError(null);
-                      }}
-                    >
-                      {choice.label}
-                    </button>
-                  ))
-                : transactionTypeChoices.map((choice) => (
-                    <button
-                      key={choice.type}
-                      type="button"
-                      className="choice"
-                      aria-pressed={draft.type === choice.type}
-                      onClick={() => {
-                        setDraft((current) => (isCreateDraft(current) ? current : { ...current, type: choice.type }));
-                        setErrors((current) => ({ ...current, type: undefined }));
-                        setSaveError(null);
-                      }}
-                    >
-                      {choice.label}
-                    </button>
-                  ))}
-            </div>
-            {errors.type !== undefined ? (
-              <p className="notice notice-alert" role="alert">
-                {errors.type}
-              </p>
-            ) : null}
-          </fieldset>
           <div className="stack field-label">
             <label htmlFor="transaction-amount">סכום ({settings.currencyLabel})</label>
             <div className="amount-stepper" dir="ltr">
@@ -292,7 +283,6 @@ export function TransactionSheet({
                 −
               </button>
               <input
-                ref={amountRef}
                 id="transaction-amount"
                 className="field amount-field"
                 name="amount"

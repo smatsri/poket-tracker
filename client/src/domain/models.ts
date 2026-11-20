@@ -26,7 +26,9 @@ export interface Session {
   date: string;
   name?: string;
   location?: string;
+  note?: string;
   createdAt: string;
+  archivedAt?: string;
   transactions: Transaction[];
 }
 

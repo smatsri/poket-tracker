@@ -6,6 +6,12 @@ export const navigation = [
 
 export type RouteId = (typeof navigation)[number]["id"];
 
+const sectionTitles: Record<RouteId, string> = {
+  current: "ערב נוכחי",
+  history: "היסטוריה",
+  stats: "סטטיסטיקה",
+};
+
 export interface AppRoute {
   id: RouteId | "unknown";
   path: string;
@@ -28,6 +34,14 @@ export function matchRoute(pathname: string): AppRoute {
   }
 
   return { id: "unknown", path, label: "העמוד לא נמצא" };
+}
+
+export function sectionTitle(route: AppRoute): string {
+  if (route.id === "unknown") {
+    return route.label;
+  }
+
+  return sectionTitles[route.id];
 }
 
 function normalizePath(pathname: string): string {
