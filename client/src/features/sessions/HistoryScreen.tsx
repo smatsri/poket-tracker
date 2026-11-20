@@ -31,6 +31,7 @@ export function HistoryScreen({ api, repository }: { api: ApiClient; repository:
   const [listAttempt, setListAttempt] = useState(0);
   const [summaryAttempt, setSummaryAttempt] = useState(0);
   const [showArchived, setShowArchived] = useState(false);
+  const [detailedIds, setDetailedIds] = useState<ReadonlySet<string>>(() => new Set());
   const [acting, setActing] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
   const [listState, setListState] = useState<HistoryScreenView>({ status: "loading" });
@@ -107,6 +108,18 @@ export function HistoryScreen({ api, repository }: { api: ApiClient; repository:
     });
   }
 
+  function toggleDetail(id: string) {
+    setDetailedIds((current) => {
+      const next = new Set(current);
+      if (next.has(id)) {
+        next.delete(id);
+      } else {
+        next.add(id);
+      }
+      return next;
+    });
+  }
+
   async function runAction(action: () => Promise<void>) {
     if (acting) {
       return;
@@ -179,38 +192,51 @@ export function HistoryScreen({ api, repository }: { api: ApiClient; repository:
         </article>
       ) : (
         <ul className="history-list">
-          {listState.entries.map((entry) => (
+          {listState.entries.map((entry) => {
+            const detailed = detailedIds.has(entry.id);
+            return (
             <li key={entry.id} className="card history-card">
               <a className="history-card-link" href={entry.href} onClick={(event) => onNavigate(event, entry.href)}>
-                <span className="history-heading">{entry.heading}</span>
-                {entry.heading !== entry.date || entry.location !== undefined ? (
-                  <span className="muted history-meta">
-                    {entry.heading !== entry.date ? <span>{entry.date}</span> : null}
-                    {entry.location !== undefined ? <span>{entry.location}</span> : null}
+                <span className="history-card-top">
+                  <span className="history-card-identity">
+                    <span className="history-heading">{entry.heading}</span>
+                    {entry.heading !== entry.date || entry.location !== undefined ? (
+                      <span className="muted history-meta">
+                        {entry.heading !== entry.date ? <span>{entry.date}</span> : null}
+                        {entry.location !== undefined ? <span>{entry.location}</span> : null}
+                      </span>
+                    ) : null}
                   </span>
+                  <span className="history-total">
+                    <span className="muted">{entry.moneyInLabel}</span>
+                    <MoneyText value={entry.moneyIn} prominent />
+                  </span>
+                </span>
+                {detailed ? (
+                  <>
+                    {entry.biggestWinner !== undefined ? (
+                      <span>
+                        {entry.biggestWinner.label} {entry.biggestWinner.name} <ResultText result={entry.biggestWinner.result} />
+                      </span>
+                    ) : null}
+                    <span className="history-amounts">
+                      <span>
+                        {entry.moneyOutLabel} <MoneyText value={entry.moneyOut} />
+                      </span>
+                      <span>
+                        {entry.gapLabel} <ResultText result={entry.result} />
+                      </span>
+                    </span>
+                    <span className="muted">
+                      {entry.playersLabel} · {entry.moneyInCountLabel} · {entry.cashOutCountLabel}
+                    </span>
+                  </>
                 ) : null}
-                {entry.biggestWinner !== undefined ? (
-                  <span>
-                    {entry.biggestWinner.label} {entry.biggestWinner.name} <ResultText result={entry.biggestWinner.result} />
-                  </span>
-                ) : null}
-                <span className="history-gap">
-                  <span className="muted">{entry.gapLabel}</span>
-                  <ResultText result={entry.result} prominent />
-                </span>
-                <span className="history-amounts">
-                  <span>
-                    {entry.moneyInLabel} <MoneyText value={entry.moneyIn} />
-                  </span>
-                  <span>
-                    {entry.moneyOutLabel} <MoneyText value={entry.moneyOut} />
-                  </span>
-                </span>
-                <span className="muted">
-                  {entry.playersLabel} · {entry.moneyInCountLabel} · {entry.cashOutCountLabel}
-                </span>
               </a>
               <div className="action-row">
+                <button type="button" className="button button-secondary" aria-expanded={detailed} onClick={() => toggleDetail(entry.id)}>
+                  {detailed ? historyCopy.showShort : historyCopy.showDetailed}
+                </button>
                 {showArchived ? (
                   <button type="button" className="button button-secondary" disabled={acting} onClick={() => void restore(entry)}>
                     {historyCopy.restore}
@@ -225,7 +251,8 @@ export function HistoryScreen({ api, repository }: { api: ApiClient; repository:
                 </button>
               </div>
             </li>
-          ))}
+            );
+          })}
         </ul>
       )}
     </section>

@@ -25,6 +25,8 @@ export const historyCopy = {
   delete: "מחיקה",
   showArchived: "ערבים בארכיון",
   showActive: "היסטוריה",
+  showDetailed: "פרטים",
+  showShort: "פחות",
   actionError: "הפעולה לא נשמרה.",
 } as const;
 

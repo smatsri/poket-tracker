@@ -11,10 +11,10 @@ export function ResultText({ result, prominent = false }: { result: PresentedRes
   );
 }
 
-export function MoneyText({ value }: { value: string }) {
+export function MoneyText({ value, prominent = false }: { value: string; prominent?: boolean }) {
   const { settings } = useOperatorSettings();
   return (
-    <span dir="ltr" className="money">
+    <span dir="ltr" className={`money${prominent ? " money-prominent" : ""}`}>
       {value} {settings.currencyLabel}
     </span>
   );
