@@ -77,7 +77,7 @@ test("applies migrations twice without duplicating tables", async () => {
     const versions = await database.query<{ id: string }>("SELECT id FROM schema_migrations ORDER BY id");
     assert.deepEqual(
       versions.rows.map((row) => row.id),
-      ["001", "002"],
+      ["001", "002", "003"],
     );
   });
 });

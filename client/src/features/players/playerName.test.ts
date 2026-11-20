@@ -51,6 +51,15 @@ test("a failed player reload keeps the last cached names on the evening", async 
       throw new Error("unused");
     },
     listSessions: async () => [],
+    archiveSession: async () => {
+      throw new Error("unused");
+    },
+    restoreSession: async () => {
+      throw new Error("unused");
+    },
+    deleteSession: async () => {
+      throw new Error("unused");
+    },
   };
   const directory = createPlayerDirectory(repository, api);
   await directory.load();

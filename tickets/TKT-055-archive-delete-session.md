@@ -1,6 +1,6 @@
 # TKT-055 — Archive or delete a closed evening
 
-**Status:** todo  
+**Status:** done  
 **Issue:** #57  
 **Milestone:** M10 Follow-ups  
 **Depends on:** None
@@ -37,12 +37,12 @@ Let the operator hide a closed evening from the recap, or remove it.
 
 ## Acceptance criteria
 
-- [ ] Archiving an evening hides it from the default history and from statistics, and the archived list shows it.
-- [ ] Restoring an archived evening returns it to the default history and to statistics.
-- [ ] Archiving or restoring an evening that is already in that state returns the stored session and does not duplicate rows.
-- [ ] Delete removes the evening and its transactions. A second delete returns `404`. Submitting that id again stores a new session.
-- [ ] An identical retry of an archived evening stays archived.
-- [ ] A closed evening still has no control that edits its name, location, date, note, or transactions.
-- [ ] Delete asks for confirmation. Archive and restore do not.
-- [ ] The default history cache keeps non-archived evenings across an archived-list load, and drops or restores an evening when that action succeeds.
-- [ ] Automated tests cover the API, the statistics exclusion, and the cache.
+- [x] Archiving an evening hides it from the default history and from statistics, and the archived list shows it.
+- [x] Restoring an archived evening returns it to the default history and to statistics.
+- [x] Archiving or restoring an evening that is already in that state returns the stored session and does not duplicate rows.
+- [x] Delete removes the evening and its transactions. A second delete returns `404`. Submitting that id again stores a new session.
+- [x] An identical retry of an archived evening stays archived.
+- [x] A closed evening still has no control that edits its name, location, date, note, or transactions.
+- [x] Delete asks for confirmation. Archive and restore do not.
+- [x] The default history cache keeps non-archived evenings across an archived-list load, and drops or restores an evening when that action succeeds.
+- [x] Automated tests cover the API, the statistics exclusion, and the cache.

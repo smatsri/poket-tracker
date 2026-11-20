@@ -131,10 +131,13 @@ paths:
 
         `from` and `to` are optional inclusive calendar-date bounds. When both
         are present, `from` must be earlier than or equal to `to`. Omitting
-        both bounds returns every session. This operation has no pagination.
+        both bounds returns every session that is not archived. `archived=true`
+        returns only archived sessions and may be combined with the date bounds.
+        This operation has no pagination.
       parameters:
         - $ref: "#/components/parameters/FromDate"
         - $ref: "#/components/parameters/ToDate"
+        - $ref: "#/components/parameters/Archived"
       responses:
         "200":
           description: Sessions matching the optional date range.
@@ -165,8 +168,9 @@ paths:
           returns `409` and leaves the stored record unchanged.
 
         Transaction array order is not significant. Two timestamps match when
-        they represent the same UTC instant. Server-owned `createdAt` is not
-        part of the comparison.
+        they represent the same UTC instant. Server-owned `createdAt` and
+        `archivedAt` are not part of the comparison. An identical retry does
+        not change `archivedAt`.
 
         Every referenced player must already exist. A missing player, a
         duplicate transaction ID within the request, or an invalid field
@@ -216,6 +220,53 @@ paths:
           $ref: "#/components/responses/Conflict"
         "500":
           $ref: "#/components/responses/InternalError"
+  /api/sessions/{sessionId}/archive:
+    post:
+      operationId: archiveSession
+      tags: [Sessions]
+      summary: Archive a session
+      description: |
+        Sets server-owned `archivedAt` when it is empty and returns the session.
+        Archiving a session that is already archived returns that stored session
+        and does not change `archivedAt`.
+      parameters:
+        - $ref: "#/components/parameters/SessionId"
+      responses:
+        "200":
+          description: Archived session.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Session"
+        "400":
+          $ref: "#/components/responses/ValidationError"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalError"
+  /api/sessions/{sessionId}/restore:
+    post:
+      operationId: restoreSession
+      tags: [Sessions]
+      summary: Restore an archived session
+      description: |
+        Clears `archivedAt` and returns the session. Restoring a session that
+        is not archived returns that stored session.
+      parameters:
+        - $ref: "#/components/parameters/SessionId"
+      responses:
+        "200":
+          description: Restored session.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Session"
+        "400":
+          $ref: "#/components/responses/ValidationError"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalError"
   /api/sessions/{sessionId}:
     get:
       operationId: getSession
@@ -235,6 +286,24 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Session"
+        "400":
+          $ref: "#/components/responses/ValidationError"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalError"
+    delete:
+      operationId: deleteSession
+      tags: [Sessions]
+      summary: Delete a session
+      description: |
+        Deletes the session and its transactions. A second delete returns `404`.
+        A later submit of the same session id stores a new session.
+      parameters:
+        - $ref: "#/components/parameters/SessionId"
+      responses:
+        "204":
+          description: Session deleted.
         "400":
           $ref: "#/components/responses/ValidationError"
         "404":
@@ -262,6 +331,14 @@ components:
       description: Inclusive start date.
       schema:
         $ref: "#/components/schemas/CalendarDate"
+    Archived:
+      name: archived
+      in: query
+      required: false
+      schema:
+        type: string
+        enum: ["true"]
+      description: When `true`, return only archived sessions. Omit it to omit archived sessions.
     ToDate:
       name: to
       in: query
@@ -435,6 +512,9 @@ components:
           description: Optional. Omitted when the session has no location.
         createdAt:
           $ref: "#/components/schemas/Timestamp"
+        archivedAt:
+          $ref: "#/components/schemas/Timestamp"
+          description: Server-owned. Present only while the session is archived. Omitted from the submit body.
         transactions:
           type: array
           items:

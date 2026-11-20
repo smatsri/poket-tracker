@@ -41,6 +41,15 @@ function api(submit: (session: Session) => Promise<SubmittedSession> | Submitted
       throw new Error("unused");
     },
     listSessions: async () => [],
+    archiveSession: async () => {
+      throw new Error("unused");
+    },
+    restoreSession: async () => {
+      throw new Error("unused");
+    },
+    deleteSession: async () => {
+      throw new Error("unused");
+    },
     submitSession: async (session) => {
       calls.push(structuredClone(session));
       return submit(session);

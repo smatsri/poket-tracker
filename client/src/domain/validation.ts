@@ -208,7 +208,7 @@ export function withSessionDetails(session: Session, details: { name: string; lo
 
 export function validateSession(value: unknown): Session {
   const record = requireRecord(value, "Session");
-  rejectUnknown(record, ["id", "date", "name", "location", "createdAt", "transactions"], "Session");
+  rejectUnknown(record, ["id", "date", "name", "location", "createdAt", "archivedAt", "transactions"], "Session");
 
   const id = requireIdentifier(record, "id");
   const date = requireString(record, "date");
@@ -241,6 +241,7 @@ export function validateSession(value: unknown): Session {
 
   const name = optionalSessionLabel(record, "name");
   const location = optionalSessionLabel(record, "location");
+  const archivedAt = optionalTimestamp(record, "archivedAt");
   return {
     id,
     date,
@@ -248,7 +249,18 @@ export function validateSession(value: unknown): Session {
     transactions,
     ...(name === undefined ? {} : { name }),
     ...(location === undefined ? {} : { location }),
+    ...(archivedAt === undefined ? {} : { archivedAt }),
   };
+}
+
+function optionalTimestamp(record: Record<string, unknown>, key: "archivedAt"): string | undefined {
+  if (!Object.hasOwn(record, key) || record[key] === undefined || record[key] === null) {
+    return undefined;
+  }
+  if (typeof record[key] !== "string" || !isTimestamp(record[key])) {
+    fail(`${key} must be an RFC 3339 date-time`);
+  }
+  return record[key];
 }
 
 export function validateActiveSessionRecord(value: unknown): ActiveSessionRecord {

@@ -349,6 +349,17 @@ test("statistics load the server session list and a player route stays in סיכ
   });
   assert.equal(calls, 1);
   assert.equal(loaded.length, 1);
+  let query: unknown = "missing";
+  await loadStatistics({
+    listSessions: async (next) => {
+      query = next;
+      return [];
+    },
+  });
+  assert.equal(query, undefined);
+  const statisticsSource = readFileSync(new URL("./statistics.ts", import.meta.url), "utf8");
+  assert.match(statisticsSource, /return api\.listSessions\(\)/);
+  assert.doesNotMatch(statisticsSource, /archived:\s*true/);
   assert.deepEqual(parseStatsLocation("/stats"), { screen: "list", playerId: null });
   assert.deepEqual(parseStatsLocation("/stats/avi"), { screen: "player", playerId: "avi" });
   assert.deepEqual(parseStatsLocation("/stats/%"), { screen: "list", playerId: null });

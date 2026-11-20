@@ -1,10 +1,12 @@
 import { getDatabase } from "../db/database.js";
 import {
+  deleteSessionRows,
   insertSession,
   insertTransaction,
   missingPlayerIds,
   selectSession,
   selectSessions,
+  setSessionArchived,
   type StoredSession,
   type StoredTransaction,
 } from "../db/sessions.js";
@@ -149,5 +151,44 @@ export async function getSession(id: string): Promise<StoredSession> {
 }
 
 export async function listSessions(query: z.output<typeof sessionListQuery>): Promise<StoredSession[]> {
-  return selectSessions(getDatabase(), query);
+  return selectSessions(getDatabase(), { from: query.from, to: query.to, archived: query.archived === "true" });
+}
+
+export async function archiveSession(id: string): Promise<StoredSession> {
+  return setArchived(id, true);
+}
+
+export async function restoreSession(id: string): Promise<StoredSession> {
+  return setArchived(id, false);
+}
+
+async function setArchived(id: string, archived: boolean): Promise<StoredSession> {
+  return getDatabase().transaction(async (sql) => {
+    const existing = await selectSession(sql, id);
+    if (!existing) {
+      throw notFound("Session not found");
+    }
+
+    const alreadyArchived = existing.archivedAt !== undefined;
+    if (archived !== alreadyArchived) {
+      await setSessionArchived(sql, id, archived ? new Date().toISOString() : null);
+    }
+
+    const stored = await selectSession(sql, id);
+    if (!stored) {
+      throw new Error("Stored session is missing");
+    }
+    return stored;
+  });
+}
+
+export async function removeSession(id: string): Promise<void> {
+  await getDatabase().transaction(async (sql) => {
+    const existing = await selectSession(sql, id);
+    if (!existing) {
+      throw notFound("Session not found");
+    }
+
+    await deleteSessionRows(sql, id);
+  });
 }

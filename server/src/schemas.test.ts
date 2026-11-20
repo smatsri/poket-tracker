@@ -155,7 +155,9 @@ test("rejects a date range whose start is after its end", () => {
     to: "2026-11-12",
   });
   assert.deepEqual(parse(sessionListQuery, {}), {});
+  assert.deepEqual(parse(sessionListQuery, { archived: "true" }), { archived: "true" });
   rejects({ from: "2026-11-12", to: "2026-11-01" }, sessionListQuery);
+  rejects({ archived: "false" }, sessionListQuery);
   rejects({ from: "2026-02-31" }, sessionListQuery);
   rejects({ from: "2026-11-01", extra: "no" }, sessionListQuery);
 });

@@ -9,12 +9,17 @@ import { formatResult } from "../../domain/format.ts";
 import type { Player, Transaction, TransactionType } from "../../domain/models.ts";
 import { matchRoute } from "../../app/routes.ts";
 import {
+  deleteConfirmation,
   historyCopy,
+  loadArchivedSessionHistory,
   loadSessionHistory,
+  openArchivedSessionHistory,
   openSessionHistory,
   parseHistoryLocation,
   presentHistoryFailure,
   presentSessionHistory,
+  rememberClosedSession,
+  removeClosedSession,
   sessionSummaryPath,
 } from "./sessionHistory.ts";
 
@@ -270,6 +275,56 @@ test("a failed history load with an empty cache keeps the existing retryable err
     canRetry: true,
   });
   assert.deepEqual(await repository.readClosedSessions(), []);
+});
+
+test("the archived list does not replace the default history cache", async () => {
+  const repository = new MemoryLocalRepository();
+  const cached = namedDocument("old", "ישן", "אצל נועה");
+  const archived = namedDocument("archived", "בארכיון", "אצל דנה");
+  await repository.replaceClosedSessions([cached]);
+  let query: unknown;
+  await openArchivedSessionHistory(
+    {
+      listSessions: async (next) => {
+        query = next;
+        return [archived];
+      },
+    },
+    () => undefined,
+  );
+
+  assert.deepEqual(query, { archived: true });
+  assert.deepEqual(await repository.readClosedSessions(), [cached]);
+  assert.equal((await loadArchivedSessionHistory({ listSessions: async () => [archived] })).length, 1);
+});
+
+test("archive drops a cached evening and restore puts it back without clearing the others", async () => {
+  const repository = new MemoryLocalRepository();
+  const kept = namedDocument("kept", "נשאר", "אצל נועה");
+  const gone = namedDocument("gone", "הולך", "אצל דנה");
+  await repository.replaceClosedSessions([kept, gone]);
+
+  await removeClosedSession(repository, "gone");
+  assert.deepEqual(
+    (await repository.readClosedSessions()).map((document) => document.session.id),
+    ["kept"],
+  );
+
+  await rememberClosedSession(repository, gone);
+  assert.deepEqual(
+    (await repository.readClosedSessions()).map((document) => document.session.id),
+    ["kept", "gone"],
+  );
+});
+
+test("delete asks for confirmation by name, and archive or restore do not", () => {
+  assert.equal(deleteConfirmation("ערב אצל נועה"), "למחוק את ערב אצל נועה? הערב והפעולות שלו יוסרו.");
+  const screen = readFileSync(new URL("./HistoryScreen.tsx", import.meta.url), "utf8");
+  assert.match(screen, /window\.confirm\(deleteConfirmation\(entry\.heading\)\)/);
+  assert.equal(screen.match(/window\.confirm/g)?.length, 1);
+  assert.match(screen, /historyCopy\.archive/);
+  assert.match(screen, /historyCopy\.restore/);
+  assert.doesNotMatch(screen, /session-name|session-location|<input/);
 });
 
 function namedDocument(id: string, name: string, location: string): SessionDocument {

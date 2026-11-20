@@ -92,7 +92,7 @@ These review notes stay out of the backlog:
 | [TKT-052](TKT-052-history-layout.md) | Lay out the history page | todo | None |
 | [TKT-053](TKT-053-app-header.md) | Restyle the header and screen title | todo | None |
 | [TKT-054](TKT-054-evening-note.md) | Add a note to the current evening | todo | None |
-| [TKT-055](TKT-055-archive-delete-session.md) | Archive or delete a closed evening | todo | None |
+| [TKT-055](TKT-055-archive-delete-session.md) | Archive or delete a closed evening | done | None |
 
 ## Requirement coverage
 

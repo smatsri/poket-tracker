@@ -10,13 +10,21 @@ const amountFormat = new Intl.NumberFormat("he-IL", { maximumFractionDigits: 0 }
 
 export const historyCopy = {
   title: "היסטוריה",
+  archivedTitle: "ערבים בארכיון",
   empty: "אין עדיין ערבים שהסתיימו.",
+  archivedEmpty: "אין ערבים בארכיון.",
   loading: "טוען את ההיסטוריה…",
   networkError: "אין חיבור לשרת, ולכן אי אפשר להציג ערבים קודמים.",
   cachedNotice: "אין חיבור לשרת. מוצגים הערבים שנשמרו במכשיר.",
   loadError: "השרת לא הצליח להחזיר את הערבים הקודמים.",
   retry: "נסו שוב",
   summaryTitle: "סיכום",
+  archive: "העברה לארכיון",
+  restore: "שחזור",
+  delete: "מחיקה",
+  showArchived: "ערבים בארכיון",
+  showActive: "היסטוריה",
+  actionError: "הפעולה לא נשמרה.",
 } as const;
 
 export interface HistoryEntry {
@@ -42,11 +50,15 @@ export interface HistoryEntry {
 }
 
 export interface HistoryListView {
-  title: typeof historyCopy.title;
+  title: string;
   status: "empty" | "ready";
   message: string | null;
   notice: string | null;
   entries: HistoryEntry[];
+}
+
+export function deleteConfirmation(heading: string): string {
+  return `למחוק את ${heading}? הערב והפעולות שלו יוסרו.`;
 }
 
 export type HistoryScreenView = HistoryListView | HistoryFailureView | { status: "loading" };
@@ -121,13 +133,20 @@ export function parseHistoryLocation(pathname: string): HistoryLocation {
   return list;
 }
 
-export function presentSessionHistory(documents: readonly SessionDocument[]): HistoryListView {
+export function presentSessionHistory(documents: readonly SessionDocument[], mode: "active" | "archived" = "active"): HistoryListView {
+  const title = mode === "archived" ? historyCopy.archivedTitle : historyCopy.title;
   if (documents.length === 0) {
-    return { title: historyCopy.title, status: "empty", message: historyCopy.empty, notice: null, entries: [] };
+    return {
+      title,
+      status: "empty",
+      message: mode === "archived" ? historyCopy.archivedEmpty : historyCopy.empty,
+      notice: null,
+      entries: [],
+    };
   }
 
   return {
-    title: historyCopy.title,
+    title,
     status: "ready",
     message: null,
     notice: null,
@@ -147,6 +166,25 @@ export function presentHistoryFailure(error: unknown): HistoryFailureView {
 
 export function loadSessionHistory(api: Pick<ApiClient, "listSessions">): Promise<SessionDocument[]> {
   return api.listSessions();
+}
+
+export function loadArchivedSessionHistory(api: Pick<ApiClient, "listSessions">): Promise<SessionDocument[]> {
+  return api.listSessions({ archived: true });
+}
+
+export async function removeClosedSession(
+  repository: Pick<LocalRepository, "readClosedSessions" | "replaceClosedSessions">,
+  sessionId: string,
+): Promise<void> {
+  const documents = await repository.readClosedSessions();
+  await repository.replaceClosedSessions(documents.filter((document) => document.session.id !== sessionId));
+}
+
+export async function rememberClosedSession(
+  repository: Pick<LocalRepository, "saveClosedSession">,
+  document: SessionDocument,
+): Promise<void> {
+  await repository.saveClosedSession(document);
 }
 
 export async function openSessionHistory(
@@ -170,6 +208,18 @@ export async function openSessionHistory(
       show({ ...presentSessionHistory(cached), notice: historyCopy.cachedNotice });
       return;
     }
+    show(presentHistoryFailure(error));
+  }
+}
+
+export async function openArchivedSessionHistory(
+  api: Pick<ApiClient, "listSessions">,
+  show: (view: HistoryScreenView) => void,
+): Promise<void> {
+  show({ status: "loading" });
+  try {
+    show(presentSessionHistory(await loadArchivedSessionHistory(api), "archived"));
+  } catch (error) {
     show(presentHistoryFailure(error));
   }
 }

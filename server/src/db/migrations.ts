@@ -40,4 +40,11 @@ ALTER TABLE sessions
   ADD COLUMN location TEXT CHECK (location IS NULL OR length(location) BETWEEN 1 AND 80);
 `,
   },
+  {
+    id: "003",
+    sql: `
+ALTER TABLE sessions
+  ADD COLUMN archived_at TEXT;
+`,
+  },
 ];

@@ -15,6 +15,7 @@ export interface StoredSession {
   name?: string;
   location?: string;
   createdAt: string;
+  archivedAt?: string;
   transactions: StoredTransaction[];
   players: StoredPlayer[];
 }
@@ -31,8 +32,15 @@ export async function missingPlayerIds(database: Sql, playerIds: string[]): Prom
 }
 
 export async function selectSession(database: Sql, id: string): Promise<StoredSession | undefined> {
-  const sessions = await database.query<{ id: string; date: string; name: string | null; location: string | null; createdAt: string }>(
-    `SELECT id, "date", name, location, created_at AS "createdAt" FROM sessions WHERE id = $1`,
+  const sessions = await database.query<{
+    id: string;
+    date: string;
+    name: string | null;
+    location: string | null;
+    createdAt: string;
+    archivedAt: string | null;
+  }>(
+    `SELECT id, "date", name, location, created_at AS "createdAt", archived_at AS "archivedAt" FROM sessions WHERE id = $1`,
     [id],
   );
   const session = sessions.rows[0];
@@ -61,7 +69,14 @@ export async function selectSession(database: Sql, id: string): Promise<StoredSe
 }
 
 function storedSession(
-  session: { id: string; date: string; name: string | null; location: string | null; createdAt: string },
+  session: {
+    id: string;
+    date: string;
+    name: string | null;
+    location: string | null;
+    createdAt: string;
+    archivedAt: string | null;
+  },
   transactions: StoredTransaction[],
   players: StoredPlayer[],
 ): StoredSession {
@@ -73,20 +88,25 @@ function storedSession(
     players,
     ...(session.name === null ? {} : { name: session.name }),
     ...(session.location === null ? {} : { location: session.location }),
+    ...(session.archivedAt === null ? {} : { archivedAt: session.archivedAt }),
   };
 }
 
 export async function selectSessions(
   database: Sql,
-  bounds: { from?: string; to?: string },
+  bounds: { from?: string; to?: string; archived?: boolean },
 ): Promise<StoredSession[]> {
   const rows = await database.query<{ id: string }>(
     `SELECT id
      FROM sessions
      WHERE ($1::text IS NULL OR "date" >= $1)
        AND ($2::text IS NULL OR "date" <= $2)
+       AND (
+         ($3::boolean IS TRUE AND archived_at IS NOT NULL)
+         OR ($3::boolean IS NOT TRUE AND archived_at IS NULL)
+       )
      ORDER BY "date" DESC, created_at DESC, id DESC`,
-    [bounds.from ?? null, bounds.to ?? null],
+    [bounds.from ?? null, bounds.to ?? null, bounds.archived === true],
   );
 
   const sessions: StoredSession[] = [];
@@ -111,6 +131,15 @@ export async function insertSession(
     session.name ?? null,
     session.location ?? null,
   ]);
+}
+
+export async function setSessionArchived(database: Sql, id: string, archivedAt: string | null): Promise<void> {
+  await database.query(`UPDATE sessions SET archived_at = $2 WHERE id = $1`, [id, archivedAt]);
+}
+
+export async function deleteSessionRows(database: Sql, id: string): Promise<void> {
+  await database.query(`DELETE FROM transactions WHERE session_id = $1`, [id]);
+  await database.query(`DELETE FROM sessions WHERE id = $1`, [id]);
 }
 
 export async function insertTransaction(

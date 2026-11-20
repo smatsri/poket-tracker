@@ -46,6 +46,15 @@ function api(handlers: {
       throw new Error("unused");
     },
     listSessions: async () => [],
+    archiveSession: async () => {
+      throw new Error("unused");
+    },
+    restoreSession: async () => {
+      throw new Error("unused");
+    },
+    deleteSession: async () => {
+      throw new Error("unused");
+    },
   };
 }
 

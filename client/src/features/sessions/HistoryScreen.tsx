@@ -4,9 +4,14 @@ import type { ApiClient } from "../../data/api/client.ts";
 import type { LocalRepository } from "../../data/local/repository.ts";
 import { MoneyText, ResultText } from "./ResultText.tsx";
 import {
+  deleteConfirmation,
   historyCopy,
+  openArchivedSessionHistory,
   openSessionHistory,
   parseHistoryLocation,
+  rememberClosedSession,
+  removeClosedSession,
+  type HistoryEntry,
   type HistoryLocation,
   type HistoryScreenView,
 } from "./sessionHistory.ts";
@@ -25,6 +30,9 @@ export function HistoryScreen({ api, repository }: { api: ApiClient; repository:
   const location = parseHistoryLocation(route.path);
   const [listAttempt, setListAttempt] = useState(0);
   const [summaryAttempt, setSummaryAttempt] = useState(0);
+  const [showArchived, setShowArchived] = useState(false);
+  const [acting, setActing] = useState(false);
+  const [actionError, setActionError] = useState<string | null>(null);
   const [listState, setListState] = useState<HistoryScreenView>({ status: "loading" });
   const [summaryState, setSummaryState] = useState<SummaryScreenView>({ status: "loading" });
 
@@ -34,16 +42,17 @@ export function HistoryScreen({ api, repository }: { api: ApiClient; repository:
     }
 
     let active = true;
-    void openSessionHistory(repository, api, (view) => {
+    const show = (view: HistoryScreenView) => {
       if (active) {
         setListState(view);
       }
-    });
+    };
+    void (showArchived ? openArchivedSessionHistory(api, show) : openSessionHistory(repository, api, show));
 
     return () => {
       active = false;
     };
-  }, [api, listAttempt, location.screen, repository]);
+  }, [api, listAttempt, location.screen, repository, showArchived]);
 
   useEffect(() => {
     if (location.sessionId === null) {
@@ -73,14 +82,69 @@ export function HistoryScreen({ api, repository }: { api: ApiClient; repository:
     );
   }
 
+  async function archive(entry: HistoryEntry) {
+    await runAction(async () => {
+      await api.archiveSession(entry.id);
+      await removeClosedSession(repository, entry.id);
+    });
+  }
+
+  async function restore(entry: HistoryEntry) {
+    await runAction(async () => {
+      const document = await api.restoreSession(entry.id);
+      await rememberClosedSession(repository, document);
+    });
+  }
+
+  async function remove(entry: HistoryEntry) {
+    if (!window.confirm(deleteConfirmation(entry.heading))) {
+      return;
+    }
+
+    await runAction(async () => {
+      await api.deleteSession(entry.id);
+      await removeClosedSession(repository, entry.id);
+    });
+  }
+
+  async function runAction(action: () => Promise<void>) {
+    if (acting) {
+      return;
+    }
+
+    setActing(true);
+    setActionError(null);
+    try {
+      await action();
+      setListAttempt((current) => current + 1);
+    } catch {
+      setActionError(historyCopy.actionError);
+    } finally {
+      setActing(false);
+    }
+  }
+
+  const listToggle = (
+    <button type="button" className="button button-secondary" onClick={() => setShowArchived((current) => !current)}>
+      {showArchived ? historyCopy.showActive : historyCopy.showArchived}
+    </button>
+  );
+
   if (listState.status === "loading") {
-    return <p className="muted">{historyCopy.loading}</p>;
+    return (
+      <section className="stack">
+        <h1>{showArchived ? historyCopy.archivedTitle : historyCopy.title}</h1>
+        {listToggle}
+        <p className="muted">{historyCopy.loading}</p>
+      </section>
+    );
   }
 
   if (listState.status === "error") {
     return (
       <section className="stack">
-        <h1>{historyCopy.title}</h1>
+        <h1>{showArchived ? historyCopy.archivedTitle : historyCopy.title}</h1>
+        {listToggle}
         <article className="card stack">
           <p className="notice notice-alert" role="alert">
             {listState.message}
@@ -98,6 +162,12 @@ export function HistoryScreen({ api, repository }: { api: ApiClient; repository:
   return (
     <section className="stack">
       <h1>{listState.title}</h1>
+      {listToggle}
+      {actionError !== null ? (
+        <p className="notice notice-alert" role="alert">
+          {actionError}
+        </p>
+      ) : null}
       {listState.notice !== null ? (
         <p className="notice" role="status">
           {listState.notice}
@@ -110,7 +180,7 @@ export function HistoryScreen({ api, repository }: { api: ApiClient; repository:
       ) : (
         <ul className="choice-list">
           {listState.entries.map((entry) => (
-            <li key={entry.id}>
+            <li key={entry.id} className="card stack">
               <a className="player-row" href={entry.href} onClick={(event) => onNavigate(event, entry.href)}>
                 <span className="player-row-main">
                   <span>
@@ -129,6 +199,20 @@ export function HistoryScreen({ api, repository }: { api: ApiClient; repository:
                   </span>
                 </span>
               </a>
+              <div className="action-row">
+                {showArchived ? (
+                  <button type="button" className="button button-secondary" disabled={acting} onClick={() => void restore(entry)}>
+                    {historyCopy.restore}
+                  </button>
+                ) : (
+                  <button type="button" className="button button-secondary" disabled={acting} onClick={() => void archive(entry)}>
+                    {historyCopy.archive}
+                  </button>
+                )}
+                <button type="button" className="button button-destructive" disabled={acting} onClick={() => void remove(entry)}>
+                  {historyCopy.delete}
+                </button>
+              </div>
             </li>
           ))}
         </ul>

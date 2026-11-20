@@ -102,6 +102,7 @@ export const sessionListQuery = z
   .strictObject({
     from: calendarDate.optional(),
     to: calendarDate.optional(),
+    archived: z.literal("true").optional(),
   })
   .refine((query) => query.from === undefined || query.to === undefined || query.from <= query.to);
 

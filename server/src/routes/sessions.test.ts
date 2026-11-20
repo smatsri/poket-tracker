@@ -81,7 +81,7 @@ function assertSessionDocument(value: unknown): asserts value is {
   assert.ok(value);
   const body = value as Record<string, unknown>;
   const keys = Object.keys(body).sort();
-  const allowed = new Set([...sessionDocumentKeys, "location", "name"]);
+  const allowed = new Set([...sessionDocumentKeys, "archivedAt", "location", "name"]);
   assert.deepEqual(keys.filter((key) => !allowed.has(key)), []);
   assert.deepEqual(sessionDocumentKeys.filter((key) => !keys.includes(key)), []);
   for (const field of forbiddenTotals) {
@@ -388,6 +388,16 @@ describe("session submission", { concurrency: false }, () => {
     return { status: response.status, body };
   }
 
+  async function postEmpty(path: string): Promise<{ status: number; body: unknown }> {
+    const response = await fetch(`${url}${path}`, { method: "POST" });
+    return { status: response.status, body: await response.json() };
+  }
+
+  function sessionIds(body: unknown): string[] {
+    const sessions = (body as { sessions: Array<{ id: string }> }).sessions;
+    return sessions.map((session) => session.id);
+  }
+
   test("a stored session is returned with ordered transactions and distinct players", async () => {
     await seedSession({ id: "session-001", date: "2026-11-12", createdAt: "2026-11-12T22:00:00.000Z" }, [
       { id: "tx-b", playerId: "player-bea", type: "cash-out", amount: 80, timestamp: "2026-11-12T19:00:00Z" },
@@ -547,6 +557,73 @@ describe("session submission", { concurrency: false }, () => {
     } finally {
       conflict.restore();
     }
+  });
+
+  test("archive hides an evening from the default list statistics use, and restore returns it", async () => {
+    await postSession(url, sessionBody({ id: "session-live" }));
+    await postSession(url, sessionBody({ id: "session-old", transactions: [{ ...buyIn, id: "tx-old" }] }));
+
+    const archived = await postEmpty("/api/sessions/session-old/archive");
+    assert.equal(archived.status, 200);
+    assertSessionDocument(archived.body);
+    const archivedAt = (archived.body as { archivedAt?: string }).archivedAt;
+    assert.match(archivedAt ?? "", /T/);
+
+    const archivedAgain = await postEmpty("/api/sessions/session-old/archive");
+    assert.equal(archivedAgain.status, 200);
+    assert.equal((archivedAgain.body as { archivedAt?: string }).archivedAt, archivedAt);
+    assert.deepEqual(await counts(), { sessions: 2, transactions: 3 });
+
+    const active = await getJson("/api/sessions");
+    assert.deepEqual(sessionIds(active.body), ["session-live"]);
+    const onlyArchived = await getJson("/api/sessions?archived=true");
+    assert.deepEqual(sessionIds(onlyArchived.body), ["session-old"]);
+    const one = await getJson("/api/sessions/session-old");
+    assert.equal(one.status, 200);
+    assert.equal((one.body as { archivedAt?: string }).archivedAt, archivedAt);
+
+    const restored = await postEmpty("/api/sessions/session-old/restore");
+    assert.equal(restored.status, 200);
+    assert.equal(Object.hasOwn(restored.body as object, "archivedAt"), false);
+    const restoredAgain = await postEmpty("/api/sessions/session-old/restore");
+    assert.equal(restoredAgain.status, 200);
+    assert.equal(Object.hasOwn(restoredAgain.body as object, "archivedAt"), false);
+    assert.deepEqual(sessionIds((await getJson("/api/sessions")).body).sort(), ["session-live", "session-old"]);
+  });
+
+  test("an identical retry of an archived evening stays archived", async () => {
+    const body = sessionBody({ id: "session-kept" });
+    await postSession(url, body);
+    const archived = await postEmpty("/api/sessions/session-kept/archive");
+    const archivedAt = (archived.body as { archivedAt: string }).archivedAt;
+
+    const retry = await postSession(url, body);
+    assert.equal(retry.status, 200);
+    assert.equal((retry.body as { archivedAt?: string }).archivedAt, archivedAt);
+
+    const conflict = await postSession(url, sessionBody({ id: "session-kept", date: "2026-11-13" }));
+    assert.equal(conflict.status, 409);
+    const still = await getJson("/api/sessions/session-kept");
+    assert.equal((still.body as { archivedAt?: string }).archivedAt, archivedAt);
+    assert.equal((still.body as { date: string }).date, "2026-11-12");
+  });
+
+  test("delete removes the evening and a later submit of that id stores a new one", async () => {
+    await postSession(url, sessionBody({ id: "session-gone" }));
+
+    const removed = await fetch(`${url}/api/sessions/session-gone`, { method: "DELETE" });
+    assert.equal(removed.status, 204);
+    assert.equal(await removed.text(), "");
+    assert.deepEqual(await counts(), { sessions: 0, transactions: 0 });
+
+    const missing = await fetch(`${url}/api/sessions/session-gone`, { method: "DELETE" });
+    assert.equal(missing.status, 404);
+    assert.deepEqual(await missing.json(), { error: { code: "NOT_FOUND", message: "Session not found" } });
+
+    const again = await postSession(url, sessionBody({ id: "session-gone" }));
+    assert.equal(again.status, 201);
+    assert.equal(Object.hasOwn(again.body as object, "archivedAt"), false);
+    assert.deepEqual(await counts(), { sessions: 1, transactions: 2 });
   });
 
   test("an empty transaction list is stored without derived totals", async () => {
