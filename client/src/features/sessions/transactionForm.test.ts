@@ -179,13 +179,14 @@ test("a successful one-player create does not focus the amount field", () => {
   assert.match(source, /\{\.\.\.amountFieldProps\}/);
 });
 
-test("the amount, action, and save stay outside the scrolling player list", () => {
+test("the action is chosen above the player list, and the amount and save stay outside it", () => {
   const source = readFileSync(new URL("./TransactionSheet.tsx", import.meta.url), "utf8");
   const scroll = source.indexOf("sheet-scroll");
   const actions = source.indexOf("sheet-actions");
-  assert.ok(scroll >= 0 && actions > scroll);
+  const choice = source.indexOf("createActionChoices");
+  assert.ok(choice !== -1 && choice < scroll && actions > scroll);
   const footer = source.slice(actions);
-  assert.match(footer, /createActionChoices/);
+  assert.doesNotMatch(footer, /createActionChoices/);
   assert.match(footer, /amount-field/);
   assert.match(footer, /שמירה/);
   const toolbar = source.slice(source.indexOf("sheet-toolbar"), scroll);

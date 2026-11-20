@@ -208,6 +208,47 @@ export function TransactionSheet({
             </div>
           </header>
         </div>
+        <fieldset className="type-field">
+          <legend>{editing === null ? "פעולה" : "סוג פעולה"}</legend>
+          <div className="type-choices">
+            {isCreateDraft(draft)
+              ? createActionChoices.map((choice) => (
+                  <button
+                    key={choice.action}
+                    type="button"
+                    className="choice"
+                    aria-pressed={draft.action === choice.action}
+                    onClick={() => {
+                      setDraft((current) => (isCreateDraft(current) ? { ...current, action: choice.action } : current));
+                      setErrors((current) => ({ ...current, type: undefined }));
+                      setSaveError(null);
+                    }}
+                  >
+                    {choice.label}
+                  </button>
+                ))
+              : transactionTypeChoices.map((choice) => (
+                  <button
+                    key={choice.type}
+                    type="button"
+                    className="choice"
+                    aria-pressed={draft.type === choice.type}
+                    onClick={() => {
+                      setDraft((current) => (isCreateDraft(current) ? current : { ...current, type: choice.type }));
+                      setErrors((current) => ({ ...current, type: undefined }));
+                      setSaveError(null);
+                    }}
+                  >
+                    {choice.label}
+                  </button>
+                ))}
+          </div>
+          {errors.type !== undefined ? (
+            <p className="notice notice-alert" role="alert">
+              {errors.type}
+            </p>
+          ) : null}
+        </fieldset>
         <div className="sheet-scroll stack">
           <PlayerPanel
             directory={directory}
@@ -229,47 +270,6 @@ export function TransactionSheet({
           ) : null}
         </div>
         <div className="sheet-actions stack">
-          <fieldset className="stack type-field">
-            <legend>{editing === null ? "פעולה" : "סוג פעולה"}</legend>
-            <div className="type-choices">
-              {isCreateDraft(draft)
-                ? createActionChoices.map((choice) => (
-                    <button
-                      key={choice.action}
-                      type="button"
-                      className="choice"
-                      aria-pressed={draft.action === choice.action}
-                      onClick={() => {
-                        setDraft((current) => (isCreateDraft(current) ? { ...current, action: choice.action } : current));
-                        setErrors((current) => ({ ...current, type: undefined }));
-                        setSaveError(null);
-                      }}
-                    >
-                      {choice.label}
-                    </button>
-                  ))
-                : transactionTypeChoices.map((choice) => (
-                    <button
-                      key={choice.type}
-                      type="button"
-                      className="choice"
-                      aria-pressed={draft.type === choice.type}
-                      onClick={() => {
-                        setDraft((current) => (isCreateDraft(current) ? current : { ...current, type: choice.type }));
-                        setErrors((current) => ({ ...current, type: undefined }));
-                        setSaveError(null);
-                      }}
-                    >
-                      {choice.label}
-                    </button>
-                  ))}
-            </div>
-            {errors.type !== undefined ? (
-              <p className="notice notice-alert" role="alert">
-                {errors.type}
-              </p>
-            ) : null}
-          </fieldset>
           <div className="stack field-label">
             <label htmlFor="transaction-amount">סכום ({settings.currencyLabel})</label>
             <div className="amount-stepper" dir="ltr">

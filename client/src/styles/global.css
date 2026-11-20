@@ -432,6 +432,7 @@ a.activity-row {
 }
 
 .type-field {
+  flex: none;
   margin: 0;
   padding: 0;
   border: 0;
