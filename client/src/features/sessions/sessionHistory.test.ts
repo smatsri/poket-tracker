@@ -163,6 +163,10 @@ test("a history card names the biggest winner, including a tie, a loss, and an e
   assert.match(screen, /biggestWinner\.label/);
   assert.match(screen, /biggestWinner\.name/);
   assert.match(screen, /biggestWinner\.result/);
+  const order = ["history-heading", "entry.date", "entry.location", "biggestWinner.label", "entry.gapLabel", "entry.moneyInLabel", "entry.moneyOutLabel", "entry.moneyInCountLabel"].map(
+    (marker) => screen.indexOf(marker),
+  );
+  assert.ok(order.every((index, position) => index >= 0 && (position === 0 || index > order[position - 1]!)));
 });
 
 test("no sessions produces the Hebrew empty state", () => {

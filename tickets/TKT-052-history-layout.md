@@ -1,6 +1,6 @@
 # TKT-052 — Lay out the history page
 
-**Status:** todo  
+**Status:** done  
 **Issue:** #54  
 **Milestone:** M10 Follow-ups  
 **Depends on:** None
@@ -34,9 +34,9 @@ Make a past evening readable on a phone without dropping the facts the card alre
 
 ## Acceptance criteria
 
-- [ ] Each evening is one card, and the heading is the name or the date.
-- [ ] The gap is the prominent amount, with money in, money out, and the muted counts still visible.
-- [ ] A named evening shows its date, and its location when one is set.
-- [ ] A biggest-winner fact already on the entry is visible, and a card without that fact still renders.
-- [ ] The card opens the summary, in RTL, at 360px width.
-- [ ] The manual checklist describes this order.
+- [x] Each evening is one card, and the heading is the name or the date.
+- [x] The gap is the prominent amount, with money in, money out, and the muted counts still visible.
+- [x] A named evening shows its date, and its location when one is set.
+- [x] A biggest-winner fact already on the entry is visible, and a card without that fact still renders.
+- [x] The card opens the summary, in RTL, at 360px width.
+- [x] The manual checklist describes this order.

@@ -178,30 +178,36 @@ export function HistoryScreen({ api, repository }: { api: ApiClient; repository:
           <p>{listState.message}</p>
         </article>
       ) : (
-        <ul className="choice-list">
+        <ul className="history-list">
           {listState.entries.map((entry) => (
-            <li key={entry.id} className="card stack">
-              <a className="player-row" href={entry.href} onClick={(event) => onNavigate(event, entry.href)}>
-                <span className="player-row-main">
+            <li key={entry.id} className="card history-card">
+              <a className="history-card-link" href={entry.href} onClick={(event) => onNavigate(event, entry.href)}>
+                <span className="history-heading">{entry.heading}</span>
+                {entry.heading !== entry.date || entry.location !== undefined ? (
+                  <span className="muted history-meta">
+                    {entry.heading !== entry.date ? <span>{entry.date}</span> : null}
+                    {entry.location !== undefined ? <span>{entry.location}</span> : null}
+                  </span>
+                ) : null}
+                {entry.biggestWinner !== undefined ? (
+                  <span>
+                    {entry.biggestWinner.label} {entry.biggestWinner.name} <ResultText result={entry.biggestWinner.result} />
+                  </span>
+                ) : null}
+                <span className="history-gap">
+                  <span className="muted">{entry.gapLabel}</span>
+                  <ResultText result={entry.result} prominent />
+                </span>
+                <span className="history-amounts">
                   <span>
                     {entry.moneyInLabel} <MoneyText value={entry.moneyIn} />
                   </span>
                   <span>
                     {entry.moneyOutLabel} <MoneyText value={entry.moneyOut} />
                   </span>
-                  <span>
-                    {entry.gapLabel} <ResultText result={entry.result} prominent />
-                  </span>
-                  <span className="player-name">{entry.heading}</span>
-                  {entry.biggestWinner !== undefined ? (
-                    <span>
-                      {entry.biggestWinner.label} {entry.biggestWinner.name} <ResultText result={entry.biggestWinner.result} />
-                    </span>
-                  ) : null}
-                  {entry.location !== undefined ? <span className="muted">{entry.location}</span> : null}
-                  <span className="muted">
-                    {entry.playersLabel} · {entry.moneyInCountLabel} · {entry.cashOutCountLabel}
-                  </span>
+                </span>
+                <span className="muted">
+                  {entry.playersLabel} · {entry.moneyInCountLabel} · {entry.cashOutCountLabel}
                 </span>
               </a>
               <div className="action-row">
