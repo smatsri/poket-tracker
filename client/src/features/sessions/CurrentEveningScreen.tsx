@@ -278,8 +278,9 @@ export function CurrentEveningScreen({
         <SessionDetailsForm
           name={record.session.name ?? ""}
           location={record.session.location ?? ""}
-          onSave={async (name, location) => {
-            setRecord(await evening.updateDetails({ name, location }));
+          note={record.session.note ?? ""}
+          onSave={async (name, location, note) => {
+            setRecord(await evening.updateDetails({ name, location, note }));
           }}
         />
       ) : null}
@@ -289,6 +290,7 @@ export function CurrentEveningScreen({
           {record.session.location !== undefined ? ` · ${record.session.location}` : ""}
         </p>
       ) : null}
+      {record !== null && locked && record.session.note !== undefined ? <p>{record.session.note}</p> : null}
       <AddAction disabled={locked} onAdd={() => openSheet(null)} />
       <article className="card totals">
         <p>
@@ -577,19 +579,21 @@ function TransactionDetail({
 function SessionDetailsForm({
   name,
   location,
+  note,
   onSave,
 }: {
   name: string;
   location: string;
-  onSave: (name: string, location: string) => Promise<void>;
+  note: string;
+  onSave: (name: string, location: string, note: string) => Promise<void>;
 }) {
-  const [values, setValues] = useState({ name, location });
+  const [values, setValues] = useState({ name, location, note });
   const [error, setError] = useState<string | null>(null);
 
-  async function change(next: { name: string; location: string }) {
+  async function change(next: { name: string; location: string; note: string }) {
     setValues(next);
     try {
-      await onSave(next.name, next.location);
+      await onSave(next.name, next.location, next.note);
       setError(null);
     } catch {
       setError("לא הצלחנו לשמור את פרטי הערב.");
@@ -618,6 +622,17 @@ function SessionDetailsForm({
           maxLength={80}
           autoComplete="off"
           onChange={(event) => void change({ ...values, location: event.target.value })}
+        />
+      </label>
+      <label className="stack field-label">
+        <span>הערה</span>
+        <textarea
+          className="field"
+          name="session-note"
+          value={values.note}
+          maxLength={500}
+          rows={3}
+          onChange={(event) => void change({ ...values, note: event.target.value })}
         />
       </label>
       {error !== null ? (

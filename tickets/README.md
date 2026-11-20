@@ -22,9 +22,9 @@ The authoritative contract is [docs/api/openapi.yaml](../docs/api/openapi.yaml).
 | M7 Contract hardening | TKT-029–TKT-032 | The locked contracts hold for the cases the reviews found | done |
 | M8 Production deployment | TKT-033–TKT-040 | The app is reachable on a phone through Cloud Run and Neon | done |
 | M9 Evening usability | TKT-041–TKT-048 | A live evening is faster to run, and the recap is easier to check | done |
-| M10 Follow-ups | TKT-049–TKT-055 | The recap is easier to read, a note can ride with the evening, and a closed evening can be archived or deleted | todo |
+| M10 Follow-ups | TKT-049–TKT-055 | The recap is easier to read, a note can ride with the evening, and a closed evening can be archived or deleted | done |
 
-M0–M9 are done. M10 is open. Hosting stays locked in [docs/deployment.md](../docs/deployment.md). Later product work should reuse existing client calculations and `GET /api/sessions`. Do not add analytics endpoints unless a later ticket proves they are required.
+M0–M10 are done. Hosting stays locked in [docs/deployment.md](../docs/deployment.md). Later product work should reuse existing client calculations and `GET /api/sessions`. Do not add analytics endpoints unless a later ticket proves they are required.
 
 M9 is specified in [docs/roadmap-m9.md](../docs/roadmap-m9.md). M10 is specified in [docs/roadmap-m10.md](../docs/roadmap-m10.md). Architecture, the data model, and OpenAPI stay the current contract until the ticket that changes them lands.
 
@@ -91,7 +91,7 @@ These review notes stay out of the backlog:
 | [TKT-051](TKT-051-history-biggest-winner.md) | Show the biggest winner on a history card | done | None |
 | [TKT-052](TKT-052-history-layout.md) | Lay out the history page | done | None |
 | [TKT-053](TKT-053-app-header.md) | Restyle the header and screen title | done | None |
-| [TKT-054](TKT-054-evening-note.md) | Add a note to the current evening | todo | None |
+| [TKT-054](TKT-054-evening-note.md) | Add a note to the current evening | done | None |
 | [TKT-055](TKT-055-archive-delete-session.md) | Archive or delete a closed evening | done | None |
 
 ## Requirement coverage

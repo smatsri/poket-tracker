@@ -39,6 +39,7 @@ export interface SessionSummaryView {
   heading: string;
   date: string;
   location?: string;
+  note?: string;
   totalBuyIns: string;
   totalCashOuts: string;
   balance: PresentedResult;
@@ -82,6 +83,7 @@ export function presentSessionSummary(document: SessionDocument): SessionSummary
     heading: document.session.name ?? history.date,
     date: history.date,
     ...(document.session.location === undefined ? {} : { location: document.session.location }),
+    ...(document.session.note === undefined ? {} : { note: document.session.note }),
     totalBuyIns: amountFormat.format(result.sessionBuyIns),
     totalCashOuts: amountFormat.format(result.sessionCashOuts),
     balance: presentResult(result.sessionBalance),

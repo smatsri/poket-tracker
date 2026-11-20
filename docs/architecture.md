@@ -134,7 +134,7 @@ These decisions close gaps in the source specifications.
 4. Financial totals exist only in the client. API responses do not add balances, profit, or statistics.
 5. Player names may be duplicated. The client warns when another player has the same trimmed name under Hebrew base comparison. The server trims and collapses internal whitespace, then stores the name without a uniqueness constraint.
 6. Creating a player requires the server. The client caches the last successful player list for selection during a connectivity gap. Version 1 does not create local-only players, because submission would fail for an unknown player ID.
-7. A closed session's name, location, date, and transactions cannot be edited. Archive, restore, and delete are the only closed-session mutations. Archive sets server-owned `archivedAt` and hides the session from the default session list. `GET /api/sessions?archived=true` returns only archived sessions. `GET` of one session still returns an archived session. Restore clears `archivedAt`. Archive and restore are idempotent. Delete removes the session and its transactions and returns `204`. A second delete returns `404`. Submitting that id again stores a new session. An identical retry does not change `archivedAt`.
+7. A closed session's name, location, note, date, and transactions cannot be edited. Archive, restore, and delete are the only closed-session mutations. Archive sets server-owned `archivedAt` and hides the session from the default session list. `GET /api/sessions?archived=true` returns only archived sessions. `GET` of one session still returns an archived session. Restore clears `archivedAt`. Archive and restore are idempotent. Delete removes the session and its transactions and returns `204`. A second delete returns `404`. Submitting that id again stores a new session. An identical retry does not change `archivedAt`.
 8. The default session date is the device-local calendar date in `YYYY-MM-DD`.
 9. Amounts are positive whole currency units. Version 1 stores no currency code on transactions or sessions. The interface formats them with Hebrew grouping, an explicit `+` or `−` sign on results, and the operator's display label. That label and the default amount are local settings. They start at `₪` and 50.
 10. The current evening shows the five newest transactions and links to the complete history.
@@ -158,6 +158,7 @@ These decisions close gaps in the source specifications.
 | Balance | מאזן |
 | History | היסטוריה |
 | Summary | סיכום |
+| Note | הערה |
 | Statistics | סיכומים |
 
 Local status labels are `פתוח` for draft, `ממתין לשליחה` for pending, and `נשלח` for submitted.

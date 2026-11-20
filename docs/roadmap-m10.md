@@ -1,6 +1,6 @@
 # M10 — Follow-ups
 
-**Status:** Open  
+**Status:** Done  
 **Tickets:** TKT-049–TKT-055
 
 M0–M9 are done. M10 comes from using the app. The tickets are independent. Take them in any order.

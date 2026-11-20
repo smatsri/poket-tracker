@@ -337,6 +337,7 @@ function SummaryBody({ view, notice }: { view: SessionSummaryView; notice: strin
         <h1>{summaryCopy.title}</h1>
         <p>{view.heading}</p>
         {view.location !== undefined ? <p>{view.location}</p> : null}
+        {view.note !== undefined ? <p>{view.note}</p> : null}
         <p className="muted">
           {view.playersLabel} · {view.transactionsLabel}
         </p>

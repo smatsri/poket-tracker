@@ -168,12 +168,20 @@ export function validatePlayer(value: unknown): Player {
 }
 
 export function readSessionLabel(value: string): string | undefined {
+  return readCollapsedText(value, 80, "name and location must contain at most 80 characters");
+}
+
+export function readSessionNote(value: string): string | undefined {
+  return readCollapsedText(value, 500, "note must contain at most 500 characters");
+}
+
+function readCollapsedText(value: string, maxLength: number, tooLong: string): string | undefined {
   const normalized = value.trim().replace(/\s+/g, " ");
   if (normalized.length === 0) {
     return undefined;
   }
-  if (normalized.length > 80) {
-    fail("name and location must contain at most 80 characters");
+  if (normalized.length > maxLength) {
+    fail(tooLong);
   }
   return normalized;
 }
@@ -188,14 +196,19 @@ function optionalSessionLabel(record: Record<string, unknown>, key: "name" | "lo
   return readSessionLabel(record[key]);
 }
 
-export function withSessionDetails(session: Session, details: { name: string; location: string }): Session {
+export function withSessionDetails(
+  session: Session,
+  details: { name: string; location: string; note: string },
+): Session {
   const name = readSessionLabel(details.name);
   const location = readSessionLabel(details.location);
+  const note = readSessionNote(details.note);
   const next: Session = {
     id: session.id,
     date: session.date,
     createdAt: session.createdAt,
     transactions: session.transactions,
+    ...(session.archivedAt === undefined ? {} : { archivedAt: session.archivedAt }),
   };
   if (name !== undefined) {
     next.name = name;
@@ -203,12 +216,15 @@ export function withSessionDetails(session: Session, details: { name: string; lo
   if (location !== undefined) {
     next.location = location;
   }
+  if (note !== undefined) {
+    next.note = note;
+  }
   return next;
 }
 
 export function validateSession(value: unknown): Session {
   const record = requireRecord(value, "Session");
-  rejectUnknown(record, ["id", "date", "name", "location", "createdAt", "archivedAt", "transactions"], "Session");
+  rejectUnknown(record, ["id", "date", "name", "location", "note", "createdAt", "archivedAt", "transactions"], "Session");
 
   const id = requireIdentifier(record, "id");
   const date = requireString(record, "date");
@@ -241,6 +257,7 @@ export function validateSession(value: unknown): Session {
 
   const name = optionalSessionLabel(record, "name");
   const location = optionalSessionLabel(record, "location");
+  const note = optionalSessionNote(record);
   const archivedAt = optionalTimestamp(record, "archivedAt");
   return {
     id,
@@ -249,8 +266,19 @@ export function validateSession(value: unknown): Session {
     transactions,
     ...(name === undefined ? {} : { name }),
     ...(location === undefined ? {} : { location }),
+    ...(note === undefined ? {} : { note }),
     ...(archivedAt === undefined ? {} : { archivedAt }),
   };
+}
+
+function optionalSessionNote(record: Record<string, unknown>): string | undefined {
+  if (!Object.hasOwn(record, "note") || record.note === undefined || record.note === null) {
+    return undefined;
+  }
+  if (typeof record.note !== "string") {
+    fail("note must be a string");
+  }
+  return readSessionNote(record.note);
 }
 
 function optionalTimestamp(record: Record<string, unknown>, key: "archivedAt"): string | undefined {

@@ -103,6 +103,27 @@ test("each contract operation calls fetch with only the write-schema fields", as
   assert.equal(header(calls[2]?.init, "accept"), "application/json");
 });
 
+test("a session note is submitted and returned, and a blank note is left off the request", async () => {
+  const noted = { ...wireSession, note: "שולחן קטן" };
+  const calls: unknown[] = [];
+  const client = createApiClient(baseUrl, async (_url, init) => {
+    calls.push(JSON.parse(String(init?.body)));
+    return json(201, noted);
+  });
+
+  const saved = await client.submitSession({ ...session, note: "שולחן קטן" });
+  assert.equal(saved.session.note, "שולחן קטן");
+  const blank = createApiClient(baseUrl, async (_url, init) => {
+    calls.push(JSON.parse(String(init?.body)));
+    return json(201, wireSession);
+  });
+  const omitted = await blank.submitSession(session);
+  assert.equal(Object.hasOwn(omitted.session, "note"), false);
+  assert.equal(Object.hasOwn(calls[0] as object, "note"), true);
+  assert.equal((calls[0] as { note?: string }).note, "שולחן קטן");
+  assert.equal(Object.hasOwn(calls[1] as object, "note"), false);
+});
+
 test("archive, restore, and delete call the session routes and omit archivedAt on submit", async () => {
   const calls: string[] = [];
   const archived = { ...wireSession, archivedAt: "2026-11-13T10:00:00Z" };

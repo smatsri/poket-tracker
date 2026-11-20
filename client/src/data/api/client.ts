@@ -114,6 +114,7 @@ function sessionRequestBody(session: Session): {
   date: string;
   name?: string;
   location?: string;
+  note?: string;
   transactions: Array<Omit<Transaction, "sessionId">>;
 } {
   return {
@@ -121,6 +122,7 @@ function sessionRequestBody(session: Session): {
     date: session.date,
     ...(session.name === undefined ? {} : { name: session.name }),
     ...(session.location === undefined ? {} : { location: session.location }),
+    ...(session.note === undefined ? {} : { note: session.note }),
     transactions: session.transactions.map((transaction) => ({
       id: transaction.id,
       playerId: transaction.playerId,
@@ -253,7 +255,7 @@ function parseSessionDocument(value: unknown): SessionDocument {
     throw unexpectedError("Session response did not match the contract");
   }
 
-  if (Object.keys(value).some((key) => !["id", "date", "name", "location", "createdAt", "archivedAt", "transactions", "players"].includes(key))) {
+  if (Object.keys(value).some((key) => !["id", "date", "name", "location", "note", "createdAt", "archivedAt", "transactions", "players"].includes(key))) {
     throw unexpectedError("Session response did not match the contract");
   }
 
@@ -277,6 +279,7 @@ function parseSessionDocument(value: unknown): SessionDocument {
         transactions,
         ...(Object.hasOwn(value, "name") ? { name: value.name } : {}),
         ...(Object.hasOwn(value, "location") ? { location: value.location } : {}),
+        ...(Object.hasOwn(value, "note") ? { note: value.note } : {}),
         ...(Object.hasOwn(value, "archivedAt") ? { archivedAt: value.archivedAt } : {}),
       }),
       players: value.players.map((player) => validatePlayer(player)),

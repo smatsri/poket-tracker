@@ -67,6 +67,19 @@ test("session name and location use player-name normalization and omit blanks", 
   rejects({ ...session, location: "a".repeat(81) }, sessionCreateRequest);
 });
 
+test("a session note uses the same collapse, omits a blank, and stops at 500 characters", () => {
+  const session = {
+    id: "session-001",
+    date: "2026-11-12",
+    transactions: [],
+  };
+  const omitted = parse(sessionCreateRequest, { ...session, note: "   " });
+  assert.equal(omitted.note, undefined);
+  assert.equal(parse(sessionCreateRequest, { ...session, note: "  שולחן   קטן " }).note, "שולחן קטן");
+  assert.equal(parse(sessionCreateRequest, { ...session, note: `${"א".repeat(500)} ` }).note?.length, 500);
+  rejects({ ...session, note: "א".repeat(501) }, sessionCreateRequest);
+});
+
 test("rejects unknown fields", () => {
   rejects({ name: "Dana", nickname: "D" }, playerCreateRequest);
   rejects({ ...validTransaction, note: "extra" });

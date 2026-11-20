@@ -63,16 +63,21 @@ export const amount = z.number().int().positive();
 
 export const playerName = z.string().transform(normalizePlayerName).pipe(z.string().min(1).max(80));
 
-const sessionLabel = z.preprocess((value) => {
-  if (value === undefined || value === null) {
-    return undefined;
-  }
-  if (typeof value !== "string") {
-    return value;
-  }
-  const normalized = normalizePlayerName(value);
-  return normalized.length === 0 ? undefined : normalized;
-}, z.string().min(1).max(80).optional());
+function optionalCollapsedText(maxLength: number) {
+  return z.preprocess((value) => {
+    if (value === undefined || value === null) {
+      return undefined;
+    }
+    if (typeof value !== "string") {
+      return value;
+    }
+    const normalized = normalizePlayerName(value);
+    return normalized.length === 0 ? undefined : normalized;
+  }, z.string().min(1).max(maxLength).optional());
+}
+
+const sessionLabel = optionalCollapsedText(80);
+const sessionNote = optionalCollapsedText(500);
 
 export const sessionId = identifier;
 
@@ -94,6 +99,7 @@ export const sessionCreateRequest = z
     date: calendarDate,
     name: sessionLabel,
     location: sessionLabel,
+    note: sessionNote,
     transactions: z.array(transactionInput),
   })
   .refine((session) => new Set(session.transactions.map((transaction) => transaction.id)).size === session.transactions.length);

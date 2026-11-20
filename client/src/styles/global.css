@@ -194,6 +194,12 @@ h2 {
   color: var(--color-text);
 }
 
+textarea.field {
+  min-block-size: 6rem;
+  font: inherit;
+  resize: vertical;
+}
+
 .choice-list,
 .history-list {
   display: flex;

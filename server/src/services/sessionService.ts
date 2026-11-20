@@ -92,6 +92,7 @@ async function runSubmit(database: Database, submission: SessionSubmission): Pro
         existing.date === submission.date &&
         sameLabel(existing.name, submission.name) &&
         sameLabel(existing.location, submission.location) &&
+        sameLabel(existing.note, submission.note) &&
         sameTransactionSet(existing.transactions, submission.transactions)
       ) {
         return { status: 200, session: existing };
@@ -111,6 +112,7 @@ async function runSubmit(database: Database, submission: SessionSubmission): Pro
       createdAt,
       ...(submission.name === undefined ? {} : { name: submission.name }),
       ...(submission.location === undefined ? {} : { location: submission.location }),
+      ...(submission.note === undefined ? {} : { note: submission.note }),
     });
     for (const transaction of submission.transactions) {
       await insertTransaction(sql, submission.id, transaction);

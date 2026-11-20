@@ -343,16 +343,18 @@ test("a draft keeps an optional name and location through submit", async () => {
   const client = api((session) => confirmed(session, 201));
   const service = createEveningService(repository, client, clock());
   await service.startEvening();
-  const named = await service.updateDetails({ name: "  ערב   חמישי ", location: "  אצל דנה " });
+  const named = await service.updateDetails({ name: "  ערב   חמישי ", location: "  אצל דנה ", note: "" });
   assert.equal(named.session.name, "ערב חמישי");
   assert.equal(named.session.location, "אצל דנה");
-  assert.equal(Object.hasOwn(await service.updateDetails({ name: "   ", location: "" }).then((record) => record.session), "name"), false);
+  assert.equal(Object.hasOwn(named.session, "note"), false);
+  assert.equal(Object.hasOwn(await service.updateDetails({ name: "   ", location: "", note: "   " }).then((record) => record.session), "name"), false);
 
-  await service.updateDetails({ name: "ערב חמישי", location: "אצל דנה" });
+  await service.updateDetails({ name: "ערב חמישי", location: "אצל דנה", note: "  שולחן   קטן " });
   await service.addTransaction({ playerId: "player-001", type: "buy-in", amount: 50 });
   await service.submitEvening();
   assert.equal(client.calls[0]?.name, "ערב חמישי");
   assert.equal(client.calls[0]?.location, "אצל דנה");
+  assert.equal(client.calls[0]?.note, "שולחן קטן");
 
   const pending = await repository.readActiveSession();
   assert.equal(pending, null);
@@ -365,14 +367,15 @@ test("a pending evening cannot change its name or location", async () => {
   });
   const service = createEveningService(repository, client, clock());
   await service.startEvening();
-  await service.updateDetails({ name: "ערב חמישי", location: "אצל דנה" });
+  await service.updateDetails({ name: "ערב חמישי", location: "אצל דנה", note: "שולחן קטן" });
   await service.addTransaction({ playerId: "player-001", type: "buy-in", amount: 50 });
   await assert.rejects(() => service.submitEvening());
-  await assert.rejects(() => service.updateDetails({ name: "אחר", location: "אחר" }), EveningError);
+  await assert.rejects(() => service.updateDetails({ name: "אחר", location: "אחר", note: "אחר" }), EveningError);
   const stored = await repository.readActiveSession();
   assert.equal(stored?.status, "pending");
   assert.equal(stored?.session.name, "ערב חמישי");
   assert.equal(stored?.session.location, "אצל דנה");
+  assert.equal(stored?.session.note, "שולחן קטן");
 });
 
 test("an evening without transactions cannot be submitted", async () => {

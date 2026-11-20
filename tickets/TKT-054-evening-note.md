@@ -1,6 +1,6 @@
 # TKT-054 — Add a note to the current evening
 
-**Status:** todo  
+**Status:** done  
 **Issue:** #56  
 **Milestone:** M10 Follow-ups  
 **Depends on:** None
@@ -34,9 +34,9 @@ Let the operator attach one short note to the evening they are running.
 
 ## Acceptance criteria
 
-- [ ] A draft can save a note or leave it empty, and a confirmed session returns the same value.
-- [ ] A note longer than 500 characters after normalization is rejected, and an empty note is omitted.
-- [ ] The summary shows the note. A closed evening has no control that changes it.
-- [ ] Existing sessions without a note still load.
-- [ ] An identical retry returns the stored note. A different note for the same session id returns `409`.
-- [ ] Automated tests cover the omitted, saved, rejected, and conflict cases.
+- [x] A draft can save a note or leave it empty, and a confirmed session returns the same value.
+- [x] A note longer than 500 characters after normalization is rejected, and an empty note is omitted.
+- [x] The summary shows the note. A closed evening has no control that changes it.
+- [x] Existing sessions without a note still load.
+- [x] An identical retry returns the stored note. A different note for the same session id returns `409`.
+- [x] Automated tests cover the omitted, saved, rejected, and conflict cases.

@@ -14,6 +14,7 @@ export interface StoredSession {
   date: string;
   name?: string;
   location?: string;
+  note?: string;
   createdAt: string;
   archivedAt?: string;
   transactions: StoredTransaction[];
@@ -37,10 +38,11 @@ export async function selectSession(database: Sql, id: string): Promise<StoredSe
     date: string;
     name: string | null;
     location: string | null;
+    note: string | null;
     createdAt: string;
     archivedAt: string | null;
   }>(
-    `SELECT id, "date", name, location, created_at AS "createdAt", archived_at AS "archivedAt" FROM sessions WHERE id = $1`,
+    `SELECT id, "date", name, location, note, created_at AS "createdAt", archived_at AS "archivedAt" FROM sessions WHERE id = $1`,
     [id],
   );
   const session = sessions.rows[0];
@@ -74,6 +76,7 @@ function storedSession(
     date: string;
     name: string | null;
     location: string | null;
+    note: string | null;
     createdAt: string;
     archivedAt: string | null;
   },
@@ -88,6 +91,7 @@ function storedSession(
     players,
     ...(session.name === null ? {} : { name: session.name }),
     ...(session.location === null ? {} : { location: session.location }),
+    ...(session.note === null ? {} : { note: session.note }),
     ...(session.archivedAt === null ? {} : { archivedAt: session.archivedAt }),
   };
 }
@@ -122,15 +126,12 @@ export async function selectSessions(
 
 export async function insertSession(
   database: Sql,
-  session: { id: string; date: string; createdAt: string; name?: string; location?: string },
+  session: { id: string; date: string; createdAt: string; name?: string; location?: string; note?: string },
 ): Promise<void> {
-  await database.query(`INSERT INTO sessions (id, "date", created_at, name, location) VALUES ($1, $2, $3, $4, $5)`, [
-    session.id,
-    session.date,
-    session.createdAt,
-    session.name ?? null,
-    session.location ?? null,
-  ]);
+  await database.query(
+    `INSERT INTO sessions (id, "date", created_at, name, location, note) VALUES ($1, $2, $3, $4, $5, $6)`,
+    [session.id, session.date, session.createdAt, session.name ?? null, session.location ?? null, session.note ?? null],
+  );
 }
 
 export async function setSessionArchived(database: Sql, id: string, archivedAt: string | null): Promise<void> {

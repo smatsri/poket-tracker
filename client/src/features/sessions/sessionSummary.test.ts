@@ -45,12 +45,14 @@ test("summary totals and player results come from the client formulas", () => {
   assert.equal(view.canChange, false);
   assert.equal(view.heading, view.date);
   assert.equal(view.location, undefined);
+  assert.equal(view.note, undefined);
   const named = presentSessionSummary({
     ...document,
-    session: { ...document.session, name: "ערב חמישי", location: "אצל דנה" },
+    session: { ...document.session, name: "ערב חמישי", location: "אצל דנה", note: "שולחן קטן" },
   });
   assert.equal(named.heading, "ערב חמישי");
   assert.equal(named.location, "אצל דנה");
+  assert.equal(named.note, "שולחן קטן");
   assert.equal(named.canChange, false);
   assert.notEqual(named.heading, named.date);
   assert.equal(view.totalBuyIns, new Intl.NumberFormat("he-IL", { maximumFractionDigits: 0 }).format(result.sessionBuyIns));
@@ -187,7 +189,8 @@ test("loading a summary reads that session and the screen does not offer changes
   assert.equal(loaded.session.id, "session-1");
 
   const screen = readFileSync(new URL("./HistoryScreen.tsx", import.meta.url), "utf8");
-  assert.doesNotMatch(screen, /עריכה|מחיקה|שליח|submitEvening|deleteTransaction|updateTransaction|addTransaction|startEvening|session-name|session-location/);
+  assert.doesNotMatch(screen, /עריכה|מחיקה|שליח|submitEvening|deleteTransaction|updateTransaction|addTransaction|startEvening|session-name|session-location|session-note|<textarea/);
+  assert.match(screen, /view\.note/);
   assert.match(screen, /openSessionSummary/);
   assert.match(screen, /כל הפעולות|summaryCopy.transactions/);
 });
