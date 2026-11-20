@@ -1,6 +1,6 @@
 # TKT-050 — Sort the summary by profit
 
-**Status:** todo  
+**Status:** done  
 **Issue:** #52  
 **Milestone:** M10 Follow-ups  
 **Depends on:** None
@@ -30,7 +30,7 @@ The summary lists players from the highest net result to the lowest.
 
 ## Acceptance criteria
 
-- [ ] Summary players appear from the highest net to the lowest.
-- [ ] Two equal nets appear by Hebrew name, then by player id.
-- [ ] The current-evening screen keeps its existing player order.
-- [ ] An automated test covers a reordered list and a tie.
+- [x] Summary players appear from the highest net to the lowest.
+- [x] Two equal nets appear by Hebrew name, then by player id.
+- [x] The current-evening screen keeps its existing player order.
+- [x] An automated test covers a reordered list and a tie.

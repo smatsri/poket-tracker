@@ -1,7 +1,7 @@
 import type { ApiClient, SessionDocument } from "../../data/api/client.ts";
 import { ApiRequestError } from "../../data/api/errors.ts";
 import type { LocalRepository } from "../../data/local/repository.ts";
-import { calculateSessionResult } from "../../domain/calculations.ts";
+import { calculateSessionResult, compareRankedResults } from "../../domain/calculations.ts";
 import type { PlayerSessionResult } from "../../domain/models.ts";
 import { presentPlayerResult, presentResult, type PresentedPlayerRow, type PresentedResult } from "./currentEvening.ts";
 import { sessionPlayerPath, sessionTransactionsPath } from "./sessionHistory.ts";
@@ -89,7 +89,14 @@ export function presentSessionSummary(document: SessionDocument): SessionSummary
     transactionCount: document.session.transactions.length,
     playersLabel: `${summaryCopy.players}: ${playerCount}`,
     transactionsLabel: `${summaryCopy.transactionCount}: ${document.session.transactions.length}`,
-    players: result.players.map((player) => presentSummaryPlayer(document.session.id, player, document.players)),
+    players: [...result.players]
+      .sort((left, right) =>
+        compareRankedResults(
+          { netResult: left.netResult, name: storedPlayerName(left.playerId, document.players), playerId: left.playerId },
+          { netResult: right.netResult, name: storedPlayerName(right.playerId, document.players), playerId: right.playerId },
+        ),
+      )
+      .map((player) => presentSummaryPlayer(document.session.id, player, document.players)),
     transactions: history.transactions,
     transactionsHref: sessionTransactionsPath(document.session.id),
     summaryHref: `/history/${encodeURIComponent(document.session.id)}`,
@@ -162,6 +169,10 @@ export async function openSessionSummary(
     }
     show(presentSummaryFailure(error));
   }
+}
+
+function storedPlayerName(playerId: string, players: SessionDocument["players"]): string {
+  return players.find((player) => player.id === playerId)?.name ?? "";
 }
 
 function presentSummaryPlayer(sessionId: string, player: PlayerSessionResult, players: SessionDocument["players"]): SummaryPlayerRow {
