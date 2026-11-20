@@ -1,8 +1,9 @@
 import type { ApiClient, SessionDocument } from "../../data/api/client.ts";
 import { ApiRequestError } from "../../data/api/errors.ts";
 import type { LocalRepository } from "../../data/local/repository.ts";
-import { calculateSessionResult } from "../../domain/calculations.ts";
-import type { Player } from "../../domain/models.ts";
+import { calculateSessionResult, compareRankedResults } from "../../domain/calculations.ts";
+import type { Player, PlayerSessionResult } from "../../domain/models.ts";
+import { playerDisplayName } from "../players/playerName.ts";
 import { presentResult, type PresentedResult } from "./currentEvening.ts";
 import { formatSessionDate } from "./transactionHistory.ts";
 
@@ -47,6 +48,12 @@ export interface HistoryEntry {
   moneyInCountLabel: string;
   cashOutCountLabel: string;
   result: PresentedResult;
+  biggestWinner?: {
+    playerId: string;
+    name: string;
+    result: PresentedResult;
+    label: "המרוויח הגדול";
+  };
 }
 
 export interface HistoryListView {
@@ -251,7 +258,36 @@ function presentEntry(document: SessionDocument): HistoryEntry {
     moneyInCountLabel: `מספר כניסות: ${moneyInCount}`,
     cashOutCountLabel: `מספר יציאות: ${cashOutCount}`,
     result: presentResult(result.sessionBalance),
+    ...biggestWinner(document, result.players),
   };
+}
+
+function biggestWinner(
+  document: SessionDocument,
+  players: readonly PlayerSessionResult[],
+): Pick<HistoryEntry, "biggestWinner"> {
+  const top = [...players].sort((left, right) =>
+    compareRankedResults(
+      { netResult: left.netResult, name: storedPlayerName(left.playerId, document.players), playerId: left.playerId },
+      { netResult: right.netResult, name: storedPlayerName(right.playerId, document.players), playerId: right.playerId },
+    ),
+  )[0];
+  if (top === undefined) {
+    return {};
+  }
+
+  return {
+    biggestWinner: {
+      playerId: top.playerId,
+      name: playerDisplayName(top.playerId, document.players),
+      result: presentResult(top.netResult),
+      label: "המרוויח הגדול",
+    },
+  };
+}
+
+function storedPlayerName(playerId: string, players: readonly Player[]): string {
+  return players.find((player) => player.id === playerId)?.name ?? "";
 }
 
 function distinctPlayerCount(players: readonly Player[]): number {

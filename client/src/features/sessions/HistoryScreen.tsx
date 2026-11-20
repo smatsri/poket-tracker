@@ -193,6 +193,11 @@ export function HistoryScreen({ api, repository }: { api: ApiClient; repository:
                     {entry.gapLabel} <ResultText result={entry.result} prominent />
                   </span>
                   <span className="player-name">{entry.heading}</span>
+                  {entry.biggestWinner !== undefined ? (
+                    <span>
+                      {entry.biggestWinner.label} {entry.biggestWinner.name} <ResultText result={entry.biggestWinner.result} />
+                    </span>
+                  ) : null}
                   {entry.location !== undefined ? <span className="muted">{entry.location}</span> : null}
                   <span className="muted">
                     {entry.playersLabel} · {entry.moneyInCountLabel} · {entry.cashOutCountLabel}

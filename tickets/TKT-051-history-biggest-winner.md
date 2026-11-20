@@ -1,6 +1,6 @@
 # TKT-051 — Show the biggest winner on a history card
 
-**Status:** todo  
+**Status:** done  
 **Issue:** #53  
 **Milestone:** M10 Follow-ups  
 **Depends on:** None
@@ -34,9 +34,9 @@ Each history card names who finished with the highest net that evening.
 
 ## Acceptance criteria
 
-- [ ] A history card shows the player with the highest net and that signed result, under the label `המרוויח הגדול`.
-- [ ] A tie shows one player, chosen by Hebrew name and then player id.
-- [ ] A top result of zero or below is still shown.
-- [ ] An evening with no player results omits the line.
-- [ ] An unknown player is `שחקן לא ידוע`.
-- [ ] Automated tests cover the unique, tied, negative, and empty cases.
+- [x] A history card shows the player with the highest net and that signed result, under the label `המרוויח הגדול`.
+- [x] A tie shows one player, chosen by Hebrew name and then player id.
+- [x] A top result of zero or below is still shown.
+- [x] An evening with no player results omits the line.
+- [x] An unknown player is `שחקן לא ידוע`.
+- [x] Automated tests cover the unique, tied, negative, and empty cases.
