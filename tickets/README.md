@@ -86,7 +86,7 @@ These review notes stay out of the backlog:
 | [TKT-046](TKT-046-history-metrics.md) | Show the history gap | done | None |
 | [TKT-047](TKT-047-player-rename-delete.md) | Rename a player and delete an unused one | done | None |
 | [TKT-048](TKT-048-session-cache.md) | Cache closed sessions for display | done | TKT-045 |
-| [TKT-049](TKT-049-amount-focus.md) | Leave the amount field unfocused after a save | todo | None |
+| [TKT-049](TKT-049-amount-focus.md) | Leave the amount field unfocused after a save | done | None |
 | [TKT-050](TKT-050-summary-by-profit.md) | Sort the summary by profit | todo | None |
 | [TKT-051](TKT-051-history-biggest-winner.md) | Show the biggest winner on a history card | todo | None |
 | [TKT-052](TKT-052-history-layout.md) | Lay out the history page | todo | None |

@@ -1,6 +1,6 @@
 # TKT-049 — Leave the amount field unfocused after a save
 
-**Status:** todo  
+**Status:** done  
 **Issue:** #51  
 **Milestone:** M10 Follow-ups  
 **Depends on:** None
@@ -31,9 +31,9 @@ Adding an action must not move focus to the amount field or open the number keyb
 
 ## Acceptance criteria
 
-- [ ] A successful one-player save leaves the sheet open, resets the amount to the default, and does not focus the amount field.
-- [ ] A successful save for several players still closes the sheet.
-- [ ] A failed save does not change the evening and does not focus the amount field.
-- [ ] Tapping the amount still opens the numeric keyboard.
-- [ ] Architecture decision 11 and the manual checklist match this behavior.
-- [ ] An automated test covers the decision not to focus after a successful create.
+- [x] A successful one-player save leaves the sheet open, resets the amount to the default, and does not focus the amount field.
+- [x] A successful save for several players still closes the sheet.
+- [x] A failed save does not change the evening and does not focus the amount field.
+- [x] Tapping the amount still opens the numeric keyboard.
+- [x] Architecture decision 11 and the manual checklist match this behavior.
+- [x] An automated test covers the decision not to focus after a successful create.

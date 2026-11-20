@@ -38,7 +38,6 @@ export function TransactionSheet({
   onClose: () => void;
   onPersisted: () => Promise<void>;
 }) {
-  const amountRef = useRef<HTMLInputElement>(null);
   const amountTouched = useRef(false);
   const flight = useRef(createSingleFlight());
   const { settings } = useOperatorSettings();
@@ -49,16 +48,9 @@ export function TransactionSheet({
   const [errors, setErrors] = useState<TransactionFieldErrors>({});
   const [saveError, setSaveError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
-  const [amountFocus, setAmountFocus] = useState(0);
   const [undoId, setUndoId] = useState<string | null>(null);
   const [undoError, setUndoError] = useState<string | null>(null);
   const [undoing, setUndoing] = useState(false);
-
-  useEffect(() => {
-    if (amountFocus > 0) {
-      amountRef.current?.focus();
-    }
-  }, [amountFocus]);
 
   useEffect(() => {
     let active = true;
@@ -132,7 +124,6 @@ export function TransactionSheet({
         setTransactions(current?.session.transactions ?? []);
         setUndoId(saved.length === 1 ? (saved[0]?.id ?? null) : null);
         setUndoError(null);
-        setAmountFocus((focus) => focus + 1);
       });
       return;
     }
@@ -292,7 +283,6 @@ export function TransactionSheet({
                 −
               </button>
               <input
-                ref={amountRef}
                 id="transaction-amount"
                 className="field amount-field"
                 name="amount"

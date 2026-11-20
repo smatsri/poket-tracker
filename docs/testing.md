@@ -68,7 +68,7 @@ Run this on a phone-sized viewport, 360px wide, in a Chromium browser. The serve
 
 1. Start an evening from the empty state and confirm the Hebrew empty and active screens read naturally from right to left.
 2. Create a player, create a second player with the same name, and confirm a duplicate warning appears without blocking the distinct saved player.
-3. Record a buy-in, rebuy, and cash-out in a few taps. Confirm the numeric keyboard, the retained player and type, and the cleared amount. A second tap during the save does not record a duplicate.
+3. Record a buy-in, rebuy, and cash-out in a few taps. Confirm the numeric keyboard opens only when the amount is tapped, the retained player and type, and the amount returning to the default without focusing that field. A second tap during the save does not record a duplicate.
 4. Confirm player totals, the session balance, and the five-item recent activity update immediately.
 5. Refresh and restart the browser. Confirm the same evening and transactions return.
 6. Edit and delete a draft transaction. Confirm every derived balance changes.

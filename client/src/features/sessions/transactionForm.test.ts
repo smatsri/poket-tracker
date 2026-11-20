@@ -170,6 +170,15 @@ test("a create row shows the evening net, or zero when the player has no transac
   assert.equal(createPlayerNet("p2", transactions), 0);
 });
 
+test("a successful one-player create does not focus the amount field", () => {
+  const source = readFileSync(new URL("./TransactionSheet.tsx", import.meta.url), "utf8");
+  const reset = source.indexOf("createDraftAfterSave");
+  assert.ok(reset !== -1);
+  assert.doesNotMatch(source.slice(reset), /\.focus\s*\(/);
+  assert.doesNotMatch(source, /\.focus\s*\(/);
+  assert.match(source, /\{\.\.\.amountFieldProps\}/);
+});
+
 test("the amount, action, and save stay outside the scrolling player list", () => {
   const source = readFileSync(new URL("./TransactionSheet.tsx", import.meta.url), "utf8");
   const scroll = source.indexOf("sheet-scroll");
