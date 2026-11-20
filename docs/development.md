@@ -95,9 +95,9 @@ npx --yes @redocly/cli lint docs/api/openapi.yaml --config docs/api/redocly.yaml
 
 ## Current state
 
-Milestones M0–M8 in [tickets/README.md](../tickets/README.md) are done. That work built the workspaces, the player and session API, client calculations and submission, the Hebrew evening flow, history, statistics, the Version 1.0 charts, and the contract-hardening fixes. The API stores players, sessions, and transactions in PostgreSQL. Acceptance evidence is in [TKT-022](../tickets/TKT-022-mvp-acceptance.md), [TKT-028](../tickets/TKT-028-v1-acceptance.md), and TKT-029–TKT-032. Production hosting is locked in [deployment.md](deployment.md). Later product work should reuse `GET /api/sessions` and the client calculations before adding an endpoint.
+Milestones M0–M9 in [tickets/README.md](../tickets/README.md) are done. That work built the workspaces, the player and session API, client calculations and submission, the Hebrew evening flow, history, statistics, the Version 1.0 charts, the contract-hardening fixes, production hosting, and the evening-usability pass. The API stores players, sessions, and transactions in PostgreSQL. Acceptance evidence is in [TKT-022](../tickets/TKT-022-mvp-acceptance.md), [TKT-028](../tickets/TKT-028-v1-acceptance.md), and TKT-029–TKT-032. Production hosting is locked in [deployment.md](deployment.md). Later product work should reuse `GET /api/sessions` and the client calculations before adding an endpoint.
 
-M9 Evening usability is specified in [roadmap-m9.md](roadmap-m9.md) and is not built yet. Its tickets are TKT-041–TKT-048.
+M10 Follow-ups is specified in [roadmap-m10.md](roadmap-m10.md). Its tickets are TKT-049–TKT-055. They are independent.
 
 ## GitHub issues
 

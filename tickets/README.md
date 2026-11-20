@@ -22,10 +22,11 @@ The authoritative contract is [docs/api/openapi.yaml](../docs/api/openapi.yaml).
 | M7 Contract hardening | TKT-029–TKT-032 | The locked contracts hold for the cases the reviews found | done |
 | M8 Production deployment | TKT-033–TKT-040 | The app is reachable on a phone through Cloud Run and Neon | done |
 | M9 Evening usability | TKT-041–TKT-048 | A live evening is faster to run, and the recap is easier to check | done |
+| M10 Follow-ups | TKT-049–TKT-055 | The recap is easier to read, a note can ride with the evening, and a closed evening can be archived or deleted | todo |
 
-M0–M9 are done. Hosting stays locked in [docs/deployment.md](../docs/deployment.md). Later product work should reuse existing client calculations and `GET /api/sessions`. Do not add analytics endpoints unless a later ticket proves they are required.
+M0–M9 are done. M10 is open. Hosting stays locked in [docs/deployment.md](../docs/deployment.md). Later product work should reuse existing client calculations and `GET /api/sessions`. Do not add analytics endpoints unless a later ticket proves they are required.
 
-M9 is specified in [docs/roadmap-m9.md](../docs/roadmap-m9.md). Architecture, the data model, and OpenAPI stay the current contract until the ticket that changes them lands.
+M9 is specified in [docs/roadmap-m9.md](../docs/roadmap-m9.md). M10 is specified in [docs/roadmap-m10.md](../docs/roadmap-m10.md). Architecture, the data model, and OpenAPI stay the current contract until the ticket that changes them lands.
 
 These review notes stay out of the backlog:
 
@@ -85,6 +86,13 @@ These review notes stay out of the backlog:
 | [TKT-046](TKT-046-history-metrics.md) | Show the history gap | done | None |
 | [TKT-047](TKT-047-player-rename-delete.md) | Rename a player and delete an unused one | done | None |
 | [TKT-048](TKT-048-session-cache.md) | Cache closed sessions for display | done | TKT-045 |
+| [TKT-049](TKT-049-amount-focus.md) | Leave the amount field unfocused after a save | todo | None |
+| [TKT-050](TKT-050-summary-by-profit.md) | Sort the summary by profit | todo | None |
+| [TKT-051](TKT-051-history-biggest-winner.md) | Show the biggest winner on a history card | todo | None |
+| [TKT-052](TKT-052-history-layout.md) | Lay out the history page | todo | None |
+| [TKT-053](TKT-053-app-header.md) | Restyle the header and screen title | todo | None |
+| [TKT-054](TKT-054-evening-note.md) | Add a note to the current evening | todo | None |
+| [TKT-055](TKT-055-archive-delete-session.md) | Archive or delete a closed evening | todo | None |
 
 ## Requirement coverage
 
@@ -119,6 +127,18 @@ These review notes stay out of the backlog:
 | Rename a player, and delete one with no transactions | TKT-047 |
 | Closed sessions render from a local cache | TKT-048 |
 
+### M10 Follow-ups
+
+| Outcome | Tickets |
+| --- | --- |
+| Adding an action does not open the number keyboard | TKT-049 |
+| The summary lists players by profit | TKT-050 |
+| A history card names the biggest winner | TKT-051 |
+| The history page is a readable card list | TKT-052 |
+| The header carries the screen title | TKT-053 |
+| The current evening can store one note | TKT-054 |
+| A closed evening can be archived or deleted | TKT-055 |
+
 | UI acceptance criterion | Tickets |
 | --- | --- |
 | 1. A new evening can be started from a phone | TKT-012, TKT-014, TKT-022 |
@@ -137,7 +157,7 @@ These review notes stay out of the backlog:
 These items stay outside Version 1.0:
 
 - Additional charts beyond the three Version 1.0 views, plus filters, search, and advanced analytics
-- Editing or deleting a session after server confirmation
+- Editing a closed evening's name, location, date, note, or transactions. Archive and delete are M10, in TKT-055
 - Player accounts and multiple application users. Operator access for the hosted app is M8, in [docs/deployment.md](../docs/deployment.md)
 - Multi-device collaboration and real-time sync. M9 may cache closed sessions for display; the server stays the source of truth. Full offline history stays deferred
 - Attendance without a transaction
